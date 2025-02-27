@@ -1,0 +1,15 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+
+<h2>Eliminar Miembro del Ministerio</h2>
+
+<p>¿Estás seguro de que deseas eliminar a <strong>{{ miembro_ministerio.id_miembro.nombre }}</strong> del ministerio <strong>{{ miembro_ministerio.id_ministerio.descripcion }}</strong>?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'miembro-ministerio-list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock content %}

@@ -1,0 +1,73 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+{% load custom_filters %}
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+    <h2>Participantes en servicios</h2>
+
+    <form method="GET">
+        <label for="fecha_inicio">Fecha Inicio:</label>
+        <input type="date" name="fecha_inicio" id="fecha_inicio" value="{{ fecha_inicio_b }}">
+        <input type="date" name="fecha_fin" id="fecha_fin" value="{{ fecha_fin_b }}">
+
+            <label for="id_ministerio">Ministerio:</label>
+            <select name="id_ministerio" id="id_ministerio">
+                {% for opcion in ministerios %}
+                    <option value="{{ opcion.id }}">{{ opcion.descripcion }}</option>
+                {% endfor %}
+            </select>
+
+        <button type="submit" class="btn btn-secondary">Buscas</button>
+    </form>
+
+    <br>
+
+    <table  class="table table-hover table-striped table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th></th>
+                {% for servicio, roles in servicios_participantes.items %}
+                    <th>{{ servicio.fecha }} - {{ servicio.id_categoria.descripcion }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for rol in roles_disponibles %}
+                <tr>
+                    <td><strong>{{ rol }}</strong></td>
+                    {% for servicio, roles in servicios_participantes.items %}
+                        <td>
+                            {% if rol in roles %}
+                                {% for participante in roles|dict_get:rol %}
+                                    {{ participante.id_miembro_ministerio.id_miembro.nombre }} {{ participante.id_miembro_ministerio.id_miembro.apellido }}<br>
+                                {% endfor %}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+
+<script>
+    flatpickr("#fecha_inicio", { dateFormat: "Y-m-d" });
+    flatpickr("#fecha_fin", { dateFormat: "Y-m-d" });
+</script>
+{% endblock content %}

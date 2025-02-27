@@ -1,0 +1,14 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+<h2> Miembro de {{ miembro_ministerio.id_ministerio.descripcion }}</h2>
+
+<p><strong>Miembro:</strong> {{ miembro_ministerio.id_miembro.nombre }} {{ miembro_ministerio.id_miembro.apellido }}</p>
+<p><strong>Rol:</strong> {{ miembro_ministerio.id_rol_ministerio.descripcion }}</p>
+
+<a href="{% url 'miembro-ministerio-list' %}" class="btn btn-secondary">Volver</a>
+<a href="{% url 'miembro-ministerio-update' miembro_ministerio.pk %}" class="btn btn-warning">Editar</a>
+<a href="{% url 'miembro-ministerio-delete' miembro_ministerio.pk %}" class="btn btn-danger">Eliminar</a>
+
+{% endblock content %}

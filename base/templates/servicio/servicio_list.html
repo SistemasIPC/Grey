@@ -1,0 +1,110 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+
+
+    <h2>Servicios</h2>
+
+<div id="envoltorio-agregar-buscar">
+
+    <form method="GET" style="margin-top: 20px; display: flex;">
+        <table>
+            <tr>
+                <td><label >Categoria:</label>
+
+                    <select name="categoria-buscar" >
+                         <option value=""> -------------</option>
+                        {% for categoria in categoria_servicio %}
+                            <option value="{{ categoria.id }}"> {{ categoria.descripcion }}</option>
+                        {% endfor %}
+                    </select>
+                </td>
+                <td>
+                <label >Fecha:</label>  <input type="text"  name="fecha-buscar" id="fecha-buscar" value="{{ fecha_buscado }}" autocomplete="off">
+
+                </td>
+
+                <td>
+                <input class="btn btn-success" type="submit" value="buscar">
+                </td>
+            </tr>
+        </table>
+    </form>
+    <br>
+        {% if usuario_iglesia.superusuario %}
+    <a id='enlace-agregar' class="btn btn-primary" href="{% url 'crear-servicio' iglesia.id %}">Nuevo servicio</a>
+     {% endif %}
+</div>
+
+
+<table class="table table-hover table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Fecha</th>
+            <th>Servicio</th>
+            <th>Descripcion</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    {% for servicio in servicios %}
+
+            <tr>
+
+             <td>{{servicio.fecha}}</td>
+            <td>
+             {% if usuario_iglesia.superusuario %}
+                <a href="{% url 'programar-miembros' servicio.id %}"> Programar</a>
+                <a href="{% url 'servicio' servicio.id %}">{{servicio.id_categoria.descripcion}}</a>
+
+             {% else %}
+                <a href="{% url 'programar-miembros' servicio.id %}">{{servicio.id_categoria.descripcion}}</a>
+            {% endif %}
+            </td>
+           <td> {{servicio.descripcion}}</td>
+            <td>
+                {% if usuario_iglesia.superusuario %}
+                    <a  class="btn btn-warning" href="{% url 'editar-servicio' servicio.id %}">Editar</a>
+                {% endif %}
+            </td>
+            <td>
+                {% if usuario_iglesia.superusuario %}
+
+
+
+                        {% if servicio.es_eliminable  %}
+                            <a class='btn btn-danger' href="{% url 'eliminar-servicio' servicio.id %}" onclick="return confirm('¿Seguro que quieres eliminar este servicio?')">
+                                &#x2A2F;
+                            </a>
+                        {% endif %}
+
+
+
+
+                {% endif %}
+
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay miembros registrados en esta iglesia.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        flatpickr("#fecha-buscar", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "F j, Y",
+            allowInput: true
+        });
+    });
+</script>
+
+{% endblock content %}
