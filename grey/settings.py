@@ -83,14 +83,26 @@ WSGI_APPLICATION = 'grey.wsgi.application'
 #}
 
 
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'bdgrey',
+#        'USER': 'grey',
+#        'PASSWORD': 'rootgrey+-',
+#        'HOST': 'localhost',
+#        'PORT': '5432',
+#        'OPTIONS': {'client_encoding': 'UTF8'},
+#   }
+#}
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'bdgrey',
+        'NAME': 'railway',
         'USER': 'grey',
-        'PASSWORD': 'rootgrey+-',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'PASSWORD': 'JcVwkiuGjzNjGSgXKeXCIpFBZAcbQmOk',
+        'HOST': 'metro.proxy.rlwy.net',
+        'PORT': '48567',
         'OPTIONS': {'client_encoding': 'UTF8'},
    }
 }
