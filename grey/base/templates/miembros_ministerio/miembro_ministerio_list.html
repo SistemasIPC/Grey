@@ -1,0 +1,97 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+
+
+
+<h2>Miembros en: {{ ministerios_user|join:", " }}</h2>
+
+<a href="{% url 'miembro-ministerio-create' %}" class="btn btn-primary">Agregar Miembro a Ministerio</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Miembro</th>
+            <th>Ministerio</th>
+            <th>Rol</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for miembro in miembros_ministerios %}
+        <tr>
+            <td> {{ miembro.id_miembro.nombre }} {{ miembro.id_miembro.apellido }}</td>
+            <td>{{ miembro.id_ministerio.descripcion }}</td>
+            <td>
+                <select class="form-control rol-selector" data-miembro="{{ miembro.id_miembro.id }}" data-ministerio="{{ miembro.id_ministerio.id }}">
+                     {% for rol in miembro.id_ministerio.roles_disponibles.all %}
+                        <option value="{{ rol.id }}" {% if miembro.id_rol_ministerio.id == rol.id %}selected{% endif %}>
+                            {{ rol.descripcion }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </td>
+            <td>
+                <a href="{% url 'miembro-ministerio-detail' miembro.pk %}" class="btn btn-info">Ver</a>
+                <a href="{% url 'miembro-ministerio-delete' miembro.pk %}" class="btn btn-danger">Eliminar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay miembros en tus ministerios.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".rol-selector").forEach(function (selector) {
+        selector.addEventListener("focus", function () {
+            this.dataset.rolPrevio = this.value; // Guardar el rol actual antes del cambio
+        });
+
+        selector.addEventListener("change", function () {
+            const miembroId = this.getAttribute("data-miembro");
+            const ministerioId = this.getAttribute("data-ministerio");
+            const nuevoRolId = this.value;
+            const rolPrevio = this.dataset.rolPrevio; // Obtener el rol anterior
+
+            const confirmar = confirm("¿Estás seguro de que quieres cambiar el rol?");
+            if (!confirmar) {
+                this.value = rolPrevio; // Restablecer al rol anterior si cancela
+                return;
+            }
+
+            fetch("{% url 'api_actualizar_rol' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    miembro_id: miembroId,
+                    ministerio_id: ministerioId,
+                    rol_id: nuevoRolId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert("Rol actualizado correctamente.");
+                    this.dataset.rolPrevio = nuevoRolId; // Actualizar el rol previo después del cambio
+                } else {
+                    alert("Error al actualizar el rol.");
+                    this.value = rolPrevio; // Restaurar el valor anterior en caso de error
+                }
+            })
+            .catch(error => {
+                alert("Error en la solicitud.");
+                this.value = rolPrevio; // Restaurar el valor si hay un error en la petición
+            });
+        });
+    });
+});
+</script>
+{% endblock content %}

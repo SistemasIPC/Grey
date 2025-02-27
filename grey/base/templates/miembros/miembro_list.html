@@ -1,0 +1,47 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+
+
+
+
+<h2>Lista de Miembros de la Iglesia</h2>
+<a href="{% url 'miembro-create' %}" class="btn btn-primary">Agregar Miembro</a>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>Correo</th>
+            <th>Teléfono</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for miembro in miembros %}
+        <tr>
+            <td>{{ miembro.nombre }}</td>
+            <td>{{ miembro.apellido }}</td>
+            <td>{{ miembro.correo }}</td>
+            <td>{{ miembro.telefono }}</td>
+            <td>
+                <a href="{% url 'miembro-update' miembro.pk %}" class="btn btn-warning">Editar</a>
+
+             {% if miembro.id not in miembros_con_ministerio %}
+                    <a href="{% url 'miembro-delete' miembro.pk %}"  class="btn btn-danger" onclick="return confirm('¿Estás seguro de eliminar esta persona?')">
+                        Eliminar
+                    </a>
+                {% endif %}
+
+
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No hay miembros registrados en esta iglesia.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock content %}

@@ -1,0 +1,75 @@
+{% extends 'principal_super.html' %}
+
+{% block content %}
+    <a class="btn btn-secundary" href="{% url 'usuario_iglesia_list' %}">Volver</a>
+    <h2>Usuarios en la Iglesia</h2>
+    <a class="btn btn-primary" href="{% url 'usuario_iglesia_create' %}">Agregar Usuario</a>
+
+    <table border="0">
+        <tr>
+            <th>Usuario</th>
+            <th>Iglesia</th>
+            <th>Superusuario</th>
+            <th>Acciones</th>
+        </tr>
+        {% for usuario in usuarios_iglesia %}
+        <tr  {% if usuario.superusuario %} class='icono-mocion-nula'  {% endif %}  >
+            <td>{{ usuario.id_usuario.username }}</td>
+            <td>{{ usuario.id_iglesia.nombre }}</td>
+            <td>
+                {% if usuario.superusuario %}
+                    Superusuario
+                {% else %}
+                    <button class="toggle-superusuario btn btn-sm btn-warning"
+                            data-id="{{ usuario.id }}"
+                            data-estado="{{ usuario.superusuario }}">
+                        Cambiar
+                    </button>
+                {% endif %}
+
+            </td>
+            <td>
+
+                {% if not usuario.superusuario and usuario.num_ministerios == 0 %}
+                    <a class="btn btn-danger" href="{% url 'usuario_iglesia_delete' usuario.id %}">Eliminar</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+            <tr>
+                <td colspan="4">No hay usuarios registrados en esta iglesia.</td>
+            </tr>
+        {% endfor %}
+    </table>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".toggle-superusuario").forEach(function (button) {
+        button.addEventListener("click", function () {
+            const usuarioId = this.getAttribute("data-id");
+            const confirmacion = confirm("¿Estás seguro de que deseas convertir a este usuario en superusuario?");
+
+            if (confirmacion) {
+                fetch(`/usuario_iglesia/${usuarioId}/actualizar_superusuario/`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert("Usuario actualizado correctamente.");
+                        location.reload();
+                    } else {
+                        alert("Error al actualizar el usuario.");
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock content %}

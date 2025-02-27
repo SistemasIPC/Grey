@@ -1,0 +1,31 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+
+
+
+
+<div class="barra-superior">
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+
+    <a href="{% url 'asambleas'  %}">Volver </a>
+</div>
+        <div>
+        <h1> Asamblea: {{asamblea}}</h1>
+        </div>
+
+  <div class="titulo-tarea">
+        <div>   <a href="{% url 'asistentes' asamblea.id %}">Asistentes </a>  </div>
+        <div>   <a href="{% url 'mociones' asamblea.id %}">Mociones </a></div>
+        <div>   <a href="{% url 'asistentes' asamblea.id %}">Votacion </a></div>
+
+      </div>
+{% endblock content %}

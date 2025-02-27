@@ -1,0 +1,13 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+<h2>Eliminar Rol</h2>
+<p>¿Estás seguro de que deseas eliminar el rol "{{ object.nombre_rol }}" en el ministerio "{{ object.id_ministerio.nombre }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Confirmar Eliminación</button>
+</form>
+
+<a  class="btn btn-secondary" href="{% url 'rol_ministerio_list' %}">Cancelar</a>
+{% endblock content %}

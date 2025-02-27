@@ -1,0 +1,32 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+
+<div class="barra-superior">
+    <a href="{% url 'servicios'%}">&#x1F860; Volver</a>
+</div>
+    <h2> Servicio</h2>
+<div class="cuerpo-tarjeta">
+    <form method="POST" action="">
+    {% csrf_token %}
+    {{form.as_p}}
+    <input type="submit"  class="btn btn-success" value="enviar">
+     <a href="{% url 'servicios' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        flatpickr("#id_fecha", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "F j, Y",
+            allowInput: true
+        });
+    });
+</script>
+
+
+
+{% endblock content %}

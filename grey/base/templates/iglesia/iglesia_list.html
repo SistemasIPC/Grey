@@ -1,0 +1,36 @@
+{% extends 'principal_super.html' %}
+
+{% block content %}
+
+   <h2>Lista de Iglesias</h2>
+    <a class="btn btn-primary" href="{% url 'iglesia_create' %}">Crear Nueva Iglesia</a>
+
+    <table border="0">
+        <tr>
+            <th>Nombre</th>
+            <th>Pastor</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Acciones</th>
+        </tr>
+        {% for iglesia in iglesias %}
+        <tr>
+            <td>{{ iglesia.nombre }}</td>
+            <td>{{ iglesia.pastor }}</td>
+            <td>{{ iglesia.telefono }}</td>
+            <td>{{ iglesia.correo }}</td>
+            <td>
+                <a class="btn btn-warning" href="{% url 'iglesia_update' iglesia.id %}">Editar</a>
+
+                {% if iglesia.num_miembros == 0 and iglesia.num_usuarios == 0 %}
+                    <a href="{% url 'iglesia_delete' iglesia.id %}" class="btn btn-danger">Eliminar</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+            <tr>
+                <td colspan="5">No hay iglesias registradas.</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% endblock content %}

@@ -1,0 +1,83 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+
+
+
+
+
+
+    <a href="{% url 'servicios'  %}">Volver </a>
+
+    <h1> Participantes para el {{ servicio.fecha|date:"l d F Y" }} {{servicio.descripcion}}   </h1>
+
+
+
+<hr>
+
+
+{% if miembros_por_ministerio %}
+
+
+
+    <ul>
+        {% for ministerio, miembros in miembros_por_ministerio.items %}
+            <li>
+                <strong>{{ forloop.counter }}. {{ ministerio.descripcion }} ({{ miembros|length }} miembros)</strong>
+                <ul>
+                    {% for miembro, rol, id_combinado in miembros %}
+                        {{ forloop.counter }}. {{ miembro.nombre }} {{ miembro.apellido }} - (<em>{{ rol }})</em>
+                    {% empty %}
+                        <li>No hay miembros en este ministerio para este servicio.</li>
+                    {% endfor %}
+                </ul>
+            </li>
+        {% endfor %}
+    </ul>
+    <p><strong>Total de miembros programadas en todos los ministerios: {{ total_miembros }}</strong></p>
+{% else %}
+    <p >No hay ministerios relacionados con este servicio.</p>
+{% endif %}
+
+
+
+
+
+
+
+{% if miembros_por_ministerio_prog %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="grid-container">
+            {% for ministerio, miembros in miembros_por_ministerio_prog.items %}
+                <div class="ministerio">
+                    <h3>{{ ministerio.descripcion }} ({{ miembros|length }} miembros)</h3>
+                    <ul>
+                        {% for miembro, rol, id_combinado  in miembros %}
+
+
+
+                                <li>
+                                    <label>
+                                        <input type="checkbox" name="miembros_seleccionados" value="{{ miembro.id }}-{{ ministerio.id }}"
+                                            {% if id_combinado in miembros_programados_set %}checked{% endif %}>
+                                        {{ miembro.nombre }} {{ miembro.apellido }} ({{ rol }})
+
+                                    </label>
+                                </li>
+
+                        {% empty %}
+                            <li >No hay miembros en este ministerio.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-warning" >Actualizar Miembros</button>
+    </form>
+{% else %}
+    <p >No hay ministerios relacionados con este servicio.</p>
+{% endif %}
+{% endblock content %}
