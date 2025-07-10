@@ -1,0 +1,19 @@
+# created by virtualenv automatically
+#*
+# Python
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+.env
+
+# Django
+db.sqlite3
+/media/
+staticfiles/
+
+# VS Code
+.vscode/
+
+# En caso de tener configuraciones locales
+*.local
