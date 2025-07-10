@@ -83,29 +83,29 @@ WSGI_APPLICATION = 'grey.wsgi.application'
 #}
 
 
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'bdgrey',
-#        'USER': 'grey',
-#        'PASSWORD': 'rootgrey+-',
-#        'HOST': 'localhost',
-#        'PORT': '5432',
-#        'OPTIONS': {'client_encoding': 'UTF8'},
-#   }
-#}
-
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'railway',
-        'USER': 'postgres',
-        'PASSWORD': 'MaDWUBFQwuDcLouDfcmjTrHJCRCUAqNi',
-        'HOST': 'interchange.proxy.rlwy.net',
-        'PORT': '14970',
+        'NAME': 'bdgrey',
+        'USER': 'grey',
+        'PASSWORD': 'rootgrey+-',
+        'HOST': 'localhost',
+        'PORT': '5432',
         'OPTIONS': {'client_encoding': 'UTF8'},
    }
 }
+
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.postgresql',
+#        'NAME': 'railway',
+#        'USER': 'postgres',
+#        'PASSWORD': 'MaDWUBFQwuDcLouDfcmjTrHJCRCUAqNi',
+#        'HOST': 'interchange.proxy.rlwy.net',
+#        'PORT': '14970',
+#        'OPTIONS': {'client_encoding': 'UTF8'},
+#   }
+#}
 
 
 # Password validation
