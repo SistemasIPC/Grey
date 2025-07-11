@@ -58,11 +58,7 @@ INSTALLED_APPS = [
 #    'django.middleware.clickjacking.XFrameOptionsMiddleware',
 #]
 
-
-
-
-
-# Para servir archivos estáticos correctamente
+# Para servir
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
