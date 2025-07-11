@@ -60,6 +60,8 @@ INSTALLED_APPS = [
 
 
 
+
+
 # Para servir archivos estáticos correctamente
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
