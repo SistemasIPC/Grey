@@ -151,6 +151,9 @@ class ParticipanteServicio(models.Model):
     id_servicio = models.ForeignKey(
         Servicio, on_delete=models.CASCADE
     )
+    id_rol_ministerio = models.ForeignKey(  # 🔹 NUEVO CAMPO
+        Rol_ministerio, on_delete=models.SET_NULL, null=True, blank=True
+    )
 
     def __str__(self):
         return (

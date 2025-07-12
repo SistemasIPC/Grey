@@ -326,7 +326,7 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
             miembros_con_roles = []
             for m in miembros:
                 # Concatenar los ids en el formato que necesitamos
-                m.id_combinado = f"{m.id_miembro.id}-{ministerio.id}"
+                m.id_combinado = f"{m.id_miembro.id}-{ministerio.id}-{m.id_rol_ministerio.id}"
                 miembros_con_roles.append((m.id_miembro, m.id_rol_ministerio.descripcion, m.id_combinado))
                 miembros_programados_set.add(m.id_combinado)
 
@@ -345,8 +345,8 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
             miembros_prog_con_roles = []
             for m in miembros_prog:
                 # Concatenar los ids en el formato que necesitamos
-                m.id_combinado = f"{m.id_miembro.id}-{ministerio.id}"
-                miembros_prog_con_roles.append((m.id_miembro, m.id_rol_ministerio.descripcion, m.id_combinado))
+                m.id_combinado = f"{m.id_miembro.id}-{ministerio.id}-{m.id_rol_ministerio.id}"
+                miembros_prog_con_roles.append((m.id_miembro, m.id_rol_ministerio.descripcion, m.id_rol_ministerio.id,m.id_combinado))
 
 
             #miembros_prog_con_roles = [(m.id_miembro, m.id_rol_ministerio.descripcion) for m in miembros_prog]
@@ -381,10 +381,10 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
 
         miembros_dict = {}
         for item in miembros_seleccionados:
-            miembro_id, ministerio_id = map(int, item.split("-"))
+            miembro_id, ministerio_id, rol_id = map(int, item.split("-"))
             if miembro_id not in miembros_dict:
                 miembros_dict[miembro_id] = set()
-            miembros_dict[miembro_id].add(ministerio_id)
+            miembros_dict[miembro_id].add((ministerio_id, rol_id))
 
 
         miembros = Miembro_ministerio.objects.filter(id_ministerio__id_usuario=self.request.user)
@@ -398,32 +398,59 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
         for participante in participantes_actuales:
             miembro_id = participante.id_miembro_ministerio.id_miembro.id
             ministerio_id = participante.id_miembro_ministerio.id_ministerio.id
+
+            rol_id=participante.id_miembro_ministerio.id_rol_ministerio.id
+
+
             if miembro_id not in miembros_actuales_por_ministerio:
                 miembros_actuales_por_ministerio[miembro_id] = set()
-            miembros_actuales_por_ministerio[miembro_id].add(ministerio_id)
+            miembros_actuales_por_ministerio[miembro_id].add((ministerio_id,rol_id))
 
 
 
         # Agregar nuevos miembros al servicio
-        for miembro_id, ministerios in miembros_dict.items():
+        for miembro_id, ministerios_roles in miembros_dict.items():
             miembro = get_object_or_404(Miembro, pk=miembro_id)
 
-            for ministerio_id in ministerios:
+            for ministerio_id, rol_id in ministerios_roles:
                 ministerio = get_object_or_404(Ministerio, pk=ministerio_id)
-                miembro_ministerio = get_object_or_404(Miembro_ministerio, id_miembro=miembro, id_ministerio=ministerio)
-                ParticipanteServicio.objects.get_or_create(id_servicio=servicio,
-                                                           id_miembro_ministerio=miembro_ministerio)
+
+
+                miembro_ministerio = Miembro_ministerio.objects.filter(id_miembro=miembro, id_ministerio=ministerio,id_rol_ministerio_id=rol_id ).first()
+
+                if miembro_ministerio:
+                    #print(f"⚠ Miembro {miembro}  está registrado en el ministerio {ministerio}, Rol{rol_id} ")
+                    rol = miembro_ministerio.id_rol_ministerio  # O puedes usar: Rol_ministerio.objects.get(pk=rol_id)
+                    try:
+                        ParticipanteServicio.objects.get_or_create(
+                            id_servicio=servicio,
+                            id_miembro_ministerio=miembro_ministerio,
+                            defaults={'id_rol_ministerio': rol}
+                          )
+                    except ParticipanteServicio.MultipleObjectsReturned:
+                        print("⚠ Ya existen múltiples participantes con esa combinación. No se pudo crear.")
+                else:
+                    # Opcional: log de advertencia
+                    print(f"⚠ Miembro {miembro} no está registrado en el ministerio {ministerio}")
+
+                #miembro_ministerio = get_object_or_404(Miembro_ministerio, id_miembro=miembro, id_ministerio=ministerio)
+               # ParticipanteServicio.objects.get_or_create(id_servicio=servicio,   id_miembro_ministerio=miembro_ministerio)
+
+
+
+
 
 
         # Verificar y eliminar solo si el miembro no pertenece a otro ministerio en este servicio
-        for miembro_id, ministerios in miembros_actuales_por_ministerio.items():
-            for ministerio_id in ministerios:
-                id_combinado = f"{miembro_id}-{ministerio_id}"
+        for miembro_id, ministerio_rol_set in miembros_actuales_por_ministerio.items():
+            for ministerio_id, rol_id in ministerio_rol_set:
+                id_combinado = f"{miembro_id}-{ministerio_id}-{rol_id}"
                 if id_combinado not in miembros_seleccionados:
                     ParticipanteServicio.objects.filter(
                         id_servicio=servicio,
                         id_miembro_ministerio__id_miembro__id=miembro_id,
-                        id_miembro_ministerio__id_ministerio__id=ministerio_id
+                        id_miembro_ministerio__id_ministerio__id=ministerio_id,
+                        id_miembro_ministerio__id_rol_ministerio__id = rol_id
                     ).delete()
 
 
@@ -449,8 +476,13 @@ class MiembroListView(LoginRequiredMixin, ListView):
 
         miembros=Miembro.objects.filter(iglesia=usuario_iglesia.id_iglesia)
         context['miembros'] = miembros
+
         miembros_con_ministerio = set( Miembro_ministerio.objects.values_list('id_miembro', flat=True) )
         context['miembros_con_ministerio'] = miembros_con_ministerio
+
+
+
+
         return context
 
 

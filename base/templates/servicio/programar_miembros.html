@@ -55,13 +55,13 @@
                 <div class="ministerio">
                     <h3>{{ ministerio.descripcion }} ({{ miembros|length }} miembros)</h3>
                     <ul class="list-group">
-                        {% for miembro, rol, id_combinado  in miembros %}
+                        {% for miembro, rol, rol_id,id_combinado  in miembros %}
 
 
 
                                 <li class="list-group-item" >
                                     <label>
-                                        <input type="checkbox" name="miembros_seleccionados" value="{{ miembro.id }}-{{ ministerio.id }}"
+                                        <input type="checkbox" name="miembros_seleccionados" value="{{ miembro.id }}-{{ ministerio.id }}-{{ rol_id }}"
                                             {% if id_combinado in miembros_programados_set %}checked{% endif %}>
                                         {{ miembro.nombre }} {{ miembro.apellido }} ({{ rol }})
 
