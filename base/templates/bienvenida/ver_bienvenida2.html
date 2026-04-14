@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+
+<h2>Bienvenida - {{ bienvenida.id_tipo_bienvenida.nombre }}</h2>
+
+<p><b>Número telefónico:</b> {{ bienvenida.numero_telefonico }}</p>
+
+<p><b>Texto bíblico:</b></p>
+<p>{{ bienvenida.texto_biblico }}</p>
+
+<p><b>Playlist:</b></p>
+<a href="{{ bienvenida.link_playlist }}" target="_blank">
+{{ bienvenida.link_playlist }}
+</a>
+
+<p><b>Devocional YouVersion:</b></p>
+<a href="{{ bienvenida.link_devocional_youversion }}" target="_blank">
+{{ bienvenida.link_devocional_youversion }}
+</a>
+
+<p><b>Libro online:</b></p>
+<a href="{{ bienvenida.link_libro_online }}" target="_blank">
+{{ bienvenida.link_libro_online }}
+</a>
+
+<p><b>Video bienvenida:</b></p>
+<a href="{{ bienvenida.link_video_bienvenida }}" target="_blank">
+{{ bienvenida.link_video_bienvenida }}
+</a>
+
+<p><b>Mensaje de bienvenida:</b></p>
+<p>{{ bienvenida.mensaje_bienvenida }}</p>
+
+
+
+<hr>
+
+<h3>Enviar Bienvenida</h3>
+
+<input type="text" id="telefono" placeholder="Número WhatsApp">
+
+<button onclick="enviarWhatsApp()">
+Enviar Bienvenida
+</button>
+
+
+<script>
+
+function enviarWhatsApp(){
+
+    var telefono = document.getElementById("telefono").value;
+
+    var mensaje = `{{ object.mensaje_bienvenida|escapejs }}
+
+{{ object.texto_biblico|escapejs }}
+
+Playlist:
+{{ object.link_playlist }}
+
+Devocional:
+{{ object.link_devocional_youversion }}
+
+Libro:
+{{ object.link_libro_online }}
+
+Video:
+{{ object.link_video_bienvenida }}
+`;
+
+    var url = "https://wa.me/" + telefono + "?text=" + encodeURIComponent(mensaje);
+
+
+
+    window.open(url, "_blank");
+
+}
+
+</script>
+</body>
+</html>
