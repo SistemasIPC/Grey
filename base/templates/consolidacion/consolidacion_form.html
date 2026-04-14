@@ -1,10 +1,216 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}
+
+{% block content %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+
+
+
+<script>
+
+function activarSelect2(selector){
+
+    $(selector).select2({
+
+        placeholder: "Escriba al menos 3 letras",
+
+        allowClear: true,
+
+        ajax: {
+
+            url: $(selector).data("url"),
+
+            dataType: "json",
+
+            delay: 250,
+
+            data: function(params){
+                return {
+                    term: params.term
+                };
+            },
+
+            processResults: function(data){
+                return {
+                    results: data
+                };
+            }
+
+        },
+
+        minimumInputLength: 3,
+        width: '100%'
+
+    });
+
+}
+
+
+$(document).ready(function(){
+
+    activarSelect2(".select2-miembro");
+    activarSelect2(".select2-invito");
+    activarSelect2(".select2-grupo");
+
+});
+
+
+$(".select2-miembro").select2({
+
+    ajax: {
+
+        url: "/ajax/buscar-miembro/",
+
+        dataType: "json",
+
+        delay: 250,
+
+        data: function(params){
+            return { term: params.term };
+        },
+
+        processResults: function(data){
+            return { results: data };
+        }
+
+    },
+
+    minimumInputLength: 3
+
+});
+
+
+$(".select2-invito").select2({
+
+    ajax: {
+
+        url: "/ajax/buscar-miembro/",
+
+        dataType: "json",
+
+        delay: 250,
+
+        data: function(params){
+            return { term: params.term };
+        },
+
+        processResults: function(data){
+            return { results: data };
+        }
+
+    },
+
+    minimumInputLength: 3
+
+});
+
+
+$(".select2-grupo").select2({
+
+    ajax: {
+
+        url: "/ajax/buscar-grupo/",
+
+        dataType: "json",
+
+        delay: 250,
+
+        data: function(params){
+            return { term: params.term };
+        },
+
+        processResults: function(data){
+            return { results: data };
+        }
+
+    },
+
+    minimumInputLength: 3
+
+});
+</script>
+
+<h3>Seguimiento Nuevo</h3>
+
+
+{% if form.errors %}
+<div class="alert alert-danger">
+    <strong>Errores en el formulario</strong>
+    {{ form.errors }}
+</div>
+{% endif %}
+
+<form method="post">
+
+{% csrf_token %}
+
+<div class="row">
+
+<div class="col-md-6">
+<label>Miembro</label>
+{{ form.miembro }}
+</div>
+
+
+<div class="col-md-6">
+<label>Categoria servicio</label>
+{{ form.categoria_servicio }}
+</div>
+
+
+<div class="col-md-4">
+<label>Fecha ingreso</label>
+{{ form.fecha_ingreso }}
+</div>
+
+
+<div class="col-md-4">
+<label>Red</label>
+{{ form.red }}
+</div>
+
+
+<div class="col-md-4">
+<label>Grupo en casa</label>
+{{ form.grupo_casa }}
+</div>
+
+
+<div class="col-md-6">
+<label>Nombre invitó</label>
+{{ form.nombre_invito }}
+</div>
+
+
+<div class="col-md-6">
+<label>Celular invitó</label>
+{{ form.celular_invito }}
+</div>
+
+
+<div class="col-md-12">
+<label>Observación</label>
+{{ form.observacion }}
+</div>
+
+</div>
+
+
+<br>
+
+<button class="btn btn-success">
+Guardar
+</button>
+
+
+<a href="{% url 'consolidacion_list' %}" class="btn btn-secondary">
+Cancelar
+</a>
+
+
+</form>
+
+
+
+{% endblock %}

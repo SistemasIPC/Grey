@@ -25,22 +25,31 @@
         </div>
 
         <div class="form-group">
-            <label for="{{ form.correo.id_for_label }}">Correo Electrónico</label>
+            <label for="{{ form.correo.id_for_label }}">Correo Electr&oacute;nico</label>
             {{ form.correo }}
         </div>
 
         <div class="form-group">
-            <label for="{{ form.telefono.id_for_label }}">Teléfono</label>
+            <label for="{{ form.telefono.id_for_label }}">Celular</label>
+            {{ form.celular }}
+        </div>
+
+
+        <div class="form-group">
+            <label for="{{ form.telefono.id_for_label }}">Tel&eacute;fono</label>
             {{ form.telefono }}
         </div>
 
         <div class="form-group">
-            <label for="{{ form.fecha_nacimiento.id_for_label }}">Fecha de Nacimiento</label>
+            <label for="{{ form.fecha_nacimiento.id_for_label }}">Fecha de nacimiento</label>
             {{ form.fecha_nacimiento }}
         </div>
 
         <div class="form-check">
             {{ form.activo }} <label for="{{ form.activo.id_for_label }}">Activo</label>
+        </div>
+        <div class="form-check">
+            {{ form.lider }} <label for="{{ form.lider.id_for_label }}">L&iacute;der</label>
         </div>
 
         <button type="submit" class="btn btn-success">Guardar</button>

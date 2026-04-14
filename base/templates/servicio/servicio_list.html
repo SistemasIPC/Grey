@@ -54,14 +54,14 @@
 
             <tr>
 
-             <td>{{servicio.fecha}}</td>
+             <td>{{servicio.fecha|date:"l, d \d\e F \d\e Y"|capfirst}}</td>
             <td>
              {% if usuario_iglesia.superusuario %}
-                <a href="{% url 'programar-miembros' servicio.id %}"> Programar</a>
-                <a href="{% url 'servicio' servicio.id %}">{{servicio.id_categoria.descripcion}}</a>
+
+                 {{servicio.id_categoria.descripcion}} | <a href="{% url 'servicio' servicio.id %}"> Ver programados </a>
 
              {% else %}
-                <a href="{% url 'programar-miembros' servicio.id %}">{{servicio.id_categoria.descripcion}}</a>
+                 {{servicio.id_categoria.descripcion}} | <a href="{% url 'programar-miembros' servicio.id %}">Programar</a>
             {% endif %}
             </td>
            <td> {{servicio.descripcion}}</td>

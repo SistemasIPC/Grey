@@ -1,10 +1,99 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}
+
+{% block content %}
+
+<h3>Pendientes por consolidar </h3>
+<br>
+
+{% if pendientes_red|length > 0 %}
+
+<h3>En ministerio </h3>
+
+<table class="table table-bordered table-striped">
+
+<tr class="table-info">
+<th>Nombre</th>
+<th>Fecha ingreso</th>
+<th>Red</th>
+<th></th>
+</tr>
+
+{% for r in pendientes_red %}
+
+<tr
+{% if r.dias_seguimiento > dias_alerta_con_2 %}
+class="table-danger"
+{% elif r.dias_seguimiento > dias_alerta_con_1 %}
+class="table-warning"
+{% endif %}
+>
+<td>{{ r.miembro }}</td>
+<td>{{ r.fecha_ingreso }}</td>
+<td>{{ r.red }}</td>
+
+<td>
+<a href="{% url 'registrar_seguimiento_consolidacion' r.id %}" class="btn btn-primary btn-sm"  onclick="return confirm('¿Desea vincular para seguimiento?')">
+Vincular a seguimiento
+</a>
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="4">No hay pendientes en ministerio</td>
+</tr>
+
+{% endfor %}
+
+</table>
+{% endif %}
+
+
+{% if pendientes_grupo|length > 0 %}
+<h3 class="mt-5">En grupo en casa</h3>
+
+<table class="table table-bordered table-striped">
+
+<tr class="table-info">
+<th>Nombre</th>
+<th>Fecha ingreso</th>
+<th>Grupo en Casa</th>
+<th></th>
+</tr>
+
+{% for r in pendientes_grupo %}
+
+<tr
+        {% if r.dias_seguimiento > dias_alerta_con_2 %}
+class="table-danger"
+{% elif r.dias_seguimiento > dias_alerta_con_1 %}
+class="table-warning"
+{% endif %}
+>
+<td>{{ r.miembro }}</td>
+<td>{{ r.fecha_ingreso }}</td>
+<td>{{ r.grupo_casa }}</td>
+
+<td>
+<a href="{% url 'registrar_seguimiento_consolidacion' r.id %}" class="btn btn-primary btn-sm" onclick="return confirm('¿Desea vincular para seguimiento?')">
+Vincular a seguimiento
+</a>
+</td>
+
+</tr>
+
+{% empty %}
+
+<tr>
+<td colspan="4">No hay pendientes en grupo en casa</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endif %}
+
+{% endblock %}

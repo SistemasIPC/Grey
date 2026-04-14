@@ -8,7 +8,7 @@
     <ul class="list-group">
         {% for ministerio in ministerios %}
             <li class="list-group-item">
-                <a href="{% url 'ministerio-detail' ministerio.id %}">{{ ministerio.descripcion }}</a>
+                <a href="{% url 'ministerio-detail' ministerio.id %}">({{ ministerio.codigo }})-|-{{ ministerio.descripcion }}</a>
                 ({{ ministerio.id_usuario.first_name}} {{ ministerio.id_usuario.last_name}})
                 <a href="{% url 'ministerio-update' ministerio.id %}" class="btn btn-warning">Editar</a>
 

@@ -61,33 +61,47 @@
                 <ul class="navbar-nav me-auto">
 
 
+
                     {% if usuario_iglesia.superusuario %}
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Grupos en Casa</a> </li>
                     <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
                     <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
                      <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
-                    <li class="nav-item" ><a class="nav-link"  href="{% url 'servicios' %}">Ver proramados </a> </li>
+
+                   <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
                    <li class="nav-item" >----------- </li>
-                   <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
-                     <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar</a> </li>
-                     <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
-                    <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver Participantes</a></li>
 
 
 
 
                     {% else %}
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Grupos en Casa</a> </li>
+
                     <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
                     <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
                      <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
                      <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
                     <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
+                   <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_grupos_casa' %}">Mis grupos</a> </li>
+                    <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_redes' %}">Mis redes</a> </li>
+                    <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
 
+
+                    {% if codigo_min == "CN" %}
+                        <li class="nav-item" ><a  class="nav-link" href="{% url 'consolidacion_list' %}">Consolidacion</a> </li>
+                    {% endif %}
+                    <li class="nav-item" >
+                    <a href="{% url 'consolidacion_pendiente' %}" class="nav-link"> Seguimiento consolidación
+
+                            <span class="badge bg-danger">
+                                {{ pendientes_por_consolidacion }}
+                            </span>
+
+
+                    </a>
+                    </li>
+
+                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Consultar grupos en Casa</a> </li>
 
                     {% endif %}
-
-
 
 
 
@@ -122,6 +136,17 @@
 
         {% endblock content %}
     </div>
+
+    {% if messages %}
+<div class="mt-2">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 
     <footer class="bg-dark text-white text-center py-3 mt-4">
         <p>&copy; 2025 La Grey - Todos los derechos reservados</p>

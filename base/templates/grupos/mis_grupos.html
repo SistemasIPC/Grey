@@ -1,10 +1,68 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}
+
+{% block content %}
+
+
+<div class="container mt-4">
+
+<h3>Grupo en casa</h3>
+
+
+<table class="table table-bordered table-hover">
+
+<thead class="table-dark">
+<tr>
+    <th>Código</th>
+    <th>Descripción</th>
+    <th>Barrio</th>
+    <th>Día</th>
+    <th>Hora</th>
+    <th></th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for g in grupos %}
+
+<tr>
+
+<td>{{ g.codigo }}</td>
+
+<td>{{ g.descripcion }}</td>
+
+<td>{{ g.barrio }}</td>
+
+<td>{{ g.get_dia_semana_display  }}</td>
+
+<td>{{ g.hora|time:"g:i A" }}</td>
+
+<td>
+
+<a href="{% url 'gestionar_grupo_casa' g.id %}"
+class="btn btn-primary btn-sm">
+
+Gestionar
+
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+{% if not grupos %}
+<div class="alert alert-warning">
+No tiene grupos en casa asignados.
+</div>
+{% endif %}
+
+</div>
+
+
+{% endblock %}

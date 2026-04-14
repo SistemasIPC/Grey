@@ -1,10 +1,482 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}
+
+{% block content %}
+<div class="barra-superior">
+<a href="{% url 'mis_grupos_casa' %}">Volver </a>
+</div>
+
+
+<h3>Información del Grupo en casa</h3>
+
+<table class="table table-bordered">
+
+<tr><th class="table-info">Código</th><td>{{ grupo.codigo }}</td></tr>
+<tr><th class="table-info">Descripción</th><td>{{ grupo.descripcion }}</td></tr>
+<tr><th class="table-info">Barrio</th><td>{{ grupo.barrio }}</td></tr>
+<tr><th class="table-info">Dirección</th><td>{{ grupo.direccion }}</td></tr>
+<tr><th class="table-info">Día</th><td>{{ grupo.get_dia_semana_display }}</td></tr>
+<tr><th class="table-info">Hora</th><td>{{ grupo.hora|time:"g:i A" }}</td></tr>
+<tr><th class="table-info">Email</th><td>{{ grupo.email }}</td></tr>
+
+</table>
+
+
+
+<h3>Equipo del Grupo</h3>
+
+<table class="table table-striped">
+
+  <tr class="table-success">
+<th colspan="4" align="right">
+
+       <h4>Agregar integrante al equipo</h4>
+
+    <form method="post" action="{% url 'agregar_equipo_grupo' grupo.id %}">
+    {% csrf_token %}
+
+    <div class="row">
+
+    <div class="col-md-6">
+
+    <select name="miembro"
+      class="form-control select2-miembro-equipo"
+    data-url="{% url 'buscar_miembro_equipo' %}" required>
+  </select>
+
+    </div>
+
+    <div class="col-md-4">
+        <label>Rol</label>
+            <select name="rol" class="form-control" required>
+                <option value="">Seleccione rol</option>
+
+                {% for r in roles %}
+                    <option value="{{ r.id }}">{{ r.descripcion }}</option>
+                {% endfor %}
+
+            </select>
+    </div>
+
+
+    <div class="col-md-2">
+
+    <button type="submit" class="btn btn-primary">
+      Agregar
+      </button>
+
+    </div>
+
+    </div>
+
+    </form>
+
+</th>
+</tr>
+
+<tr class="table-dark">
+<th>Nombre</th>
+<th>Teléfono</th>
+<th>Rol</th>
+<th></th>
+</tr>
+
+{% for e in equipo %}
+
+<tr >
+
+<td>{{ e.miembro.nombre }}</td>
+<td>{{ e.miembro.telefono }}</td>
+
+<td> {{ e.rol.descripcion }}</td>
+
+
+
+
+
+<td>
+
+<a href="{% url 'eliminar_equipo' e.id %}"
+onclick="return confirm('¿Quitar integrante?')"
+class="btn btn-danger btn-sm">
+
+Eliminar
+
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+
+<h3>Asistentes</h3>
+
+<table class="table table-bordered">
+<tr class="table-success">
+<td colspan="7">
+
+        <h4>Agregar asistente al grupo</h4>
+
+            <form method="post" action="{% url 'agregar_asistente_grupo' grupo.id %}">
+            {% csrf_token %}
+
+                <div class="row">
+
+                    <div class="col-md-5">
+                        <label>Miembro</label>
+                        <select name="miembro" class="form-control select2-miembro-asistente" data-url="{% url 'buscar_miembro_asistente' %}" required>
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                    <label>Encargado (equipo del grupo)</label>
+
+                    <select name="equipo" class="form-control">
+
+                        <option value="">Seleccione encargado</option>
+
+                        {% for e in equipo %}
+                        <option value="{{ e.id }}">
+                            {{ e.miembro.nombre }} {{ e.miembro.apellido }} - {{ e.rol.descripcion }}
+                        </option>
+                        {% endfor %}
+
+                    </select>
+
+                </div>
+
+                <div class="col-md-2" style="margin-top:30px">
+                    <button type="submit" class="btn btn-success">
+                    Agregar
+                </button>
+                </div>
+
+            </div>
+
+        </form>
+
+
+
+</td>
+</tr>
+
+
+<tr class="table-dark">
+<th>Nombre</th>
+<th>Teléfono</th>
+<th>Email</th>
+<th>Fecha Nacimiento</th>
+<th>Estado</th>
+<th>Encargado</th>
+  <th></th>
+</tr>
+
+{% for a in asistentes %}
+
+<tr>
+
+<td>{{ a.miembro.nombre }}</td>
+<td>{{ a.miembro.telefono }}</td>
+<td>{{ a.miembro.email }}</td>
+<td>{{ a.miembro.fecha_nacimiento }}</td>
+
+<td
+{% if a.estado == "A" %}
+class="table-success"
+{% elif a.estado == "U" %}
+class="table-danger"
+{% endif %}
+>
+
+
+
+
+<select name="estado" class="form-control cambiar-estado-asistente" data-id="{{ a.id }}" data-observaciones="{{ a.observaciones|default:'' }}">
+
+<option value="C" {% if a.estado == "C" %}selected{% endif %}>Consolidación</option>
+<option value="S" {% if a.estado == "S" %}selected{% endif %}>Seguimiento</option>
+<option value="A" {% if a.estado == "A" %}selected{% endif %}>Asistente</option>
+<option value="U" {% if a.estado == "U" %}selected{% endif %}>Ausente</option>
+
+</select>
+
+
+
+</td>
+
+
+<td>
+
+
+<select name="equipo" class="form-control cambiar-encargado-asistente" data-id="{{ a.id }}">
+
+<option value="">---</option>
+
+{% for e in equipo %}
+
+<option value="{{ e.id }}"
+{% if a.equipo and a.equipo.id == e.id %}selected{% endif %}>
+
+{{ e.miembro.nombre }} ({{ e.rol.descripcion }})
+
+</option>
+
+{% endfor %}
+
+</select>
+
+
+
+</td>
+
+
+
+
+<td>
+
+{% if a.estado != "C" %}
+
+<a href="{% url 'eliminar_asistente_grupo' a.id %}"
+onclick="return confirm('¿Eliminar asistente?')"
+class="btn btn-danger btn-sm">
+
+Eliminar
+
+</a>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+
+
+
+
+<div class="modal fade" id="modalObservacion">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5>Cambiar estado del asistente</h5>
+            </div>
+
+            <div class="modal-body">
+
+                <label>Observaciones</label>
+
+                    <textarea id="observaciones_asistente"   class="form-control" rows="4"></textarea>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"> Cancelar </button>
+
+                <button type="button" class="btn btn-primary" id="guardarEstadoAsistente"> Guardar </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+
+
+<script>
+
+$(document).ready(function(){
+
+    $('.select2-miembro-equipo').select2({
+
+        placeholder: "Buscar miembro del equipo",
+
+        ajax: {
+
+            url: $('.select2-miembro-equipo').data('url'),
+
+            dataType: 'json',
+
+            delay: 250,
+
+            data: function (params) {
+
+                return {
+                    term: params.term
+                };
+
+            },
+
+            processResults: function (data) {
+
+                return {
+                    results: data
+                };
+
+            }
+
+        },
+
+        minimumInputLength: 2
+
+    });
+
+});
+
+</script>
+
+
+<script>
+
+$(document).ready(function(){
+
+    $('.select2-miembro-asistente').select2({
+
+        placeholder: "Buscar miembro",
+
+        ajax: {
+
+            url: $('.select2-miembro-asistente').data('url'),
+
+            dataType: 'json',
+
+            delay: 250,
+
+            data: function (params) {
+                return {
+                    term: params.term
+                };
+            },
+
+            processResults: function (data) {
+                return {
+                    results: data
+                };
+            }
+
+        },
+
+        minimumInputLength: 2
+
+    });
+
+});
+
+</script>
+
+
+
+
+<script>
+
+$(".cambiar-encargado-asistente").change(function(){
+
+    let equipo = $(this).val();
+    let id = $(this).data("id");
+
+    if(!confirm("¿Desea cambiar el encargado del asistente?")){
+        location.reload();
+        return;
+    }
+
+    $.ajax({
+
+        url: "{% url 'cambiar_encargado_asistente_grupo_ajax' %}",
+
+        type: "POST",
+
+        data: {
+
+            "id": id,
+            "equipo": equipo,
+            "csrfmiddlewaretoken": "{{ csrf_token }}"
+
+        },
+
+        success: function(response){
+
+            alert(response.mensaje);
+
+        }
+
+    });
+
+});
+
+</script>
+
+<script>
+
+let asistente_id = null;
+let estado_nuevo = null;
+
+$(".cambiar-estado-asistente").change(function(){
+
+    asistente_id = $(this).data("id");
+    estado_nuevo = $(this).val();
+
+    let observacion = $(this).data("observaciones");
+
+    $("#observaciones_asistente").val(observacion);
+
+    $("#modalObservacion").modal("show");
+
+});
+
+</script>
+
+
+<script>
+
+$("#guardarEstadoAsistente").click(function(){
+
+    let observaciones = $("#observaciones_asistente").val();
+
+    $.ajax({
+
+        url: "{% url 'cambiar_estado_asistente_grupo_ajax' %}",
+
+        type: "POST",
+
+        data: {
+
+            id: asistente_id,
+            estado: estado_nuevo,
+            observaciones: observaciones,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+
+        },
+
+        success: function(response){
+
+            alert(response.mensaje);
+
+            location.reload();
+
+        }
+
+    });
+
+});
+
+</script>
+
+
+{% endblock %}

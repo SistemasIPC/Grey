@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", function () {
     searchInput.addEventListener('input', function () {
         const query = searchInput.value;
         if (query.length >= 3) {
-            fetch(`/buscar_miembro/?q=${query}`)
+            fetch(`/buscar_miembro_m/?q=${query}`)
                 .then(response => response.json())
                 .then(data => {
                     miembrosList.innerHTML = '';

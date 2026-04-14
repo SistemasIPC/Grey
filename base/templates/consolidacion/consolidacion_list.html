@@ -1,10 +1,374 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}
+
+{% block content %}
+
+<h3>Seguimiento de Nuevos</h3>
+
+<a href="{% url 'consolidacion_nuevo' %}" class="btn btn-success mb-3">
+Nuevo Registro
+</a>
+
+
+<form method="get" class="row mb-3">
+
+<div class="col-md-2">
+<input type="date" name="fecha" class="form-control" value="{{ filtros.fecha }}">
+</div>
+
+
+<div class="col-md-2">
+<select name="categoria_servicio" class="form-control"    >
+
+<option value="">---</option>
+
+{% for s in servicios %}
+<option value="{{s.id}}"
+
+{% if filtros.categoria_servicio == s.id|stringformat:"s" %}
+selected
+{% endif %}
+
+
+> {{s}}</option>
+{% endfor %}
+
+</select>
+</div>
+
+
+<div class="col-md-2">
+<select name="red" class="form-control">
+<option value="">---</option>
+
+{% for r in redes %}
+<option value="{{r.id}}"
+
+{% if filtros.red == r.id|stringformat:"s" %}
+selected
+{% endif %}
+>
+    {{r.nombre}}</option>
+{% endfor %}
+
+</select>
+</div>
+
+
+<div class="col-md-2">
+<input type="text" name="nombre" placeholder="Nombre" class="form-control" value="{{ filtros.nombre }}">
+</div>
+
+
+<div class="col-md-2">
+
+    <select name="en_seguimiento" class="form-control">
+
+<option value="">Todos</option>
+
+<option value="P"
+{% if request.GET.en_seguimiento == "P" %}
+selected
+{% endif %}
+>
+Pendiente
+</option>
+
+<option value="E"
+{% if request.GET.en_seguimiento == "E" %}
+selected
+{% endif %}
+>
+En proceso
+</option>
+
+<option value="T"
+{% if request.GET.en_seguimiento == "T" %}
+selected
+{% endif %}
+>
+Terminado
+</option>
+
+</select>
+
+</div>
+
+
+<div class="col-md-2">
+<button class="btn btn-primary">Buscar</button>
+</div>
+
+</form>
+
+
+<table class="table table-bordered table-hover">
+
+<thead>
+
+<tr>
+<th>Nombre</th>
+<th>Fecha ingreso</th>
+<th>Servicio</th>
+<th>Red</th>
+    <th>Grupo en Casa</th>
+<th>Días</th>
+<th>Acciones</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for r in registros %}
+
+
+
+<tr
+{% if r.dias_seguimiento >  dias_alerta_con_2 %}
+class="table-danger"
+{% elif r.dias_seguimiento >  dias_alerta_con_1 %}
+class="table-warning"
+{% endif %}
+>
+
+<td>{{ r.miembro }}</td>
+
+<td>{{ r.fecha_ingreso }}</td>
+
+<td>{{ r.categoria_servicio }}</td>
+
+<td>{{ r.red }} </td>
+<td> {{ r.grupo_casa }}</td>
+<td>{{ r.fecha_ingreso|timesince }}</td>
+
+<td>
+
+{% if r.en_seguimiento == 'P' %}
+<a href="{% url 'consolidacion_editar' r.id %}" class="btn btn-primary btn-sm">
+Editar
+</a>
+{% endif %}
+
+
+
+
+
+
+{% if r.en_seguimiento == 'P' %}
+
+<button
+class="btn btn-danger btn-sm cambiar-estado"
+data-id="{{ r.id }}" data-estado="E" data-observaciones="{{ r.observacion|default:'' }}">
+Pendiente
+</button>
+
+{% elif r.en_seguimiento == 'E' %}
+
+{% if r.red or r.grupo_casa %}
+<a href="{% url 'consolidacion_enviar_correo' r.id %}"
+onclick="return confirm('¿Desea enviar el recordatorio de seguimiento?')"
+class="btn btn-primary btn-sm">
+📧 Enviar correo
+</a>
+{% endif %}
+
+<button
+class="btn btn-warning btn-sm cambiar-estado"
+data-id="{{ r.id }}" data-estado="T"  data-observaciones="{{ r.observacion|default:'' }}">
+En proceso
+</button>
+
+{% else %}
+Terminado
+{% endif %}
+
+
+
+
+
+
+
+
+
+{% if not r.whatsapp_enviado %}
+
+
+<button
+class="btn btn-success btn-sm enviar-whatsapp"
+data-id="{{ r.id }}"
+data-telefono="{{ r.miembro.telefono }}"
+>
+Enviar Saludo WS
+</button>
+
+{% else %}
+
+<span class="badge bg-success">WS</span>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+
+<div class="pagination">
+
+{% if page_obj.has_previous %}
+<a href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+{% endif %}
+
+<span>
+Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+</span>
+
+{% if page_obj.has_next %}
+<a href="?page={{ page_obj.next_page_number }}&{{ request.GET.urlencode }}">Siguiente</a>
+{% endif %}
+
+</div>
+
+
+
+
+
+
+
+<div class="modal fade" id="modalComentario">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5>Comentario de seguimiento</h5>
+            </div>
+
+            <div class="modal-body">
+
+                <textarea id="comentario_seguimiento" class="form-control" rows="4" placeholder="Escriba el comentario del cambio de estado">
+                </textarea>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button class="btn btn-secondary" data-bs-dismiss="modal">  Cancelar </button>
+                <button class="btn btn-primary" id="guardarCambioEstado"> Guardar </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+let consolidacion_id = null
+let nuevo_estado = null
+
+$(".cambiar-estado").click(function(){
+
+    consolidacion_id = $(this).data("id")
+    nuevo_estado = $(this).data("estado")
+    observaciones = $(this).data("observaciones")
+
+    $("#comentario_seguimiento").val(observaciones)
+
+    $("#modalComentario").modal("show")
+
+})
+
+</script>
+<script>
+
+$("#guardarCambioEstado").click(function(){
+
+    let comentario = $("#comentario_seguimiento").val()
+
+    if(comentario.trim() === ""){
+        alert("Debe escribir un comentario")
+        return
+    }
+
+    $.ajax({
+
+        url: "{% url 'consolidacion_cambiar_ajax' %}",
+
+        type: "POST",
+
+        data: {
+
+            id: consolidacion_id,
+            estado: nuevo_estado,
+            comentario: comentario,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+
+        },
+
+        success: function(response){
+
+            location.reload()
+
+        }
+
+    })
+
+})
+
+</script>
+
+
+
+
+<script>
+
+$(".enviar-whatsapp").click(function(){
+
+    let id = $(this).data("id")
+    let telefono = $(this).data("telefono")
+
+    if(!confirm("¿Desea enviar el mensaje de bienvenida por WhatsApp?")){
+        return
+    }
+
+    $.ajax({
+
+        url: "{% url 'consolidacion_enviar_whatsapp' %}",
+
+        type: "POST",
+
+        data: {
+
+            id: id,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+
+        },
+
+        success: function(response){
+
+            if(response.link){
+                window.open(response.link, "_blank")
+            }
+            alert("Mensaje enviado via WhatsApp?")
+            location.reload()
+
+        }
+
+    })
+
+})
+
+</script>
+
+{% endblock %}

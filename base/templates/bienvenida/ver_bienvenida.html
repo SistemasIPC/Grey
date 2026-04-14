@@ -1,10 +1,211 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends base_template %}
+{% if user.is_authenticated %}
+{% endif %}
+
+{% load static %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+
+            <div class="card shadow-lg border-0 rounded-4">
+
+                <div class="card-header bg-primary text-white rounded-top-4">
+                    <h4 class="mb-0">
+                           {% if user.is_authenticated %}
+                            👋 Bienvenida - {{ bienvenida.id_tipo_bienvenida.nombre }}
+                            {% else %}
+                            👋 ¡Esta tambi&eacute;n es tu casa!
+                            {% endif %}
+                    </h4>
+                </div>
+
+                <div class="card-body p-4">
+
+
+                    <!-- MENSAJE -->
+                    <div class="mt-4">
+
+                        <div class="p-4 mt-2 rounded-3 border bg-success bg-opacity-10" align="center">
+
+                           <b> {{ bienvenida.mensaje_bienvenida|linebreaks }}</b>
+
+                        </div>
+                    </div>
+
+
+                    <!-- TEXTO BIBLICO -->
+                    <div class="mb-4">
+
+                        <div class="bg-light p-3 rounded-3 border">
+                            {{ bienvenida.texto_biblico|linebreaks }}
+                        </div>
+                    </div>
+
+                    <!-- TELEFONO -->
+                    <div class="mb-3">
+                        <label class="fw-bold">📱 Estamos para servirte: </label>
+                        <span >
+                            {% if user.is_authenticated %}
+
+                                   {{ bienvenida.numero_telefonico }}
+                             {% else %}
+                               <a href="tel:{{ bienvenida.numero_telefonico }}"
+                                   class="btn btn-outline-success">
+                                   {{ bienvenida.numero_telefonico }}
+                                </a>
+                            {% endif %}
+                        </span>
+                    </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold">Hemos preparado lo siguiente: </label>
+                        </div>
+
+
+                    <!-- LINKS -->
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold">🎥 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+
+                            <a href="{{ bienvenida.link_video_bienvenida }}" target="_blank">
+
+                            <img
+                                src="https://img.youtube.com/vi/{{ youtube_id_bienvenida }}/0.jpg"
+                                class="img-fluid rounded shadow"
+                                style="max-width:300px"
+                            >
+                            </a>
+
+
+
+                        </div>
+
+
+
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold">🎧 Playlist</label>
+                            <a href="{{ bienvenida.link_playlist }}" target="_blank" class="d-block text-primary">
+
+                             <img
+                                src="https://img.youtube.com/vi/{{ youtube_id_play }}/0.jpg"
+                                class="img-fluid rounded shadow"
+                                style="max-width:300px"
+                            >
+
+
+                            </a>
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold">📚 </label>
+
+                            <a href="{{ bienvenida.link_devocional_youversion }}" target="_blank"  class="btn btn-info btn-lg">
+                                Lectura esperando
+                            </a>
+
+
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="fw-bold">📘 </label>
+
+                            <a href="{{ bienvenida.link_libro_online }}" target="_blank" class="btn btn-info btn-lg">
+
+                                Un libro esperando
+                            </a>
+
+
+
+                        </div>
+
+
+                    </div>
+
+
+
+                </div>
+
+                <!-- FOOTER -->
+                <div class="card-footer bg-white border-0 p-3 d-flex justify-content-between">
+
+                    {% if user.is_authenticated %}
+
+                      {% if usuario_iglesia.superusuario %}
+                          <a href="{% url 'gestionar-bienvenida' bienvenida.id_tipo_bienvenida.id %}"
+                            class="btn btn-primary">
+
+                         ✏ Editar
+                            </a>
+                         {% endif %}
+                    {% else %}
+
+                    <button onclick="enviarWhatsApp()" class="btn btn-success">
+                        📲 Estamos por WhatsApp haz clic
+                    </button>
+                    {% endif %}
+
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+
+function esCelular() {
+    return /Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent);
+}
+
+
+
+
+function enviarWhatsApp(){
+
+var telefono = {{ bienvenida.numero_telefonico }};
+
+var mensaje = `{{ bienvenida.mensaje_bienvenida|escapejs }}
+
+{{ bienvenida.texto_biblico|escapejs }}
+
+🎧 Playlist:
+{{ bienvenida.link_playlist }}
+
+📚 Devocional:
+{{ bienvenida.link_devocional_youversion }}
+
+📘 Libro:
+{{ bienvenida.link_libro_online }}
+
+🎥 Video:
+{{ bienvenida.link_video_bienvenida }}
+`;
+
+
+var mensaje = 'Hola, mi nombres es ';
+
+
+
+if (esCelular()){
+    url = "https://wa.me/" + telefono + "?text=" + encodeURIComponent(mensaje);
+}else{
+    url = "https://web.whatsapp.com/send?phone=" + telefono + "&text=" + encodeURIComponent(mensaje);
+}
+
+
+window.open(url,"_blank");
+
+}
+
+</script>
+
+{% endblock %}

@@ -27,7 +27,7 @@
             <label for="id_ministerio">Ministerio:</label>
             <select name="id_ministerio" id="id_ministerio">
                 {% for opcion in ministerios %}
-                    <option value="{{ opcion.id }}">{{ opcion.descripcion }}</option>
+                    <option value="{{ opcion.id }}" {% if id_ministerio == opcion.id %}  selected    {% endif %}>{{ opcion.descripcion }}</option>
                 {% endfor %}
             </select>
 
@@ -41,7 +41,7 @@
             <tr>
                 <th></th>
                 {% for servicio, roles in servicios_participantes.items %}
-                    <th>{{ servicio.fecha }} - {{ servicio.id_categoria.descripcion }}</th>
+                    <th>{{ servicio.fecha }} - {{ servicio.id_categoria.descripcion }} ({{ servicio.descripcion }})</th>
                 {% endfor %}
             </tr>
         </thead>
@@ -53,7 +53,7 @@
                         <td>
                             {% if rol in roles %}
                                 {% for participante in roles|dict_get:rol %}
-                                    {{ participante.id_miembro_ministerio.id_miembro.nombre }} {{ participante.id_miembro_ministerio.id_miembro.apellido }}<br>
+                                    {{ participante.id_miembro_ministerio.id_miembro.nombre }} {{ participante.id_miembro_ministerio.id_miembro.apellido }} <br>
                                 {% endfor %}
                             {% else %}
                                 -

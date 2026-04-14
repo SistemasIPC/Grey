@@ -1,10 +1,412 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}
+
+{% block content %}
+<div class="barra-superior">
+<a href="{% url 'mis_redes' %}">Volver </a>
+</div>
+
+<h4>Información de la red</h4>
+
+
+
+
+<table class="table ">
+
+<tr><th >Red: {{ red.nombre }}</th><td></td></tr>
+<tr><th class="table-info">Ministerios asociados</th><td>
+<ul>
+
+{% for m in ministerios %}
+
+<li class="table-info">{{ m.descripcion }}</li>
+
+{% endfor %}
+
+</ul>
+
+
+</td></tr>
+
+</table>
+
+
+
+
+<h4>Email de la red</h4>
+
+<table class="table table-striped">
+
+  <tr class="table-success">
+        <th colspan="4" align="right">
+
+<form method="post" action="{% url 'actualizar_email_red' red.id %}">
+
+{% csrf_token %}
+
+<div class="row">
+
+<div class="col-md-4">
+
+<input
+type="email"
+name="email"
+value="{{ red.email }}"
+class="form-control"
+required>
+
+</div>
+
+<div class="col-md-2">
+
+<button class="btn btn-success">
+Guardar
+</button>
+
+</div>
+
+</div>
+
+</form>
+
+        </th></tr></table>
+
+
+
+<h4>Asistentes de la red</h4>
+
+
+<table class="table">
+
+<tr class="table-primary" >
+    <td colspan="7">
+
+
+
+        <h4>Agregar asistente a la red</h4>
+
+            <form method="post" action="{% url 'agregar_asistente_mredes' red.id %}">
+                {% csrf_token %}
+
+                <div class="row">
+
+                    <div class="col-md-5">
+
+                        <label>Miembro</label>
+
+                        <select name="miembro" class="form-control select2-miembro-red" data-url="{% url 'buscar_miembro_mredes' %}" required> </select>
+
+                    </div>
+
+                <div class="col-md-5">
+
+                    <label>Encargado</label>
+
+                    <select name="encargado" class="form-control" required>
+
+                        <option value="">Seleccione encargado</option>
+
+                        {% for e in encargados %}
+
+                        <option value="{{ e.id }}">
+
+                        {{ e.id_miembro.nombre }} {{ e.id_miembro.apellido }} - {{ e.id_rol_ministerio.descripcion }}
+
+                        </option>
+
+                        {% endfor %}
+
+                    </select>
+
+            </div>
+
+            <div class="col-md-2" style="margin-top:30px">
+
+                <button class="btn btn-success"> Agregar </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+
+    </td>
+
+</tr>
+
+</table>
+
+
+
+
+
+
+<table class="table">
+<thead>
+<tr class="table-dark">
+
+<th>Nombre</th>
+<th>Teléfono</th>
+<th>Email</th>
+<th>Fecha Nacimiento</th>
+<th>Estado</th>
+<th></th>
+
+</tr>
+</thead>
+
+<tbody>
+
+{% for a in asistentes %}
+
+<tr class="table-success">
+
+<td>{{ a.miembro.nombre }} {{ a.miembro.apellido }}</td>
+
+<td>{{ a.miembro.telefono }}</td>
+
+<td>{{ a.miembro.email }}</td>
+
+<td>{{ a.miembro.fecha_nacimiento|date:"d/m/Y" }}</td>
+
+
+
+<td>
+
+    <select class="form-control cambiar-encargado-misred" data-id="{{ a.id }}">
+
+        <option value="">Sin encargado</option>
+
+        {% for e in encargados %}
+
+        <option value="{{ e.id }}"
+        {% if a.encargado_id == e.id %}selected{% endif %}>
+
+            {{ e.id_miembro.nombre }} {{ e.id_miembro.apellido }} - {{ e.id_rol_ministerio.descripcion }}
+
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+</td>
+
+
+
+<td>
+
+<select
+class="cambiar-estado-red form-control"
+data-id="{{ a.id }}"
+data-observaciones="{{ a.observacion|default:'' }}">
+
+<option value="A" {% if a.estado == "A" %}selected{% endif %}>Asistente</option>
+<option value="S" {% if a.estado == "S" %}selected{% endif %}>Seguimiento</option>
+<option value="U" {% if a.estado == "U" %}selected{% endif %}>Ausente</option>
+
+    {% if a.estado == "C" %}
+<option value="C" selected>Consolidado</option>
+{% endif %}
+
+
+
+</select>
+
+</td>
+
+<td>
+
+{% if a.estado != "C" %}
+
+<a href="{% url 'eliminar_asistente_misred' a.id %}"
+onclick="return confirm('¿Desea eliminar el asistente?')"
+class="btn btn-danger btn-sm">
+
+Eliminar
+
+</a>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+
+
+
+
+<div class="modal fade" id="modalEstadoRed">
+
+    <div class="modal-dialog">
+
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5>Cambiar estado del asistente</h5>
+            </div>
+
+            <div class="modal-body">
+
+                <label>Descripción del cambio</label>
+
+                <textarea id="observacion_red" class="form-control" rows="4"> </textarea>
+
+            </div>
+
+            <div class="modal-footer">
+
+                <button class="btn btn-secondary" data-bs-dismiss="modal"> Cancelar </button>
+
+                <button class="btn btn-primary" id="guardarEstadoRed"> Guardar </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+
+
+<script>
+$(document).ready(function(){
+
+    $('.select2-miembro-red').select2({
+
+        placeholder: "Buscar miembro",
+
+        ajax: {
+
+            url: $('.select2-miembro-red').data('url'),
+
+            dataType: 'json',
+
+            delay: 250,
+
+            data: function (params) {
+
+                return {
+                    term: params.term,
+                    red_id: "{{ red.id }}"
+                }
+
+            },
+
+            processResults: function (data) {
+
+                return {
+                    results: data
+                }
+
+            }
+
+        },
+
+        minimumInputLength: 3
+
+    });
+
+});
+
+
+
+
+
+
+
+let asistente_red_id = null
+let estado_red = null
+
+$(".cambiar-estado-red").change(function(){
+
+    asistente_red_id = $(this).data("id")
+    estado_red = $(this).val()
+
+    let obs = $(this).data("observaciones")
+
+    $("#observacion_red").val(obs)
+
+    $("#modalEstadoRed").modal("show")
+
+})
+
+$("#guardarEstadoRed").click(function(){
+
+    $.ajax({
+
+        url: "{% url 'cambiar_estado_asistente_red_ajax' %}",
+
+        type: "POST",
+
+        data: {
+
+            id: asistente_red_id,
+            estado: estado_red,
+            observaciones: $("#observacion_red").val(),
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+
+        },
+
+        success: function(){
+
+            location.reload()
+
+        }
+
+    })
+
+})
+
+
+
+
+
+$(".cambiar-encargado-misred").change(function(){
+
+    let asistente_id = $(this).data("id")
+    let encargado_id = $(this).val()
+
+    if(!confirm("¿Desea cambiar el encargado de este asistente?")){
+        location.reload()
+        return
+    }
+
+    $.ajax({
+
+        url: "{% url 'cambiar_encargado_asistente_misred_ajax' %}",
+
+        type: "POST",
+
+        data: {
+
+            id: asistente_id,
+            encargado: encargado_id,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+
+        },
+
+        success: function(response){
+
+            alert(response.mensaje)
+
+        }
+
+    })
+
+})
+
+</script>
+
+
+{% endblock %}

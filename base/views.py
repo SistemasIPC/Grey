@@ -1,9 +1,13 @@
+from pstats import add_callers
+
 from django.shortcuts import render
 
 from django.shortcuts import get_object_or_404
 from django.shortcuts import render, redirect
+from django.contrib import messages
 from django.views.generic.list import ListView
 from django.contrib.auth.forms import UserCreationForm
+from django.views.generic import TemplateView
 from django.contrib.auth import login
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView, FormView
@@ -14,24 +18,38 @@ from django.db.models import Q
 from django.urls import  reverse_lazy
 from datetime import datetime
 from datetime import date
+
+from ebcli.lib.iam import create_role
+
 from .models import Iglesia, Usuario_iglesia, Categoria_servicio, Servicio, Miembro
 from .models import ParticipanteServicio, Ministerio,Miembro_ministerio
 from .forms import MiembroForm, MiembroMinisterioForm, MinisterioForm,RolMinisterioForm,IglesiaForm,UsuarioIglesiaForm,UsuarioIglesiaUpdateForm
-from .forms import RegistroUsuarioForm
+from .forms import RegistroUsuarioForm, BienvenidaUpdateForm
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
 
 from .models import Miembro_ministerio, Rol_ministerio, User
+from .models import TipoBienvenida, Bienvenida
 from django.db.models import Count
 from datetime import datetime, timedelta
 from django.utils.timezone import now
 # Create your views here.
 from collections import defaultdict
 
-
+import re
 from .models import GrupoCasa, Barrio, Comuna
+from .models import Consolidacion, Red, ConfiguracionIglesia, AsistentesRed, AsistentesGrupoCasa
+from .models import EquipoGrupoCasa, RolEquipoGrupo, ServicioMinisterio
+from .forms import ConsolidacionForm, ServicioForm
+
+from django.utils import timezone
+from django.core.mail import send_mail
+from django.core.mail import EmailMessage
+from django.views.decorators.http import require_POST
+from django.urls import reverse
+import urllib.parse
 #-----------------------------------------------------------------
 #                       LOGIN
 #----------------------------------------------------------------
@@ -62,7 +80,7 @@ class PaginaRegistro(FormView):
         return super(PaginaRegistro, self).form_valid(form)
 
     def get(self,*args,**kwargs): # Para que deje entrar al registro sy ya esta registros si no que vaya a las tareas
-        print("sdsdsd")
+
         if self.request.user.is_authenticated:
             return redirect('menu_principal')
         return super(PaginaRegistro,self).get(*args,**kwargs)
@@ -88,6 +106,15 @@ class Sin_iglesia(LoginRequiredMixin, ListView):
         context = super().get_context_data(**kwargs)
         return context
 
+
+class Iglesia_off(LoginRequiredMixin, ListView):
+    model = Iglesia
+    template_name = 'menu/iglesia_off.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        return context
+
 class Menu_principal(LoginRequiredMixin, ListView):
     model = Iglesia
     context_object_name = 'iglesia'
@@ -102,6 +129,13 @@ class Menu_principal(LoginRequiredMixin, ListView):
             iglesia = usuario_iglesia.id_iglesia  # Obtiene la iglesia asociada
             context['iglesia'] = iglesia
             context['usuario_iglesia'] = usuario_iglesia
+            context["pendientes_consolidacion"] = obtener_pendientes_consolidacion(self.request.user)
+
+            # verificar si pertenece a un ministerio
+            context["codigo_min"] = ""
+            ministerio = Ministerio.objects.filter(id_usuario=self.request.user, codigo="CN" ).first()
+            if ministerio:
+                context["codigo_min"] = ministerio.codigo
 
         return context
 
@@ -111,10 +145,18 @@ class Menu_principal(LoginRequiredMixin, ListView):
         if not self.request.user.is_superuser: #sino es super
 
             usuario_iglesia = Usuario_iglesia.objects.filter(id_usuario=self.request.user).first()
+
             if not usuario_iglesia:
-                    return redirect(reverse_lazy('inicio-usuario'))
+                return redirect(reverse_lazy('inicio-usuario'))
+            else:
+                if not usuario_iglesia.id_iglesia.activa:
+                    return redirect(reverse_lazy('iglesia-off'))
+
         else:
             return redirect(reverse_lazy('inicio-super'))
+
+
+
 
         return super().get(request, *args, **kwargs)
 
@@ -166,6 +208,9 @@ class ListaServicio(LoginRequiredMixin, ListView):
             except ValueError:
                 pass  # Si el valor no es un número, se ignora
 
+        config = get_object_or_404(ConfiguracionIglesia, iglesia=iglesia)
+        dias_deshab_servicio = config.dias_deshab_servicio
+
 
         servicios_con_participantes = set(ParticipanteServicio.objects.values_list('id_servicio', flat=True) )
         # Calcular la fecha límite (hoy - 5 días)
@@ -175,7 +220,7 @@ class ListaServicio(LoginRequiredMixin, ListView):
         # Agregar un atributo "es_eliminable" a cada servicio
         for servicio in context['servicios']:
             diferencia_dias = (servicio.fecha - fecha_actual).days
-            servicio.es_eliminable = servicio.id not in servicios_con_participantes and diferencia_dias > 5
+            servicio.es_eliminable = servicio.id not in servicios_con_participantes and diferencia_dias > dias_deshab_servicio
 
 
 
@@ -228,9 +273,9 @@ class DetalleServicio(LoginRequiredMixin,DetailView):
 
 class CrearServicio(LoginRequiredMixin,CreateView):
     model = Servicio
+    form_class = ServicioForm
     template_name = 'servicio/servicio_form.html'
 
-    fields = ['fecha', 'id_categoria','descripcion','observacion']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -251,11 +296,12 @@ class CrearServicio(LoginRequiredMixin,CreateView):
         return reverse_lazy('servicios')
 
 class EditarServicio(LoginRequiredMixin, UpdateView):
+
     model = Servicio
+    form_class = ServicioForm
     template_name = 'servicio/servicio_form.html'
     success_url = reverse_lazy('servicios')
 
-    fields = ['fecha', 'id_categoria','descripcion','observacion']
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -309,6 +355,7 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
 
         ministerios = Ministerio.objects.filter(miembro_ministerio__id_ministerio__id_usuario=self.request.user).distinct()
 
+        roles_por_ministerio= {}
         miembros_por_ministerio= {}
         total_miembros = 0
         miembros_programados_set = set()
@@ -316,19 +363,64 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
         total_miembros_prog = 0
 
         context["ministerios"] = ministerios
+
+        servicios_ministerios = {}
         for ministerio in ministerios:
+
+            servicios_ministerios_sql = ServicioMinisterio.objects.filter(
+                id_ministerio=ministerio,  id_servicio__id=self.kwargs["pk"]
+            )
+            servicios_ministerios[ministerio]=servicios_ministerios_sql
+
+
+
+
+
             miembros = Miembro_ministerio.objects.filter(
                 id_ministerio=ministerio,
                 participanteservicio__id_servicio=self.kwargs["pk"]
             ).select_related('id_miembro', 'id_rol_ministerio').distinct()
 
+            # Estoy buscando los roles pero de servicios
+            participantes = ParticipanteServicio.objects.filter(
+                id_servicio=self.kwargs["pk"]
+            ).select_related(
+                "id_miembro_ministerio__id_miembro",
+                "id_miembro_ministerio__id_ministerio",
+                "id_rol_ministerio"
+            )
+            roles_servicio = {}
+            for p in participantes:
+                clave = (
+                    p.id_miembro_ministerio.id_miembro_id,
+                    p.id_miembro_ministerio.id_ministerio_id
+                )
+                roles_servicio[clave] = str(p.id_rol_ministerio.id)+"-@@@-"+p.id_rol_ministerio.descripcion+"-@@@-"+str(p.id)
+
+
+
+
+
+            roles_ministerio = Rol_ministerio.objects.filter(
+                id_ministerio=ministerio).distinct()
+            roles_por_ministerio[ministerio] = roles_ministerio
+
+
             # Crear la lista con id_combinado (miembro.id - ministerio.id)
             miembros_con_roles = []
             for m in miembros:
+                clave = ( m.id_miembro_id,   m.id_ministerio_id   )
+                datos_roles=roles_servicio.get(clave).split("-@@@-")
+
+                if int(datos_roles[0]) != m.id_rol_ministerio.id:
+                    datos_roles[1]= m.id_rol_ministerio.descripcion+"=>"+datos_roles[1]
+
+
                 # Concatenar los ids en el formato que necesitamos
                 m.id_combinado = f"{m.id_miembro.id}-{ministerio.id}-{m.id_rol_ministerio.id}"
-                miembros_con_roles.append((m.id_miembro, m.id_rol_ministerio.descripcion, m.id_combinado))
+                miembros_con_roles.append((m.id_miembro, datos_roles[1] ,m.id_combinado))
                 miembros_programados_set.add(m.id_combinado)
+
 
            # miembros_con_roles = [(m.id_miembro, m.id_rol_ministerio.descripcion) for m in miembros]
             miembros_por_ministerio[ministerio] = miembros_con_roles
@@ -345,8 +437,17 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
             miembros_prog_con_roles = []
             for m in miembros_prog:
                 # Concatenar los ids en el formato que necesitamos
+                clave = ( m.id_miembro.id,   ministerio.id  )
+
+                id_rol_servicio = m.id_rol_ministerio.id
+                id_servicio_participacion = 0
+                if clave in roles_servicio and isinstance(roles_servicio[clave], str):
+                    partes = roles_servicio[clave].split("-@@@-")
+                    id_rol_servicio=int(partes[0])
+                    id_servicio_participacion = int(partes[2])
+
                 m.id_combinado = f"{m.id_miembro.id}-{ministerio.id}-{m.id_rol_ministerio.id}"
-                miembros_prog_con_roles.append((m.id_miembro, m.id_rol_ministerio.descripcion, m.id_rol_ministerio.id,m.id_combinado))
+                miembros_prog_con_roles.append((m.id_miembro, m.id_rol_ministerio.descripcion, id_rol_servicio,m.id_combinado,id_servicio_participacion))
 
 
             #miembros_prog_con_roles = [(m.id_miembro, m.id_rol_ministerio.descripcion) for m in miembros_prog]
@@ -360,6 +461,7 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
             miembros_programados_set.update([m.id_miembro.id for m in miembros])
 
 
+
         context['ministerios']=ministerios
         context['usuario_iglesia'] = usuario_iglesia
         context['miembros_por_ministerio'] = miembros_por_ministerio
@@ -367,7 +469,9 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
         context['miembros_por_ministerio_prog'] = miembros_por_ministerio_prog
         context["total_miembros_prog"] = total_miembros_prog
         context["miembros_programados_set"] = miembros_programados_set
+        context["roles_por_ministerio"] = roles_por_ministerio
 
+        context["servicios_ministerios"] = servicios_ministerios
         return context
 
 
@@ -379,83 +483,160 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
 
         # Separar IDs en un diccionario {miembro_id: [ministerio_id1, ministerio_id2, ...]}
 
+        participantes_actuales = {}
+        participantes_actuales_sql = ParticipanteServicio.objects.filter(id_servicio=servicio)
+        for participante in participantes_actuales_sql:
+            participantes_actuales[ participante.id] = True
+
+
+
+
         miembros_dict = {}
         for item in miembros_seleccionados:
-            miembro_id, ministerio_id, rol_id = map(int, item.split("-"))
-            if miembro_id not in miembros_dict:
-                miembros_dict[miembro_id] = set()
-            miembros_dict[miembro_id].add((ministerio_id, rol_id))
+            miembro_id, ministerio_id, rol_id,id_servicio_participacion = map(int, item.split("-"))
 
-
-        miembros = Miembro_ministerio.objects.filter(id_ministerio__id_usuario=self.request.user)
-
-
-        participantes_actuales = ParticipanteServicio.objects.filter(id_servicio=servicio,id_miembro_ministerio__in=miembros)
-
-
-        # Crear un diccionario de los ministerios actuales por miembro
-        miembros_actuales_por_ministerio = {}
-        for participante in participantes_actuales:
-            miembro_id = participante.id_miembro_ministerio.id_miembro.id
-            ministerio_id = participante.id_miembro_ministerio.id_ministerio.id
-
-            rol_id=participante.id_miembro_ministerio.id_rol_ministerio.id
-
-
-            if miembro_id not in miembros_actuales_por_ministerio:
-                miembros_actuales_por_ministerio[miembro_id] = set()
-            miembros_actuales_por_ministerio[miembro_id].add((ministerio_id,rol_id))
-
-
-
-        # Agregar nuevos miembros al servicio
-        for miembro_id, ministerios_roles in miembros_dict.items():
-            miembro = get_object_or_404(Miembro, pk=miembro_id)
-
-            for ministerio_id, rol_id in ministerios_roles:
-                ministerio = get_object_or_404(Ministerio, pk=ministerio_id)
-
-
-                miembro_ministerio = Miembro_ministerio.objects.filter(id_miembro=miembro, id_ministerio=ministerio,id_rol_ministerio_id=rol_id ).first()
-
-                if miembro_ministerio:
-                    #print(f"⚠ Miembro {miembro}  está registrado en el ministerio {ministerio}, Rol{rol_id} ")
-                    rol = miembro_ministerio.id_rol_ministerio  # O puedes usar: Rol_ministerio.objects.get(pk=rol_id)
-                    try:
-                        ParticipanteServicio.objects.get_or_create(
-                            id_servicio=servicio,
-                            id_miembro_ministerio=miembro_ministerio,
-                            defaults={'id_rol_ministerio': rol}
-                          )
-                    except ParticipanteServicio.MultipleObjectsReturned:
-                        print("⚠ Ya existen múltiples participantes con esa combinación. No se pudo crear.")
+            if id_servicio_participacion==0:
+                miembro_ministerio = Miembro_ministerio.objects.filter(id_miembro=miembro_id,
+                                                                       id_ministerio=ministerio_id).first()
+                ParticipanteServicio.objects.get_or_create(
+                    id_servicio=servicio,
+                    id_miembro_ministerio=miembro_ministerio,
+                    id_rol_ministerio_id=rol_id
+                )
+            else:
+                if id_servicio_participacion in participantes_actuales:
+                    participante_ser = ParticipanteServicio.objects.get(id=id_servicio_participacion)
+                    nuevo_rol = Rol_ministerio.objects.get(id=rol_id)
+                    participante_ser.id_rol_ministerio = nuevo_rol
+                    participante_ser.save()
                 else:
-                    # Opcional: log de advertencia
-                    print(f"⚠ Miembro {miembro} no está registrado en el ministerio {ministerio}")
+                    ParticipanteServicio.objects.filter(id=id_servicio_participacion).delete()
 
-                #miembro_ministerio = get_object_or_404(Miembro_ministerio, id_miembro=miembro, id_ministerio=ministerio)
-               # ParticipanteServicio.objects.get_or_create(id_servicio=servicio,   id_miembro_ministerio=miembro_ministerio)
-
-
-
-
-
-
-        # Verificar y eliminar solo si el miembro no pertenece a otro ministerio en este servicio
-        for miembro_id, ministerio_rol_set in miembros_actuales_por_ministerio.items():
-            for ministerio_id, rol_id in ministerio_rol_set:
-                id_combinado = f"{miembro_id}-{ministerio_id}-{rol_id}"
-                if id_combinado not in miembros_seleccionados:
-                    ParticipanteServicio.objects.filter(
-                        id_servicio=servicio,
-                        id_miembro_ministerio__id_miembro__id=miembro_id,
-                        id_miembro_ministerio__id_ministerio__id=ministerio_id,
-                        id_miembro_ministerio__id_rol_ministerio__id = rol_id
-                    ).delete()
 
 
 
         return redirect("programar-miembros", pk=pk)
+
+
+
+
+def guardar_observacion_servicio_ministerio(request):
+
+    if request.method == "POST":
+
+        #sm = ServicioMinisterio.objects.filter(id_ministerio__id=request.POST.get("id"),   id_servicio__id=request.POST.get("idservicio"))
+
+        sm =get_object_or_404(ServicioMinisterio, id_ministerio__id=request.POST.get("id"),id_servicio__id=request.POST.get("idservicio"))
+
+
+
+        if sm:
+            sm.observacion = request.POST.get("observacion")
+            sm.save()
+        else:
+            ministerio = Ministerio.objects.filter(id=request.POST.get("id")).first()
+            servicio = Servicio.objects.filter(id=request.POST.get("idservicio")).first()
+            ServicioMinisterio.objects.get_or_create(
+                id_ministerio=ministerio,
+                id_servicio=servicio
+            )
+        return JsonResponse({
+            "mensaje": "ok"
+        })
+
+
+
+#-----------------------------------------------------------------
+#                       Enviar correo líderes de ministerio
+#----------------------------------------------------------------
+
+
+
+
+
+
+
+
+@require_POST
+def enviar_email_ministerio(request):
+
+    #usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+    #print(usuario_iglesia.correo)
+
+
+
+    ministerio_id = request.POST.get("ministerio")
+    servicio_id = request.POST.get("servicio")
+    observacion = request.POST.get("observacion")
+
+
+
+
+    participantes = ParticipanteServicio.objects.filter(
+        id_servicio_id=servicio_id,
+        id_miembro_ministerio__id_ministerio_id=ministerio_id
+    ).select_related(
+        "id_servicio",
+        "id_rol_ministerio",
+        "id_miembro_ministerio__id_miembro",
+        "id_miembro_ministerio__id_ministerio"
+    )
+
+    enviados = 0
+
+    for p in participantes:
+
+        miembro = p.id_miembro_ministerio.id_miembro
+        servicio = p.id_servicio
+        rol = p.id_rol_ministerio.descripcion if p.id_rol_ministerio else ""
+        ministerio = p.id_miembro_ministerio.id_ministerio.descripcion
+        correo_ministerio = p.id_miembro_ministerio.id_ministerio.correo
+
+
+        if not miembro.correo:
+            continue
+
+        mensaje = f"""
+Hola {miembro.nombre} {miembro.apellido},
+
+Usted ha sido programado para participar en el siguiente servicio:
+
+Ministerio: {ministerio}
+Rol: {rol}
+
+Servicio: {servicio.id_categoria.descripcion} {servicio.descripcion}
+Fecha: {servicio.fecha}
+Hora: {servicio.hora_inicio} - {servicio.hora_fin}
+
+Observaciones:
+{observacion}
+
+Bendiciones.
+"""
+
+
+
+        if not correo_ministerio:
+            email = EmailMessage(
+                subject="Programación de servicio "+str(servicio.fecha),
+                body=mensaje,
+                to=[miembro.correo]
+            )
+        else:
+            email = EmailMessage(
+                subject="Programación de servicio "+str(servicio.fecha),
+                body=mensaje,
+                to=[miembro.correo],
+                cc = [correo_ministerio]
+            )
+        email.send()
+        enviados += 1
+
+    return JsonResponse({
+        "ok": True,
+        "enviados": enviados
+    })
+
 
 #-----------------------------------------------------------------
 #                       Gesstionar Miembros
@@ -517,7 +698,7 @@ class MiembroCreateView(LoginRequiredMixin, CreateView):
 
 
     def form_valid(self, form):
-        print("que mas")
+
         usuario_iglesia = Usuario_iglesia.objects.get(id_usuario=self.request.user)
         form.instance.iglesia = usuario_iglesia.id_iglesia
         print(form.instance.iglesia )
@@ -665,7 +846,7 @@ class MiembroMinisterioUpdateView(LoginRequiredMixin, UpdateView):
         kwargs["user"] = self.request.user  # Enviar el usuario logueado
         return kwargs
 
-def buscar_miembro(request):
+def buscar_miembro_m(request):
     query = request.GET.get('q', '')
     #miembros = Miembro.objects.filter(nombre__icontains=query, apellido__icontains=query, activo=True)[:10]
     miembros = Miembro.objects.filter(Q(nombre__icontains=query) | Q(apellido__icontains=query), activo=True )[:10]
@@ -868,9 +1049,10 @@ class ListaParticipantes_por_servicio(LoginRequiredMixin, ListView):
 
         for p in participantes:
             servicio = p.id_servicio
-            rol = p.id_miembro_ministerio.id_rol_ministerio.descripcion
+            rol = p.id_rol_ministerio.descripcion
             servicios_participantes[servicio][rol].append(p)
             roles_disponibles.add(rol)
+
 
         servicios_participantes = {servicio: dict(roles) for servicio, roles in servicios_participantes.items()}
 
@@ -886,6 +1068,8 @@ class ListaParticipantes_por_servicio(LoginRequiredMixin, ListView):
         context['roles_disponibles'] = roles_disponibles
         context['fecha_inicio_b']=fecha_inicio
         context['fecha_fin_b'] = fecha_fin
+        context['id_ministerio'] = int(id_ministerio)
+
 
 
         return context
@@ -920,6 +1104,9 @@ def participantes_por_servicio(request, ministerio_id):
         'fecha_inicio': fecha_inicio,
         'fecha_fin': fecha_fin,
     })
+
+
+
 
 
 
@@ -1169,3 +1356,1179 @@ class GrupoCasaActivosListView(ListView):
         context["barrio_selected"] = self.request.GET.get("barrio", "")
         context["comuna_selected"] = self.request.GET.get("comuna", "")
         return context
+
+
+    # -----------------------------------------------------------------
+    #                       Bienvenida a los nuevos
+    # ----------------------------------------------------------------
+class ListaTipoBienvenida(LoginRequiredMixin, ListView):
+
+    model = TipoBienvenida
+    template_name = "bienvenida/lista_tipos_bienvenida.html"
+    context_object_name = "tipos"
+
+    def get_queryset(self):
+
+        usuario_iglesia = get_object_or_404(
+            Usuario_iglesia,
+            id_usuario=self.request.user
+        )
+
+        vartemp= TipoBienvenida.objects.filter(
+                        id_iglesia=usuario_iglesia.id_iglesia
+        )
+
+
+        return vartemp
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+        iglesia = usuario_iglesia.id_iglesia
+        context['iglesia'] = iglesia
+        context['usuario_iglesia'] = usuario_iglesia
+        return context
+
+class GestionarBienvenidaUpdateView(LoginRequiredMixin, UpdateView):
+    model = Bienvenida
+    form_class = BienvenidaUpdateForm
+
+    template_name = "bienvenida/gestionar_bienvenida.html"
+    success_url = reverse_lazy("lista-tipos-bienvenida")
+
+    def get_object(self):
+        tipo = get_object_or_404(TipoBienvenida, pk=self.kwargs["pk"])
+
+        bienvenida, created = Bienvenida.objects.get_or_create(
+            id_tipo_bienvenida=tipo
+        )
+
+        return bienvenida
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+        iglesia = usuario_iglesia.id_iglesia
+
+        context["usuario_iglesia"] = usuario_iglesia
+        context["iglesia"] = iglesia
+        return context
+
+class VerBienvenidaView(DetailView):
+
+    model = Bienvenida
+    template_name = "bienvenida/ver_bienvenida.html"
+    context_object_name = "bienvenida"
+
+
+    def get_object(self):
+        tipo = get_object_or_404(TipoBienvenida, pk=self.kwargs["pk"])
+
+        bienvenida, created = Bienvenida.objects.get_or_create(
+            id_tipo_bienvenida=tipo
+        )
+
+        return bienvenida
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        if self.request.user.is_authenticated:
+            usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+            iglesia = usuario_iglesia.id_iglesia
+            context["usuario_iglesia"] = usuario_iglesia
+            context["iglesia"] = iglesia
+
+
+        if self.request.user.is_authenticated:
+            context["base_template"] = "principal.html"
+        else:
+            context["base_template"] = "principal_sin_menu.html"
+
+        # Obtener el link del video bievenidad
+        video_url = self.object.link_video_bienvenida
+        youtube_id_bienvenida = None
+
+        if video_url:
+            match = re.search(r"(?:v=|youtu\.be/)([A-Za-z0-9_-]+)", video_url)
+            if match:
+                youtube_id_bienvenida = match.group(1)
+
+        context["youtube_id_bienvenida"] = youtube_id_bienvenida
+
+        # Obtener el link del video Play list
+        video_url = self.object.link_playlist
+        youtube_id_play = None
+
+        if video_url:
+            match = re.search(r"(?:v=|youtu\.be/)([A-Za-z0-9_-]+)", video_url)
+            if match:
+                youtube_id_play = match.group(1)
+
+        context["youtube_id_play"] = youtube_id_play
+
+
+
+        return context
+
+
+    # -----------------------------------------------------------------
+    #                       Seguimiento a los nuevos
+    # ----------------------------------------------------------------
+
+class ConsolidacionListView(ListView):
+
+    model = Consolidacion
+    template_name = "consolidacion/consolidacion_list.html"
+    context_object_name = "registros"
+    paginate_by = 20
+
+    def get_queryset(self):
+
+        queryset = Consolidacion.objects.select_related(
+            "miembro",
+            "categoria_servicio",
+            "red"
+        ).order_by("-fecha_ingreso")
+
+        fecha = self.request.GET.get("fecha")
+        categoria_servicio = self.request.GET.get("categoria_servicio")
+        red = self.request.GET.get("red")
+        nombre = self.request.GET.get("nombre")
+        en_seguimiento = self.request.GET.get("en_seguimiento")
+
+        if en_seguimiento:
+            queryset = queryset.filter(en_seguimiento=en_seguimiento)
+
+        if fecha:
+            queryset = queryset.filter(fecha_ingreso=fecha)
+
+        if categoria_servicio:
+            queryset = queryset.filter(categoria_servicio_id=categoria_servicio)
+
+        if red:
+            queryset = queryset.filter(red_id=red)
+
+        if nombre:
+            queryset = queryset.filter(
+                Q(miembro__nombre__icontains=nombre) |
+                Q(miembro__apellido__icontains=nombre)
+            )
+
+
+
+
+
+        
+        return queryset
+
+
+    def get_context_data(self, **kwargs):
+
+        usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+        iglesia = usuario_iglesia.id_iglesia
+
+        context = super().get_context_data(**kwargs)
+        context["usuario_iglesia"] = usuario_iglesia
+        context["iglesia"] = iglesia
+
+        config = get_object_or_404(ConfiguracionIglesia, iglesia=iglesia)
+        context["dias_alerta_con_1"] = config.dias_alerta_con_1
+        context["dias_alerta_con_2"] = config.dias_alerta_con_2
+
+
+        context["redes"] = Red.objects.filter(iglesia_id=iglesia)
+
+        context["servicios"] = Categoria_servicio.objects.filter(id_iglesia_id=iglesia)
+        context["filtros"] = self.request.GET
+        hoy = date.today()
+        for r in context["registros"]:
+            r.dias = (hoy - r.fecha_ingreso).days
+        context["hoy"] = hoy
+
+
+
+        return context
+
+
+
+class ConsolidacionCreateView(CreateView):
+
+    model = Consolidacion
+    form_class = ConsolidacionForm
+    template_name = "consolidacion/consolidacion_form.html"
+    success_url = reverse_lazy("consolidacion_list")
+
+
+    def get_form_kwargs(self):
+
+        kwargs = super().get_form_kwargs()
+        usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+        iglesia = usuario_iglesia.id_iglesia
+        kwargs["iglesia"] = iglesia
+
+        return kwargs
+
+
+
+    def form_valid(self, form):
+
+        obj = form.save(commit=False)
+        print(form.errors)
+        obj.usuario = self.request.user
+        obj.en_seguimiento = 'P'
+
+        obj.save()
+
+
+        return super().form_valid(form)
+
+
+
+class ConsolidacionUpdateView(UpdateView):
+
+    model = Consolidacion
+    form_class = ConsolidacionForm
+    template_name = "consolidacion/consolidacion_form.html"
+    success_url = reverse_lazy("consolidacion_list")
+
+    def get_form_kwargs(self):
+
+        kwargs = super().get_form_kwargs()
+        usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+        iglesia = usuario_iglesia.id_iglesia
+        kwargs["iglesia"] = iglesia
+
+        return kwargs
+
+
+def cambiar_seguimiento(request, pk):
+
+    registro = get_object_or_404(Consolidacion, pk=pk)
+
+    if registro.en_seguimiento == "P":
+        registro.en_seguimiento = "E"
+
+    elif registro.en_seguimiento == "E":
+        registro.en_seguimiento = "T"
+        registro.termina_seguimiento = "C"
+
+
+
+
+
+    registro.save()
+
+    return redirect("consolidacion_list")
+
+
+from django.http import JsonResponse
+from .models import Consolidacion
+
+
+def consolidacion_cambiar_ajax(request):
+
+    if request.method == "POST":
+
+        registro = Consolidacion.objects.get(
+            id=request.POST.get("id")
+        )
+
+        registro.en_seguimiento = request.POST.get("estado")
+
+        comentario = request.POST.get("comentario")
+
+        if registro.observacion:
+            registro.observacion += "\n" + comentario
+        else:
+            registro.observacion = comentario
+
+        registro.save()
+
+        return JsonResponse({
+            "mensaje": "Estado actualizado correctamente"
+        })
+
+#Buscar afiliado_
+def buscar_miembro(request):
+
+
+    term = request.GET.get("term")
+
+    usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+    iglesia = usuario_iglesia.id_iglesia
+    miembros = Miembro.objects.filter(Q(nombre__icontains=term) | Q(apellido__icontains=term), activo=True,lider=True )[:10]
+
+
+
+    data = []
+
+    for m in miembros:
+        data.append({
+            "id": m.id,
+            "text": f"{m.nombre} {m.apellido}"
+        })
+
+    return JsonResponse(data, safe=False)
+
+def buscar_grupo(request):
+
+    term = request.GET.get("term")
+
+    usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+    iglesia = usuario_iglesia.id_iglesia
+
+
+    grupos = GrupoCasa.objects.filter(
+        iglesia_id=iglesia,
+        descripcion__icontains=term
+    )[:10]
+
+    data = []
+
+    for g in grupos:
+        data.append({
+            "id": g.id,
+            "text": g.descripcion
+        })
+
+    return JsonResponse(data, safe=False)
+
+def consolidacion_enviar_correo(request, pk):
+
+
+
+    #usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+    ministerio = get_object_or_404( Ministerio,  codigo="CN",  id_usuario=request.user  )
+
+
+    correo_ministerio=ministerio.correo
+
+
+
+    registro = get_object_or_404(Consolidacion, pk=pk)
+
+    correos = []
+
+    if registro.red and registro.red.email:
+        correos.append(registro.red.email)
+
+    if registro.grupo_casa and registro.grupo_casa.email:
+        correos.append(registro.grupo_casa.email)
+
+
+    if correos:
+
+        asunto = "Nuevo seguimiento de visitante "+str(registro.fecha_ingreso)
+
+        mensaje = f"""
+Se ha registrado un nuevo seguimiento.
+
+Nombre: {registro.miembro}
+Fecha ingreso: {registro.fecha_ingreso}
+Red: {registro.red}
+Grupo en casa: {registro.grupo_casa}
+
+Por favor realizar el seguimiento correspondiente.
+"""
+
+        if not correo_ministerio:
+
+            email = EmailMessage(
+                subject=asunto,
+                body=mensaje,
+                to=correos
+            )
+
+        else:
+            email = EmailMessage(
+                subject=asunto,
+                body=mensaje,
+                to=correos,
+                cc = [correo_ministerio]
+            )
+        email.send()
+
+
+
+        messages.success(request, "Correo enviado correctamente a "+str(correos))
+
+    else:
+        messages.warning(request, "No hay correos configurados para Red o Grupo en Casa.")
+
+    return redirect(request.META.get("HTTP_REFERER"))
+
+    # -----------------------------------------------------------------
+    #                       Pendientes por consolidar
+    # ----------------------------------------------------------------
+
+def obtener_pendientes_consolidacion(user):
+
+    total = 0
+
+    # verificar si pertenece a un ministerio
+    ministerios = Ministerio.objects.filter(
+        id_usuario=user
+    )
+
+    for m in ministerios:
+        if m.red:
+            total += Consolidacion.objects.filter(
+                red=m.red,
+                en_seguimiento="P"
+            ).count()
+
+    # verificar si pertenece a un grupo en casa
+    grupos = GrupoCasa.objects.filter(
+        id_usuario=user
+    )
+
+    for g in grupos:
+        total += Consolidacion.objects.filter(
+            grupo_casa=g,
+            en_seguimiento="P"
+        ).count()
+
+    return total
+
+class PendientesConsolidacionView(TemplateView):
+
+    template_name = "consolidacion/pendientes.html"
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        user = self.request.user
+
+        # redes del usuario
+        redes = Ministerio.objects.filter(
+            id_usuario=user,
+            red__isnull=False
+        ).values_list("red", flat=True)
+
+        # grupos en casa del usuario
+        grupos = GrupoCasa.objects.filter(
+            id_usuario=user
+        ).values_list("id", flat=True)
+
+        # pendientes por red
+        pendientes_red = Consolidacion.objects.filter(
+            en_seguimiento="P",
+            red__in=redes
+        ).order_by("fecha_ingreso")
+
+        # pendientes por grupo en casa
+        pendientes_grupo = Consolidacion.objects.filter(
+            en_seguimiento="P",
+            grupo_casa__in=grupos
+        ).order_by("fecha_ingreso")
+
+
+        # calcular días de seguimiento
+        hoy = date.today()
+
+        for r in pendientes_red:
+            r.dias_seguimiento = (hoy - r.fecha_ingreso).days
+
+        for r in pendientes_grupo:
+            r.dias_seguimiento = (hoy - r.fecha_ingreso).days
+
+        usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+        iglesia = usuario_iglesia.id_iglesia
+
+        context = super().get_context_data(**kwargs)
+
+        context["usuario_iglesia"] = usuario_iglesia
+        context["iglesia"] = iglesia
+
+
+        config = get_object_or_404(ConfiguracionIglesia, iglesia=iglesia)
+        context["dias_alerta_con_1"] = config.dias_alerta_con_1
+        context["dias_alerta_con_2"] = config.dias_alerta_con_2
+
+        context["pendientes_red"] = pendientes_red
+        context["pendientes_grupo"] = pendientes_grupo
+        context["pendientes_por_consolidacion"] = pendientes_red.count() + pendientes_grupo.count()
+
+
+        return context
+
+def registrar_seguimiento_consolidacion(request, pk):
+
+    registro = get_object_or_404(Consolidacion, pk=pk)
+
+    # si tiene red
+    if registro.red:
+
+        AsistentesRed.objects.get_or_create(
+            miembro=registro.miembro,
+            red=registro.red,
+            consolidacion=registro,
+            defaults={"estado": "C"}
+        )
+        registro.en_seguimiento = "E"
+        registro.save()
+
+
+    # si tiene grupo en casa
+    if registro.grupo_casa:
+
+        AsistentesGrupoCasa.objects.get_or_create(
+            miembro=registro.miembro,
+            grupo_casa=registro.grupo_casa,
+            consolidacion=registro,
+            defaults={"estado": "C"}
+        )
+        registro.en_seguimiento = "E"
+        registro.save()
+
+    return redirect("consolidacion_pendiente")
+
+
+    # -----------------------------------------------------------------
+    #                       Gestionar los grupos en casa que pertenecen a quien se loguea
+    # ----------------------------------------------------------------
+
+def mis_grupos_casa(request):
+
+    usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+    iglesia = usuario_iglesia.id_iglesia
+
+
+
+
+    grupos = GrupoCasa.objects.filter(
+        id_usuario=request.user
+    )
+
+    context = {
+        "iglesia": iglesia,
+        "usuario_iglesia": usuario_iglesia,
+        "grupos": grupos
+    }
+
+    if grupos.count() == 1:
+        grupo = grupos.first()
+        return redirect("gestionar_grupo_casa", grupo.id)
+
+    return render(request, "grupos/mis_grupos.html", context)
+
+
+
+
+def gestionar_grupo_casa(request, pk):
+
+
+    usuario_iglesia = get_object_or_404(
+        Usuario_iglesia,
+        id_usuario=request.user
+    )
+
+    iglesia = usuario_iglesia.id_iglesia
+
+    roles = RolEquipoGrupo.objects.filter(
+        iglesia=iglesia
+    )
+
+    grupo = get_object_or_404(GrupoCasa, pk=pk)
+
+
+    equipo = EquipoGrupoCasa.objects.filter(
+        grupo_casa=grupo
+    ).select_related("miembro", "rol")
+
+    asistentes = AsistentesGrupoCasa.objects.filter(
+        grupo_casa=grupo
+    ).select_related("miembro", "equipo")
+
+    context = {
+        "usuario_iglesia": usuario_iglesia,
+        "iglesia": iglesia,
+        "grupo": grupo,
+        "equipo": equipo,
+        "asistentes": asistentes,
+        "roles": roles,
+    }
+
+    return render(request, "grupos/gestionar_grupo.html", context)
+
+
+
+
+
+def cambiar_rol_equipo(request, pk):
+
+    equipo = get_object_or_404(EquipoGrupoCasa, pk=pk)
+
+    if request.method == "POST":
+
+        rol_id = request.POST.get("rol")
+
+        if rol_id:
+            equipo.rol_id = rol_id
+            equipo.save()
+
+    return redirect(request.META.get("HTTP_REFERER"))
+
+
+def eliminar_equipo(request, pk):
+
+    equipo = get_object_or_404(EquipoGrupoCasa, pk=pk)
+
+    grupo_id = equipo.grupo_casa.id
+
+    equipo.delete()
+
+    return redirect("gestionar_grupo_casa", pk=grupo_id)
+
+def agregar_equipo_grupo(request, grupo_id):
+
+    grupo = get_object_or_404(
+        GrupoCasa,
+        id=grupo_id,
+        id_usuario=request.user
+    )
+
+    if request.method == "POST":
+
+        miembro_id = request.POST.get("miembro")
+        rol_id = request.POST.get("rol")
+
+        miembro = get_object_or_404(Miembro, id=miembro_id)
+        rol = RolEquipoGrupo.objects.get(id=rol_id)
+
+        # validar que esté activo y sea líder
+        if not miembro.activo or not miembro.lider:
+            messages.error(request, "El miembro debe estar activo y ser líder.")
+            return redirect("gestionar_grupo_casa", pk=grupo_id)
+
+        # validar que no pertenezca a otro grupo
+        if EquipoGrupoCasa.objects.filter(miembro=miembro).exists():
+            messages.error(request, "Este miembro ya pertenece a otro grupo en casa.")
+            return redirect("gestionar_grupo_casa", pk=grupo_id)
+
+        EquipoGrupoCasa.objects.create(
+            grupo_casa=grupo,
+            miembro=miembro,
+            rol=rol
+        )
+
+        messages.success(request, "Integrante agregado al equipo.")
+
+    return redirect("gestionar_grupo_casa", pk=grupo_id)
+
+
+
+
+
+
+
+
+
+
+def eliminar_asistente_grupo(request, pk):
+
+    asistente = get_object_or_404(AsistentesGrupoCasa, pk=pk)
+
+    grupo_id = asistente.grupo_casa.id
+
+
+    asistente.delete()
+
+    messages.success(request, "Asistente eliminado del grupo.")
+
+    return redirect("gestionar_grupo_casa", pk=grupo_id)
+
+
+
+def buscar_miembro_equipo(request):
+
+    term = request.GET.get("term")
+
+    usuario_iglesia = get_object_or_404(
+        Usuario_iglesia,
+        id_usuario=request.user
+    )
+
+    iglesia = usuario_iglesia.id_iglesia
+
+    miembros = Miembro.objects.filter(
+        Q(nombre__icontains=term) |
+        Q(apellido__icontains=term),
+        activo=True,
+        lider=True,
+        iglesia_id=iglesia
+    ).exclude(
+        equipogrupocasa__isnull=False
+    )[:10]
+
+
+    data = []
+
+    for m in miembros:
+        data.append({
+            "id": m.id,
+            "text": f"{m.nombre} {m.apellido}"
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+def buscar_miembro_asistente(request):
+
+    term = request.GET.get("term")
+
+    miembros = Miembro.objects.filter(
+
+        Q(nombre__icontains=term) |
+        Q(apellido__icontains=term),
+
+        activo=True
+
+    )[:10]
+
+    data = []
+
+    for m in miembros:
+
+        data.append({
+            "id": m.id,
+            "text": f"{m.nombre} {m.apellido} - {m.telefono}"
+        })
+
+    return JsonResponse(data, safe=False)
+
+def buscar_miembro_asistente(request):
+
+    term = request.GET.get("term")
+
+    miembros = Miembro.objects.filter(
+
+        Q(nombre__icontains=term) |
+        Q(apellido__icontains=term),
+
+        activo=True
+
+    )[:10]
+
+    data = []
+
+    for m in miembros:
+
+        data.append({
+            "id": m.id,
+            "text": f"{m.nombre} {m.apellido} - {m.telefono}"
+        })
+
+    return JsonResponse(data, safe=False)
+
+def agregar_asistente_grupo(request, grupo_id):
+
+    if request.method == "POST":
+
+        miembro_id = request.POST.get("miembro")
+        equipo_id = request.POST.get("equipo")
+
+        if not miembro_id:
+            messages.error(request, "Debe seleccionar un miembro")
+            return redirect("gestionar_grupo_casa", grupo_id)
+
+        existe = AsistentesGrupoCasa.objects.filter(
+            grupo_casa_id=grupo_id,
+            miembro_id=miembro_id
+        ).exists()
+
+        if existe:
+            messages.warning(request, "Ese miembro ya está en el grupo")
+            return redirect("gestionar_grupo_casa", grupo_id)
+
+        AsistentesGrupoCasa.objects.create(
+
+            grupo_casa_id=grupo_id,
+            miembro_id=miembro_id,
+            equipo_id=equipo_id if equipo_id else None,
+            estado="A"
+
+        )
+
+        messages.success(request, "Asistente agregado correctamente")
+
+    return redirect("gestionar_grupo_casa", grupo_id)
+
+
+
+
+def cambiar_estado_asistente_grupo_ajax(request):
+
+    if request.method == "POST":
+
+        asistente_id = request.POST.get("id")
+        estado = request.POST.get("estado")
+        observaciones = request.POST.get("observaciones")
+
+
+        asistente = AsistentesGrupoCasa.objects.get(id=asistente_id)
+        asistente.observaciones = observaciones
+        estado_anterior = asistente.estado
+        asistente.estado = estado
+        asistente.save()
+
+
+
+        # si estaba consolidado y cambia a otro estado
+        if estado_anterior == "C" and estado != "C":
+
+            Consolidacion.objects.filter(
+                miembro=asistente.miembro
+            ).update(
+                en_seguimiento="T", observacion=observaciones, termina_seguimiento="G"
+            )
+
+
+
+
+
+        return JsonResponse({
+            "mensaje": "Estado actualizado correctamente"
+        })
+
+from .models import EquipoGrupoCasa
+
+
+def cambiar_encargado_asistente_grupo_ajax(request):
+
+    if request.method == "POST":
+
+        asistente_id = request.POST.get("id")
+        equipo_id = request.POST.get("equipo")
+
+        asistente = AsistentesGrupoCasa.objects.get(id=asistente_id)
+
+        if equipo_id:
+            asistente.equipo_id = equipo_id
+        else:
+            asistente.equipo = None
+
+        asistente.save()
+
+        return JsonResponse({
+            "mensaje": "Encargado actualizado correctamente"
+        })
+
+
+
+    # -----------------------------------------------------------------
+    #                       Gestionar las redes en cuanto a los asistentes de acuerdo a quien se loguea
+    # ----------------------------------------------------------------
+
+
+def mis_redes(request):
+    usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+    iglesia = usuario_iglesia.id_iglesia
+
+
+    ministerios = Ministerio.objects.filter(
+            id_usuario=request.user,
+            red__isnull=False
+    ).select_related("red")
+
+
+    redes = [m.red for m in ministerios]
+
+    context = {
+        "iglesia": iglesia,
+        "usuario_iglesia": usuario_iglesia,
+        "redes": redes
+    }
+
+
+    if len(redes) == 1:
+        return redirect("mis_redes", redes[0].id)
+
+
+    return render(request, "misredes/mis_redes.html", context)
+
+
+
+
+def gestionar_misred(request, red_id):
+    usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+    iglesia = usuario_iglesia.id_iglesia
+    red = Red.objects.get(id=red_id)
+
+    ministerios = Ministerio.objects.filter(
+        red=red
+    )
+
+    asistentes = AsistentesRed.objects.filter(
+        red=red
+    ).select_related("miembro")
+
+    encargados = Miembro_ministerio.objects.filter(
+        id_ministerio__red=red
+    ).select_related(
+        "id_miembro",
+        "id_rol_ministerio",
+        "id_ministerio"
+    )
+
+    return render(request, "misredes/gestionar_misredes.html", {
+
+        "usuario_iglesia": usuario_iglesia,
+        "iglesia": iglesia,
+        "red": red,
+        "ministerios": ministerios,
+        "asistentes": asistentes,
+        "encargados": encargados
+
+    })
+
+
+def actualizar_email_red(request, red_id):
+
+    if request.method == "POST":
+
+        red = Red.objects.get(id=red_id)
+
+        email = request.POST.get("email")
+
+        red.email = email
+        red.save()
+
+    return redirect("gestionar_misredes", red_id)
+
+
+
+
+def cambiar_estado_asistente_red_ajax(request):
+
+    if request.method == "POST":
+
+        asistente = AsistentesRed.objects.get(
+            id=request.POST.get("id")
+        )
+
+
+        estado_nuevo = request.POST.get("estado")
+        estado_anterior = asistente.estado
+
+        consolidacion = asistente.consolidacion
+        observacion = request.POST.get("observaciones")
+
+        asistente.estado = estado_nuevo
+        asistente.observacion = observacion
+
+        asistente.save()
+
+
+        # si estaba consolidado y cambia a otro estado
+        if estado_anterior == "C" and estado_nuevo != "C":
+
+            Consolidacion.objects.filter(
+                miembro=asistente.miembro
+            ).update(
+                en_seguimiento="T", observacion=observacion, termina_seguimiento="R"
+            )
+
+        return JsonResponse({"ok": True})
+
+
+
+def eliminar_asistente_red(request, pk):
+
+    asistente = get_object_or_404(AsistentesRed, pk=pk)
+
+    # validar que no esté consolidado
+    if asistente.estado == "C":
+        messages.error(
+            request,
+            "No se puede eliminar un asistente consolidado."
+        )
+        return redirect("gestionar_misredes", asistente.red.id)
+
+    red_id = asistente.red.id
+
+    asistente.delete()
+
+    messages.success(
+        request,
+        "Asistente eliminado correctamente."
+    )
+
+    return redirect("gestionar_misredes", red_id)
+
+
+
+
+def buscar_miembro_misred(request):
+
+    term = request.GET.get("term")
+    red_id = request.GET.get("red_id")
+
+    miembros = Miembro.objects.filter(
+
+        Q(nombre__icontains=term) |
+        Q(apellido__icontains=term),
+
+        activo=True
+
+    ).exclude(
+
+        id__in=AsistentesRed.objects.filter(
+            red_id=red_id
+        ).values_list("miembro_id", flat=True)
+
+    )[:10]
+
+    data = []
+
+    for m in miembros:
+
+        data.append({
+
+            "id": m.id,
+            "text": f"{m.nombre} {m.apellido} - {m.telefono}"
+
+        })
+
+    return JsonResponse(data, safe=False)
+
+
+
+
+def agregar_asistente_misred(request, red_id):
+
+    if request.method == "POST":
+
+        miembro_id = request.POST.get("miembro")
+        encargado_id = request.POST.get("encargado")
+
+        if not miembro_id or not encargado_id:
+
+            messages.error(
+                request,
+                "Debe seleccionar miembro y encargado"
+            )
+
+            return redirect("gestionar_misredes", red_id)
+
+        existe = AsistentesRed.objects.filter(
+
+            red_id=red_id,
+            miembro_id=miembro_id
+
+        ).exists()
+
+        if existe:
+
+            messages.warning(
+                request,
+                "Ese miembro ya está en la red"
+            )
+
+            return redirect("gestionar_misredes", red_id)
+
+        AsistentesRed.objects.create(
+
+            red_id=red_id,
+            miembro_id=miembro_id,
+            encargado_id=encargado_id,
+            estado="A"
+
+        )
+
+        messages.success(
+            request,
+            "Asistente agregado correctamente"
+        )
+
+    return redirect("gestionar_misredes", red_id)
+
+
+
+
+def cambiar_encargado_asistente_misred_ajax(request):
+
+    if request.method == "POST":
+
+        asistente_id = request.POST.get("id")
+        encargado_id = request.POST.get("encargado")
+
+        asistente = AsistentesRed.objects.get(id=asistente_id)
+
+        asistente.encargado_id = encargado_id
+        asistente.save()
+
+
+
+
+        return JsonResponse({
+
+            "mensaje": "Encargado actualizado correctamente"
+
+        })
+
+
+
+    # -----------------------------------------------------------------
+    #                       Enviar mensaje whatsapp
+    # ----------------------------------------------------------------
+
+
+def consolidacion_enviar_whatsapp(request):
+
+    if request.method == "POST":
+
+        id = request.POST.get("id")
+        registro = Consolidacion.objects.get(id=id)
+
+        if registro.whatsapp_enviado:
+            return JsonResponse({"error":"Ya fue enviado"}, status=400)
+
+
+
+        usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
+        iglesia = usuario_iglesia.id_iglesia
+        config = get_object_or_404(ConfiguracionIglesia, iglesia=iglesia)
+        mensaje = config.mensaje_bienvenida_whatsapp
+
+
+        # Enviar el link propia a la red
+        if config.link_bienvenida and registro.red:
+            bienvenida = get_object_or_404(Bienvenida, id_tipo_bienvenida__red=registro.red)
+
+            url_bienvenida = reverse("ver-bienvenida", args=[bienvenida.id])
+
+            url_completa = request.build_absolute_uri(url_bienvenida)
+            mensaje = f"""
+            {mensaje}
+
+            {config.mensaje_linkbienvenida_whatsapp}
+            {url_completa}
+            """
+
+        mensaje_codificado = urllib.parse.quote(mensaje)
+
+
+
+        celular = registro.miembro.celular
+
+        celular=celular.replace(" ", "")
+
+        nombre = registro.miembro.nombre
+
+        #link = f"https://wa.me/57{celular}?text={mensaje}"
+        link = f"https://wa.me/{celular}?text={mensaje_codificado}"
+
+
+
+        # marcar como enviado
+        registro.whatsapp_enviado = True
+        registro.fecha_whatsapp = timezone.now()
+        registro.save()
+
+        return JsonResponse({
+            "ok": True,
+            "link": link
+        })

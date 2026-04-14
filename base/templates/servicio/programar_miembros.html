@@ -1,5 +1,6 @@
 {% extends 'principal.html' %}
 
+{% load dict_utils %}
 {% block content %}
 
 
@@ -46,26 +47,88 @@
 
 
 
+
+
+{% for sm in ministerios %}
+
+<div class="card mb-3">
+
+<div class="card-header">
+<b>{{ sm.descripcion }}</b>
+</div>
+
+<div class="card-body">
+
+<textarea
+class="form-control observacion"
+rows="4"
+data-id="{{ sm.id }}"
+> {% for min in servicios_ministerios|get_item:sm %}{% if min.observacion|cut:" " %}{{ min.observacion }} {% endif %}{% endfor %}</textarea>
+
+<button
+class="btn btn-primary mt-2 guardar-observacion"
+data-id="{{ sm.id }}"   data-idservicio="{{ servicio.id }}"   >
+Guardar
+</button>
+
+
+    <button class="btn btn-success mt-2 enviar-email" data-ministerio="{{ sm.id }}" data-servicio="{{ servicio.id }}" >
+        Enviar Email
+    </button>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+
+
+
+
+
+
 {% if miembros_por_ministerio_prog %}
 
     <form method="POST">
         {% csrf_token %}
         <div class="grid-container">
-            {% for ministerio, miembros in miembros_por_ministerio_prog.items %}
+            {% for ministerio, miembros in miembros_por_ministerio_prog.items  %}
+
+
+
                 <div class="ministerio">
                     <h3>{{ ministerio.descripcion }} ({{ miembros|length }} miembros)</h3>
                     <ul class="list-group">
-                        {% for miembro, rol, rol_id,id_combinado  in miembros %}
+                        {% for miembro, rol, rol_id,id_combinado,id_servicio_participacion  in miembros %}
 
 
 
-                                <li class="list-group-item" >
+                                <li class="list-group-item fila-miembro" >
                                     <label>
-                                        <input type="checkbox" name="miembros_seleccionados" value="{{ miembro.id }}-{{ ministerio.id }}-{{ rol_id }}"
-                                            {% if id_combinado in miembros_programados_set %}checked{% endif %}>
+                                        <input type="checkbox"  class="checkbox-miembro" name="miembros_seleccionados" value="{{ miembro.id }}-{{ ministerio.id }}-{{ rol_id }}-{{ id_servicio_participacion }}"
+                                               data-miembro="{{ miembro.id }}" data-ministerio="{{ ministerio.id }}" data-id_participacion_servicio="{{ id_servicio_participacion }}"
+                                            {% if id_combinado in miembros_programados_set %} checked {% endif %} >
                                         {{ miembro.nombre }} {{ miembro.apellido }} ({{ rol }})
 
                                     </label>
+
+
+                                <select  class="select-rol form-control">
+
+                                    {%    for rollist in roles_por_ministerio|get_item:ministerio  %}
+
+                                        <option value="{{rollist.id}}"  {% if rollist.id == rol_id %}  selected    {% endif %}    >{{ rollist.descripcion }}</option>
+
+                                    {% endfor %}
+                                </select>
+
+
+
+
+
+
+
                                 </li>
 
                         {% empty %}
@@ -80,4 +143,138 @@
 {% else %}
     <p >No hay ministerios relacionados con este servicio.</p>
 {% endif %}
+
+
+
+<script>
+
+document.querySelectorAll(".select-rol").forEach(function(select){
+
+    select.addEventListener("change", function(){
+
+        let fila = this.closest(".fila-miembro")
+
+        let checkbox = fila.querySelector(".checkbox-miembro")
+
+        let miembro = checkbox.dataset.miembro
+        let ministerio = checkbox.dataset.ministerio
+        let id_participacion_servicio = checkbox.dataset.id_participacion_servicio
+        let rol = this.value
+
+        checkbox.value = miembro + "-" + ministerio + "-" + rol + "-" + id_participacion_servicio
+
+    })
+
+})
+
+
+
+
+
+</script>
+
+
+<script>
+
+$(".guardar-observacion").click(function(){
+
+    let id = $(this).data("id")
+    let idservicio = $(this).data("idservicio")
+
+    let textarea = $(this).closest(".card").find(".observacion")
+
+    let observacion = textarea.val()
+
+    if(!confirm("¿Desea guardar la observación?")){
+        return
+    }
+
+    $.ajax({
+
+        url: "{% url 'guardar_observacion_servicio_ministerio' %}",
+
+        type: "POST",
+
+        data: {
+
+            id: id,
+            idservicio: idservicio,
+            observacion: observacion,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+
+        },
+
+        success: function(response){
+
+
+
+        }
+
+    })
+
+})
+
+</script>
+
+
+
+<script>
+
+$(".enviar-email").click(function(){
+
+    let card = $(this).closest(".card")
+
+    let textarea = card.find(".observacion")
+
+    let observacion = textarea.val().trim()
+
+    let ministerio = $(this).data("ministerio")
+
+    let servicio = $(this).data("servicio")
+
+    if(observacion === ""){
+
+        alert("Debe escribir una observación antes de enviar el correo")
+
+        return
+    }
+
+    if(!confirm("¿Desea enviar el correo a los miembros de este ministerio?")){
+        return
+    }
+
+    $.ajax({
+
+        url: "{% url 'enviar_email_ministerio' %}",
+
+        type: "POST",
+
+        data:{
+
+            ministerio: ministerio,
+            servicio: servicio,
+            observacion: observacion,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+
+        },
+
+        success:function(response){
+
+            alert("Correo enviado correctamente")
+
+        },
+
+        error:function(){
+
+            alert("Error al enviar el correo")
+
+        }
+
+    })
+
+})
+
+</script>
+
+
 {% endblock content %}

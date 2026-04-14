@@ -6,11 +6,16 @@
     <a href="{% url 'servicios' %}">&#x1F860; Volver</a>
 </div>
 
-<div class="cuerpo-tarjeta">
+
+<h2>Eliminar Servicio</h2>
+
+
+
     <form method="POST">
     {% csrf_token %}
     <p>Vas a eliminar este servicio: "{{servicio}}"</p>
-    <input class='boton' type="submit" value="Eliminar">
-</form>
-</div>
+    <input class='btn btn-danger' type="submit" value="Eliminar">
+        <a href="{% url 'servicios' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+
 {% endblock content %}

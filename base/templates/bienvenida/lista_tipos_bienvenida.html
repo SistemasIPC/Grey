@@ -1,10 +1,44 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}  <!-- Si usas una base común -->
+
+{% block content %}
+
+
+<h2>Bienvenidas</h2>
+
+    <table class="table table-hover table-striped table-bordered">
+        <thead class="table-dark">
+<tr>
+<th colspan="3" >Ministerios</th>
+</tr>
+    </thead>
+{% for tipo in tipos %}
+
+<tr>
+
+<td>
+
+    {% if usuario_iglesia.superusuario %}
+
+    <a href="{% url 'gestionar-bienvenida' tipo.id %}">{{ tipo.nombre }}</a>
+    {% else %}
+        {{ tipo.nombre }}
+    {% endif %}
+
+</td>
+
+    <td>
+<a href="{% url 'ver-bienvenida' tipo.id %}" target="_blank">
+Ver
+</a>
+
+</td>
+
+
+</tr>
+
+
+{% endfor %}
+
+</table>
+
+{% endblock %}

@@ -7,7 +7,21 @@
 
 
 <h2>Lista de Miembros de la Iglesia</h2>
+
+<table class="table table-striped ">
+
+        <tr>
+            <th class="table-success">L&iacute;der</th>
+            <th class="table-primary">Activo</th>
+        </tr>
+
+</table>
+
 <a href="{% url 'miembro-create' %}" class="btn btn-primary">Agregar Miembro</a>
+
+
+
+
 <table class="table table-hover table-striped table-bordered">
     <thead class="table-dark">
         <tr>
@@ -20,7 +34,13 @@
     </thead>
     <tbody>
         {% for miembro in miembros %}
-        <tr>
+        <tr
+            {% if miembro.lider %} class="table-success" {% elif miembro.activo %} class="table-primary"  {% endif %}
+
+
+
+
+        >
             <td>{{ miembro.nombre }}</td>
             <td>{{ miembro.apellido }}</td>
             <td>{{ miembro.correo }}</td>

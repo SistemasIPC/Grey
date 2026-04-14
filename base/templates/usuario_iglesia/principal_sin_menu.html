@@ -44,78 +44,7 @@
 
 </head>
 <body>
-    <header class="bg-primary text-white text-center py-4">
-        <h1>Grey | {{iglesia}}</h1>
-        <p>Cuidando de buena manera</p>
-    </header>
 
-
-       <!-- Menú de navegación -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="{% url 'menu_principal' %}">Inicio</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav me-auto">
-
-
-
-                    {% if usuario_iglesia.superusuario %}
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Grupos en Casa</a> </li>
-                    <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
-                     <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
-                    <li class="nav-item" ><a class="nav-link"  href="{% url 'servicios' %}">Ver proramados </a> </li>
-                   <li class="nav-item" >----------- </li>
-                   <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
-                     <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar</a> </li>
-                     <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
-                    <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver Participantes</a></li>
-
-
-
-
-                    {% else %}
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Grupos en Casa</a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
-                     <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
-                     <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
-                    <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
-
-
-                    {% endif %}
-
-
-
-
-
-                   <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Bienvenida a nuevos</a> </li>
-
-
-                </ul>
-
-                <ul class="navbar-nav">
-
-                        <li class="nav-item">
-                            <a class="nav-link" href="">Perfil ({{ user.username }})</a>
-                        </li>
-
-
-                    {% if request.user.is_authenticated %}
-                            <form method="post" action="{% url 'logout' %}">
-                                {% csrf_token %}
-                                <button  class="btn btn-danger" type="submit">logout</button>
-                            </form>
-                        {% else %}
-                             <a href="{% url 'login' %}">Ingresar </a>
-                        {% endif %}
-                </ul>
-            </div>
-        </div>
-    </nav>
 
 
     <div class="container">
@@ -124,8 +53,6 @@
         {% endblock content %}
     </div>
 
-    <footer class="bg-dark text-white text-center py-3 mt-4">
-        <p>&copy; 2025 La Grey - Todos los derechos reservados</p>
-    </footer>
+
 </body>
 </html>

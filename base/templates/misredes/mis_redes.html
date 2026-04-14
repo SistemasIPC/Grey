@@ -1,10 +1,36 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
-<body>
-$END$
-</body>
-</html>
+{% extends "principal.html" %}
+
+{% block content %}
+<h3>Mis redes</h3>
+
+<table class="table">
+
+<thead>
+<tr>
+<th>Red</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for r in redes %}
+
+<tr>
+
+
+<td>
+<a href="{% url 'gestionar_misredes' r.id %}"
+class="btn btn-primary btn-sm">
+{{ r.nombre }}
+</a>
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+{% endblock %}
