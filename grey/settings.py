@@ -138,10 +138,10 @@ DATABASES = {
     )
 }
 
-
-DATABASES['default']['OPTIONS'] = {
-    'client_encoding': 'UTF8'
-}
+if 'postgres' in DATABASES['default']['ENGINE']:
+    DATABASES['default']['OPTIONS'] = {
+        'client_encoding': 'UTF8'
+    }
 
 #DATABASES = {
 #    'default': {
