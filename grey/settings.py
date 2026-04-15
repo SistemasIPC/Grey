@@ -119,14 +119,26 @@ WSGI_APPLICATION = 'grey.wsgi.application'
 #    }
 #}
 
-# Esto es por Render
+# Esto es por Render ABRIL 2026
+#DATABASES = {
+#    'default': dj_database_url.config(
+#        default=os.getenv('DATABASE_URL'),
+#        conn_max_age=600,  # mantiene la conexión abierta
+#        ssl_require=False  # cambia a True en producción con SSL (Heroku, etc.)
+#    )
+#}
+
+
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL'),
-        conn_max_age=600,  # mantiene la conexión abierta
-        ssl_require=False  # cambia a True en producción con SSL (Heroku, etc.)
+        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
+        conn_max_age=600,
+        ssl_require=False
     )
 }
+
+
 DATABASES['default']['OPTIONS'] = {
     'client_encoding': 'UTF8'
 }
