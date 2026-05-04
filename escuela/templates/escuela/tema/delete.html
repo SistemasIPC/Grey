@@ -1,0 +1,15 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Eliminar Tema</h3>
+
+<p>¿Seguro que desea eliminar "{{ obj }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'tema_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

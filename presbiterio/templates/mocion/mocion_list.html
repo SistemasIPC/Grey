@@ -1,0 +1,87 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <div>
+        <h1> ASAMBLEA:<a href="{% url 'asamblea' asamblea.id %}"> {{asamblea|title}} </a></h1>
+        <h3 style="margin:0">  <i>{{count}}</i> mocion{{count|pluralize}} </h3>
+
+    </div>
+
+
+
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+<a href="{% url 'menu_principal' %}">Menu principal </a>
+</div>
+
+
+
+
+
+
+<div id="envoltorio-agregar-buscar">
+    <form method="GET" style="margin-top: 20px; display: flex;">
+        Nombre: <input type="text" name="nombre-buscar" value="{{valor_buscado}}">
+        <input class='boton' type="submit" value="buscar">
+    </form>
+    <a id='enlace-agregar' href="{% url 'crear-mocion' asamblea.id %}">&#x1F7A5;</a>
+</div>
+
+<div class="envoltorio-items-tarea">
+
+
+    {% if count >= 1 %}
+    <table class="envoltorio-tarea" border="0">
+         <tr >
+            <td >&nbsp; </td>
+            <td align="center"><b> Mocion</b></td>
+            <td align="center"><b>Estado</b></td>
+            <td align="center"><b>Tipo</b></td>
+
+            <td>&nbsp; </td>
+            <td>&nbsp; </td>
+        </tr>
+            {% for mocion in mociones %}
+
+        {% if mocion.encurso %}
+        <tr >
+            <td class="icono-asamblea-incompleta"></td>
+            <td> <i>{{mocion.titulo}}</i></td>
+            <td>{{mocion.id_estado.descripcion}}</a></td>
+            <td>{{mocion.id_tipo.descripcion}}</a></td>
+
+            <td><a href="{% url 'editar-mocion' mocion.id %}">Editar</a></td>
+            <td> <a class='enlace-eliminar' href="{% url 'eliminar-mocion' mocion.id %}">&#x2A2F;</a></td>
+        </tr>
+
+        {% else %}
+        <tr >
+            <td class="icono-asamblea-completa"></td>
+            <td> <i>{{mocion.titulo}}</i></td>
+            <td>{{mocion.id_estado.descripcion}}</a></td>
+            <td>{{mocion.id_tipo.descripcion}}</a></td>
+
+            <td><a href="{% url 'editar-mocion' mocion.id %}">Editar</a></td>
+            <td> <a class='enlace-eliminar' href="{% url 'eliminar-mocion' mocion.id %}">&#x2A2F;</a></td>
+        </tr>
+
+        {% endif %}
+
+
+    {% endfor %}
+    </table>
+
+    {% else %}
+    <h3>No hay elementos en esta lista</h3>
+    {% endif %}
+</div>
+
+{% endblock content %}

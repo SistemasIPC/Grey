@@ -1,0 +1,79 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Formulario Curso por Periodo</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    <div class="row">
+
+        <div class="col-md-6 mb-3">
+            <label>Curso</label>
+            {{ form.curso }}
+            {{ form.curso.errors }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label>Periodo</label>
+            {{ form.periodo }}
+            {{ form.periodo.errors }}
+        </div>
+
+        <div class="col-md-6 mb-3">
+            <label>Maestro</label>
+            {{ form.maestro }}
+            {{ form.maestro.errors }}
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <label>Cupo</label>
+            {{ form.cupo }}
+            {{ form.cupo.errors }}
+        </div>
+
+        <div class="col-md-3 mb-3">
+            <label>Activo</label><br>
+            {{ form.activo }}
+            <label class="form-check-label">Activo</label>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label>Nombre Grupo</label>
+            {{ form.nombre_grupo }}
+            {{ form.nombre_grupo.errors }}
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <label>Aula</label>
+            {{ form.aula }}
+            {{ form.aula.errors }}
+        </div>
+
+        <div class="col-md-2 mb-3">
+            <label>Día</label>
+            {{ form.dia_semana }}
+            {{ form.dia_semana.errors }}
+        </div>
+
+        <div class="col-md-2 mb-3">
+            <label>Hora</label>
+            {{ form.hora }}
+            {{ form.hora.errors }}
+        </div>
+
+    </div>
+
+    <button class="btn btn-success">Guardar</button>
+    <a href="{% url 'curso_periodo_list' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+
+{% endblock %}

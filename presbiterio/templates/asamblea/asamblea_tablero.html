@@ -1,0 +1,107 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <div>
+        <h1> {{request.user|title}}</h1>
+    </div>
+
+
+
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+<a href="{% url 'menu_principal' %}">Menu principal </a>
+</div>
+
+
+
+<h2  >Tablero de la Asamblea</h2>
+<h1>{{ asamblea }} </h1>
+<!-- Sección de Sesiones de Asamblea -->
+<h3>Sesiones</h3>
+<div id="sesiones-container">
+    {% for sesion in sesiones %}
+
+        <button class="sesion-btn btn {% if asamblea.id_sesion.id == sesion.id %}btn-primary{% else %}btn-secondary{% endif %}" data-id="{{ sesion.id }}">
+            {{ sesion.descripcion }}
+        </button>
+    {% endfor %}
+</div>
+<br><br>
+
+<!-- Sección de Habilitar Votación -->
+<h3>Habilitar Votación</h3>
+<button id="habilitar-votacion" class=" btn {% if asamblea.habilita_votacion %}btn-success{% else %}btn-danger{% endif %}">
+    {% if asamblea.habilita_votacion %} Votación habilitada{% else %}Habilitar Votación{% endif %}
+</button>
+<br><br>
+
+<!-- Sección de Estado de Asamblea -->
+<h3>Estado de la Asamblea</h3>
+<div id="estado-container">
+    {% for estado in estados_asamblea %}
+        <button class="estado-btn btn {% if asamblea.id_estado.id == estado.id %}btn-primary{% else %}btn-secondary{% endif %}" data-id="{{ estado.id }}">
+            {{ estado.descripcion }}
+        </button>
+    {% endfor %}
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    // Cambiar sesión de asamblea
+    document.querySelectorAll(".sesion-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            let sesionId = this.dataset.id;
+            if (confirm("¿Deseas cambiar la sesión activa?")) {
+                fetch("{% url 'cambiar_sesion' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: new URLSearchParams({ 'sesion_id': sesionId })
+                }).then(response => location.reload());
+            }
+        });
+    });
+
+    // Cambiar estado de votación
+    document.getElementById("habilitar-votacion").addEventListener("click", function () {
+        let estadoActual = this.innerText.trim();
+        let nuevoEstado = (estadoActual === "ON") ? "OFF" : "ON";
+        if (confirm("¿Deseas cambiar el estado de votación?")) {
+            fetch("{% url 'cambiar_estado_votacion' %}", {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}"
+                }
+            }).then(response => location.reload());
+        }
+    });
+
+    // Cambiar estado de asamblea
+    document.querySelectorAll(".estado-btn").forEach(button => {
+        button.addEventListener("click", function () {
+            let estadoId = this.dataset.id;
+            if (confirm("¿Deseas cambiar el estado de la asamblea?")) {
+                fetch("{% url 'cambiar_estado_asamblea' %}", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "X-CSRFToken": "{{ csrf_token }}"
+                    },
+                    body: new URLSearchParams({ 'estado_id': estadoId })
+                }).then(response => location.reload());
+            }
+        });
+    });
+});
+</script>
+{% endblock content %}

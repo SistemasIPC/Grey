@@ -2,10 +2,18 @@ from django import forms
 from .models import Miembro, Miembro_ministerio, Ministerio, Rol_ministerio, GrupoCasa
 from .models import User, Iglesia, Usuario_iglesia, Bienvenida, Consolidacion
 from .models import Red, Categoria_servicio, Servicio
+from presbiterio.models import ReporteAnualIglesia, ConfiPresbiterio, Presbiterio
+
+from datetime import date
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.mixins import LoginRequiredMixin
 
 from django.contrib.auth.forms import UserCreationForm
+from .models import Evento, TipoEvento
+from django import forms
+from .models import EventoProgramado, Evento
+from django.core.exceptions import ValidationError
+import re
 
 class RegistroUsuarioForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, help_text="Ingresa tu nombre")
@@ -159,6 +167,11 @@ class BienvenidaUpdateForm(forms.ModelForm):
             "link_libro_online",
             "link_video_bienvenida",
             "mensaje_bienvenida",
+            "informacion_general",
+            "horario_general",
+            "informacion_general_min",
+            "horario_general_min",
+
         ]
 
 
@@ -258,3 +271,307 @@ class ConsolidacionForm(forms.ModelForm):
                     id=self.instance.grupo_casa.id
                 )
 
+
+#==================================
+#                        REPORTE ESTADISTICAS
+#==================================
+
+
+
+
+class ReporteAnualForm(forms.ModelForm):
+
+    class Meta:
+        model = ReporteAnualIglesia
+        fields = [
+            'anio',
+            'miembros_inicio',
+            'miembros_ganados',
+            'miembros_perdidos',
+            'miembros_final',
+            'miembros_activos',
+            'promedio_escuela',
+            'diezmos_ofrendas',
+            'aportes_presbiterio',
+            'otros_gastos'
+        ]
+        widgets = {
+            "anio": forms.Select(attrs={"class": "form-control"}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.iglesia = kwargs.pop("iglesia", None)
+        super().__init__(*args, **kwargs)
+
+        if not self.iglesia:
+            return
+
+        config = ConfiPresbiterio.objects.filter(
+            presbiterio=self.iglesia.presbiterio
+        ).first()
+
+        if not config:
+            return
+
+        anio_actual = date.today().year
+
+        # 🔹 años base
+        anios = [
+            anio_actual - i
+            for i in range(config.cantidad_anios)
+        ]
+
+        # 🔹 años ya reportados
+        anios_reportados = list(
+            ReporteAnualIglesia.objects.filter(
+                iglesia=self.iglesia
+            ).values_list("anio", flat=True)
+        )
+
+        # 🔹 si es edición → permitir su propio año
+        if self.instance and self.instance.pk:
+            if self.instance.anio in anios_reportados:
+                anios_reportados.remove(self.instance.anio)
+
+        # 🔹 filtrar disponibles
+        anios_disponibles = [
+            a for a in anios if a not in anios_reportados
+        ]
+
+
+        # 🔹 asignar al select
+        self.fields["anio"].choices = [(a, a) for a in anios_disponibles]
+
+
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        anio = cleaned_data.get("anio")
+
+        if anio and self.iglesia:
+
+            existe = ReporteAnualIglesia.objects.filter(
+                iglesia=self.iglesia,
+                anio=anio
+            )
+
+            if self.instance.pk:
+                existe = existe.exclude(pk=self.instance.pk)
+
+            if existe.exists():
+                raise forms.ValidationError(
+                    "Ya existe un reporte para esta iglesia en ese año."
+                )
+
+        return cleaned_data
+
+#   *****************************************************************
+#                   EVENTO
+#   *****************************************************************
+
+class EventoForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        self.iglesia = kwargs.pop("iglesia", None)
+        super().__init__(*args, **kwargs)
+
+        if self.iglesia:
+            self.fields["tipo"].queryset = TipoEvento.objects.filter(
+                iglesia=self.iglesia
+            )
+
+    class Meta:
+        model = Evento
+        fields = [
+            "nombre",
+            "tipo",
+            "red",
+            "observaciones",
+            "capacidad",
+            "es_recurrente",
+            "activo"
+        ]
+
+        widgets = {
+            "nombre": forms.TextInput(attrs={"class": "form-control"}),
+            "tipo": forms.Select(attrs={"class": "form-control"}),
+            "redo": forms.Select(attrs={"class": "form-control"}),
+            "observaciones": forms.Textarea(attrs={"class": "form-control"}),
+            "capacidad": forms.NumberInput(attrs={"class": "form-control"}),
+            "recurrente": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+            "activo": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get("nombre")
+
+        if nombre:
+            existe = Evento.objects.filter(
+                iglesia=self.iglesia,
+                nombre__iexact=nombre.strip()
+            )
+
+            if self.instance.pk:
+                existe = existe.exclude(pk=self.instance.pk)
+
+            if existe.exists():
+                raise forms.ValidationError("Ya existe un evento con ese nombre.")
+
+        return nombre
+
+
+
+class EventoProgramadoForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        self.iglesia = kwargs.pop("iglesia", None)
+        super().__init__(*args, **kwargs)
+
+        if self.iglesia:
+            self.fields["evento"].queryset = Evento.objects.filter(
+                iglesia=self.iglesia,
+                activo=True
+            )
+
+    class Meta:
+        model = EventoProgramado
+        fields = [
+            "evento",
+            "fecha",
+            "hora",
+            "capacidad",
+            "estado"
+        ]
+
+        widgets = {
+            "evento": forms.Select(attrs={"class": "form-control"}),
+            "fecha": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "hora": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
+            "capacidad": forms.NumberInput(attrs={"class": "form-control"}),
+            "estado": forms.Select(attrs={"class": "form-control"}),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        evento = cleaned_data.get("evento")
+
+        if evento and self.iglesia:
+            if evento.iglesia != self.iglesia:
+                raise forms.ValidationError("El evento no pertenece a la iglesia.")
+
+        return cleaned_data
+
+    def clean_hora(self):
+        hora = self.cleaned_data.get("hora")
+        if not hora:
+            raise forms.ValidationError("Debe ingresar una hora válida.")
+        return hora
+
+
+class InscripcionEventoForm(forms.Form):
+
+    identificacion = forms.CharField(
+        max_length=20,
+        required=True
+    )
+
+    nombre = forms.CharField(
+        max_length=100,
+        required=False
+    )
+
+    apellido = forms.CharField(
+        max_length=100,
+        required=False
+    )
+
+    telefono = forms.CharField(
+        max_length=20,
+        required=False
+    )
+
+    correo = forms.EmailField(
+        required=False
+    )
+
+    rango_edad = forms.IntegerField(required=True)
+
+    # 🔥 VALIDACIONES
+
+    def clean_identificacion(self):
+        identificacion = self.cleaned_data["identificacion"].strip()
+
+        if not identificacion.isdigit():
+            raise ValidationError("La identificación debe ser numérica.")
+
+        if len(identificacion) < 5:
+            raise ValidationError("Identificación demasiado corta.")
+
+        return identificacion
+
+    def clean_telefono(self):
+        telefono = self.cleaned_data.get("telefono")
+
+        if telefono:
+            if not re.match(r'^\+?\d{7,15}$', telefono):
+                raise ValidationError("Teléfono inválido.")
+
+        return telefono
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get("nombre")
+
+        if nombre and len(nombre.strip()) < 2:
+            raise ValidationError("Nombre muy corto.")
+
+        return nombre
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        identificacion = cleaned_data.get("identificacion")
+        nombre = cleaned_data.get("nombre")
+
+        # 🔥 si NO existe miembro → exigir datos completos
+        if identificacion and not cleaned_data.get("miembro_existente"):
+            if not nombre:
+                raise ValidationError("Debe ingresar el nombre.")
+
+        return cleaned_data
+
+
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get("nombre")
+
+        if nombre:
+            return validar_texto_nombre(nombre, "Nombre")
+
+        return nombre
+
+    def clean_apellido(self):
+        apellido = self.cleaned_data.get("apellido")
+
+        if apellido:
+            return validar_texto_nombre(apellido, "Apellido")
+
+        return apellido
+
+
+
+
+
+def validar_texto_nombre(valor, campo="Nombre"):
+    valor = valor.strip()
+    REGEX_NOMBRE = r"^[A-Za-zÁÉÍÓÚáéíóúÑñÜü]+(?:[ '\-][A-Za-zÁÉÍÓÚáéíóúÑñÜü]+)*$"
+    if not re.match(REGEX_NOMBRE, valor):
+        raise ValidationError(
+            f"{campo} solo puede contener letras y espacios."
+        )
+
+    if len(valor) < 2:
+        raise ValidationError(f"{campo} es demasiado corto.")
+
+    return valor

@@ -1,0 +1,55 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <div>
+        <h1> Hola {{request.user|title}}</h1>
+
+
+    </div>
+
+
+
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+
+     <div>
+        <h1> ASAMBLEA:<a href="{% url 'asamblea' asamblea.id %}"> {{asamblea|title}} </a></h1>
+    </div>
+
+
+
+</div>
+
+
+
+<a href="{% url 'menu_principal'  %}">Volver </a>
+<div id="envoltorio-agregar-buscar">
+
+Mocion: {{mocion}}
+</div>
+
+<div class="envoltorio-items-tarea">
+
+    <div class="cuerpo-tarjeta">
+        <form method="POST" action="">
+        {% csrf_token %}
+                <fieldset>
+                     <legend>Selecciona tu opción:</legend>
+                        {{ form.id_opcion }}
+                 </fieldset>
+
+        <input class='boton' type="submit" value="enviar">
+        </form>
+    </div>
+
+</div>
+
+{% endblock content %}

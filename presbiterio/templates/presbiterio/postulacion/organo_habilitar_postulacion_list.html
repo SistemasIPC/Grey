@@ -1,0 +1,96 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <a href="{% url 'menu_principal' %}">&#x1F860; Volver</a>
+</div>
+<h2>Listado de Órganos y Postulaciones</h2>
+
+<table  class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Órgano</th>
+            <th>Estado</th>
+            <th>Cantidad de Postulados</th>
+            <th>Acción</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for organo in organos %}
+
+
+        <tr
+          {% if organo.estado_postulacion == 0 %}
+          class="table-secondary"  {# Gris #}
+        {% elif organo.estado_postulacion == 1 %}
+          class="table-warning"    {# Naranja #}
+        {% elif organo.estado_postulacion == 2 %}
+          class="table-success"    {# Verde #}
+        {% endif %}
+
+
+        >
+            <td>
+
+              <a href="#" onclick="loadGraph({{ organo.id }}, '{{ organo.descripcion }}'); return false;">
+            {{ organo.descripcion }}
+          </a>
+            </td>
+            <td>
+                {% if organo.estado_postulacion == 0 %}
+                    No iniciado
+                {% elif organo.estado_postulacion == 1 %}
+                    En votación
+                {% elif organo.estado_postulacion == 2 %}
+                    Votación cerrada
+                {% endif %}
+            </td>
+            <td>{{ organo.postulados.count }}</td>
+            <td>
+                {% if organo.estado_postulacion == 0 %}
+                    <!-- Botón IR A VOTACIÓN -->
+                    <form method="POST" action="{% url 'toggle_postulacion' organo.id %}" onsubmit="return confirm('¿Deseas cambiar a estado de votación?');">
+                        {% csrf_token %}
+                        <button type="submit">Ir a votación</button>
+                    </form>
+                {% elif organo.estado_postulacion == 1 %}
+                    <!-- Botón CERRAR VOTACIÓN -->
+                    <form method="POST" action="{% url 'toggle_postulacion' organo.id %}" onsubmit="return confirm('¿Deseas cerrar la votación?');">
+                        {% csrf_token %}
+                        <button type="submit">Cerrar votación</button>
+                    </form>
+                {% elif organo.estado_postulacion == 2 %}
+                    <!-- Sin botón, pues ya está en verde -->
+                    Votación finalizada
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+<div class="container mt-4" id="graphContainer" style="display:none;">
+  <h2 id="graphTitle"></h2>
+  <!-- El iframe cargará la vista grafica_votos -->
+  <iframe id="graphIframe" style="width:100%; height:500px; border:0;" frameborder="0"></iframe>
+</div>
+
+<!-- Script para cargar la gráfica al hacer clic -->
+<script>
+  function loadGraph(organoId, organoNombre) {
+    // Actualiza el título del contenedor con el nombre del órgano
+    //document.getElementById('graphTitle').innerText = 'Gráfica de votación para: ' + organoNombre;
+    // Muestra el contenedor de la gráfica si está oculto
+    document.getElementById('graphContainer').style.display = 'block';
+    // Construir la URL para la gráfica; usamos un valor temporal en la URL que luego reemplazamos
+    var urlTemplate = "{% url 'grafica_votos' 9999 %}";
+    var url = urlTemplate.replace("9999", organoId);
+    // Actualiza el atributo src del iframe para cargar la gráfica
+
+    document.getElementById('graphIframe').src = url;
+
+  }
+</script>
+{% endblock %}

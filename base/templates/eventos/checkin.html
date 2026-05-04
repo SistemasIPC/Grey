@@ -1,0 +1,90 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3>{{ evento.evento.nombre }}</h3>
+    <p>{{ evento.fecha }} - {{ evento.hora }}</p>
+
+    <h4 id="cupos">
+        Cupos disponibles: {{ evento.cupos_disponibles }}
+    </h4>
+
+    <input type="text"
+           id="identificacion"
+           class="form-control form-control-lg"
+           placeholder="Ingrese identificación..."
+           autofocus>
+
+    <div id="resultado" class="mt-3"></div>
+
+    <hr>
+
+    <h5>Últimos registros</h5>
+
+    <ul id="lista" class="list-group">
+        {% for a in ultimos %}
+            <li class="list-group-item">
+                {{ a.nombre }} - {{ a.fecha_checkin|time:"H:i:s" }}
+            </li>
+        {% endfor %}
+    </ul>
+
+</div>
+
+<script>
+const input = document.getElementById("identificacion");
+
+input.addEventListener("keypress", function(e) {
+    if (e.key === "Enter") {
+
+        let valor = input.value;
+
+        fetch("{% url 'checkin_ajax' %}", {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}",
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: `identificacion=${valor}&evento_id={{ evento.id }}`
+        })
+        .then(res => res.json())
+        .then(data => {
+
+            let resultado = document.getElementById("resultado");
+
+            if (data.ok) {
+
+                resultado.innerHTML = `
+                    <div class="alert alert-success">
+                        ✔ ${data.nombre} (${data.tipo})
+                    </div>
+                `;
+
+                // actualizar cupos
+                document.getElementById("cupos").innerText =
+                    "Cupos disponibles: " + data.cupos;
+
+                // agregar a lista
+                let lista = document.getElementById("lista");
+                let item = document.createElement("li");
+                item.className = "list-group-item";
+                item.innerText = data.nombre;
+                lista.prepend(item);
+
+            } else {
+                resultado.innerHTML = `
+                    <div class="alert alert-danger">
+                        ⚠ ${data.error}
+                    </div>
+                `;
+            }
+
+            input.value = "";
+            input.focus();
+        });
+    }
+});
+</script>
+
+{% endblock %}

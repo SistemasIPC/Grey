@@ -1,0 +1,24 @@
+{% extends "presbiterio/principal.html" %}
+
+{% block content %}
+
+<h3>Eliminar Iglesia</h3>
+
+<div class="alert alert-danger">
+    ¿Está seguro que desea eliminar la iglesia <strong>{{ iglesia.nombre }}</strong>?
+</div>
+
+<form method="post">
+    {% csrf_token %}
+
+    <button type="submit" class="btn btn-danger">
+        Sí, eliminar
+    </button>
+
+    <a href="{% url 'iglesias_pres_list' %}" class="btn btn-secondary">
+        Cancelar
+    </a>
+
+</form>
+
+{% endblock %}

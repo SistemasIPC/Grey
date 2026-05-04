@@ -1,0 +1,69 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <div>
+        <h1> ASAMBLEA:<a href="{% url 'asamblea' asamblea.id %}"> {{asamblea|title}} </a></h1>
+        <h3 style="margin:0">  <i>{{count}}</i> asistente{{count|pluralize}} </h3>
+
+    </div>
+
+
+
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+<a href="{% url 'menu_principal' %}">Menu principal </a>
+</div>
+
+
+
+
+
+
+<div id="envoltorio-agregar-buscar">
+    <form method="GET" style="margin-top: 20px; display: flex;">
+        Nombre: <input type="text" name="nombre-buscar" value="{{valor_buscado}}">
+        <input class='boton' type="submit" value="buscar">
+    </form>
+    <a id='enlace-agregar' href="{% url 'crear-asistente' asamblea.id %}">&#x1F7A5;</a>
+</div>
+
+<div class="envoltorio-items-tarea">
+    {% for asistente in asistentes %}
+    <div class="envoltorio-tarea">
+        {% if asistente.id_estado.codigo == 'I' %}
+        <div class="titulo-tarea">
+            <div class="icono-asamblea-completa"></div>
+            <div> <i>{{asistente.id_miembro.nombre}} - {{ asistente.id_tipo.descripcion }}</i></div>
+            <div>{{asistente.tipo}}</a></div>
+
+            <div><a href="{% url 'editar-asistente' asistente.id %}">Editar</a></div>
+            <div> <a class='enlace-eliminar' href="{% url 'eliminar-asistente' asistente.id %}">&#x2A2F;</a></div>
+        </div>
+
+        {% else %}
+        <div class="titulo-tarea">
+            <div class="icono-asamblea-incompleta"></div>
+            <div><i>{{asistente.id_miembro.nombre}} {{asistente.id_miembro.apellido}} - {{ asistente.id_miembro.id_tipo.descripcion }}</i></div>
+            <div>{{asistente.tipo}}</a></div>
+
+            <div><a href="{% url 'editar-asistente' asistente.id %}">Editar</a></div>
+            <div> <a class='enlace-eliminar' href="{% url 'eliminar-asistente' asistente.id %}">&#x2A2F;</a></div>
+        </div>
+
+        {% endif %}
+    </div>
+
+    {% empty %}
+    <h3>No hay elementos en esta lista</h3>
+    {% endfor %}
+</div>
+
+{% endblock content %}

@@ -1,0 +1,15 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Eliminar Periodo</h3>
+
+<p>¿Seguro que desea eliminar "{{ periodo.nombre }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'periodo_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

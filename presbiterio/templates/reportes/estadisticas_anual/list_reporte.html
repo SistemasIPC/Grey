@@ -1,0 +1,106 @@
+{% extends "presbiterio/principal.html" %}
+
+{% block content %}
+
+<h3>Reportes del Presbiterio</h3>
+
+<form method="get" class="mb-3">
+    <input type="number" name="anio" value="{{ anio }}" class="form-control" style="width:150px; display:inline;" max="{{ current_year }}">
+    <input type="text" name="iglesia" placeholder="Buscar iglesia" class="form-control">
+    <button class="btn btn-primary">Filtrar</button>
+</form>
+
+<table class="table table-bordered">
+
+<thead class="table-info">
+<tr>
+    <th>Iglesias</th>
+    <th>Estado</th>
+    <th>Acción</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for item in data %}
+
+<tr>
+    <td>{{ item.iglesia.nombre }}</td>
+
+    <td>
+        {% if item.tiene_reporte %}
+            <span class="badge bg-success">Reportó</span>
+        {% else %}
+            <span class="badge bg-danger">Pendiente</span>
+
+
+                   {% if not item.tiene_reporte and puede_recordar %}
+
+                    <button
+                        class="btn btn-warning btn-sm enviar-recordatorio"
+                        data-id="{{ item.iglesia.id }}"
+                    >
+                        📩 Recordar
+                    </button>
+                    {% endif %}
+
+
+        {% endif %}
+
+
+
+
+    </td>
+
+    <td>
+
+        {% if item.tiene_reporte %}
+            <a href="{% url 'ver_reporte_estadistica_iglesia' item.reporte.id %}" class="btn btn-info btn-sm">
+                Ver
+            </a>
+        {% else %}
+            <a href="{% url 'crear_reporte_estadistica_presbiterio' item.iglesia.id anio %}" class="btn btn-warning btn-sm">
+                Registrar
+            </a>
+        {% endif %}
+
+    </td>
+</tr>
+
+{% endfor %}
+
+
+
+
+
+</tbody>
+
+</table>
+
+
+
+<script>
+$(".enviar-recordatorio").click(function(){
+
+    let iglesia_id = $(this).data("id")
+
+    if(!confirm("¿Desea enviar recordatorio a esta iglesia?")){
+        return
+    }
+
+    $.ajax({
+        url: "{% url 'enviar_recordatorio_iglesia' %}",
+        type: "POST",
+        data: {
+            iglesia_id: iglesia_id,
+            anio: "{{ anio }}",
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+        },
+        success: function(){
+            alert("Recordatorio enviado")
+        }
+    })
+
+})
+</script>
+{% endblock %}

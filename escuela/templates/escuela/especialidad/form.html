@@ -1,0 +1,29 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Formulario Especialidad</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+        <label>Nombre</label>
+        {{ form.nombre }}
+        {{ form.nombre.errors }}
+    </div>
+
+    <div class="mb-3">
+        <label>Descripción</label>
+        {{ form.descripcion }}
+        {{ form.descripcion.errors }}
+    </div>
+
+    <button class="btn btn-success">Guardar</button>
+    <a href="{% url 'especialidad_list' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+
+{% endblock %}

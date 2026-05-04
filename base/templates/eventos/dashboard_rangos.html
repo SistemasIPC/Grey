@@ -1,0 +1,58 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3>Dashboard por rango de edad</h3>
+
+    <table class="table table-bordered text-center" id="tabla">
+        <thead>
+            <tr>
+                <th>Rango</th>
+                <th>Inscritos</th>
+                <th>Asistentes</th>
+                <th>%</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+</div>
+
+<script>
+function cargarDashboard() {
+
+    fetch(window.location.pathname + "data/")
+        .then(res => res.json())
+        .then(data => {
+
+            let tbody = document.querySelector("#tabla tbody");
+            tbody.innerHTML = "";
+
+            data.data.forEach(r => {
+
+                let color = "table-danger";
+
+                if (r.porcentaje >= 70) color = "table-success";
+                else if (r.porcentaje >= 40) color = "table-warning";
+
+                tbody.innerHTML += `
+                    <tr class="${color}">
+                        <td>${r.rango}</td>
+                        <td>${r.inscritos}</td>
+                        <td>${r.asistentes}</td>
+                        <td>${r.porcentaje}%</td>
+                    </tr>
+                `;
+            });
+
+        });
+}
+
+// 🔥 cargar cada 5 segundos
+setInterval(cargarDashboard, 5000);
+cargarDashboard();
+</script>
+
+{% endblock %}

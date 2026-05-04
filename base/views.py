@@ -20,7 +20,8 @@ from datetime import datetime
 from datetime import date
 
 from ebcli.lib.iam import create_role
-
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from .models import Iglesia, Usuario_iglesia, Categoria_servicio, Servicio, Miembro
 from .models import ParticipanteServicio, Ministerio,Miembro_ministerio
 from .forms import MiembroForm, MiembroMinisterioForm, MinisterioForm,RolMinisterioForm,IglesiaForm,UsuarioIglesiaForm,UsuarioIglesiaUpdateForm
@@ -42,7 +43,7 @@ import re
 from .models import GrupoCasa, Barrio, Comuna
 from .models import Consolidacion, Red, ConfiguracionIglesia, AsistentesRed, AsistentesGrupoCasa
 from .models import EquipoGrupoCasa, RolEquipoGrupo, ServicioMinisterio
-from .forms import ConsolidacionForm, ServicioForm
+from .forms import ConsolidacionForm, ServicioForm, ReporteAnualForm,EventoForm,EventoProgramadoForm,InscripcionEventoForm
 
 from django.utils import timezone
 from django.core.mail import send_mail
@@ -50,12 +51,18 @@ from django.core.mail import EmailMessage
 from django.views.decorators.http import require_POST
 from django.urls import reverse
 import urllib.parse
+from django.http import JsonResponse
+from .models import Consolidacion, EquipoGrupoCasa, Evento, EventoDia, EventoProgramado, RangoEdad, TipoEvento, InscripcionEvento, AsistenciaEvento
+from .utils import *
+from presbiterio.models import ReporteAnualIglesia, ConfiPresbiterio
+from django.core.paginator import Paginator
+from django.db.models import OuterRef, Subquery
 #-----------------------------------------------------------------
 #                       LOGIN
 #----------------------------------------------------------------
 
-class Logueo (LoginView):
-    template_name = "login/login.html"
+class LoginIglesiaView (LoginView):
+    template_name = "login/login_iglesias.html"
     field = '__all__'
     redirect_authenticated_user = True
 
@@ -85,6 +92,16 @@ class PaginaRegistro(FormView):
             return redirect('menu_principal')
         return super(PaginaRegistro,self).get(*args,**kwargs)
 
+
+
+#-----------------------------------------------------------------
+#                       Pagina para proteger entrada desde los links
+#----------------------------------------------------------------
+
+
+class VistaProtegida(LoginRequiredMixin):
+    login_url = '/login/'
+    redirect_field_name = 'next'  # opcional, pero recomendado
 
 #-----------------------------------------------------------------
 #                       MENU PRINCIPAL
@@ -120,16 +137,20 @@ class Menu_principal(LoginRequiredMixin, ListView):
     context_object_name = 'iglesia'
     template_name = 'menu/inicio.html'
 
+
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
+
         usuario_iglesia = Usuario_iglesia.objects.filter(id_usuario=self.request.user).first()
+
+
 
         if usuario_iglesia:
             iglesia = usuario_iglesia.id_iglesia  # Obtiene la iglesia asociada
             context['iglesia'] = iglesia
             context['usuario_iglesia'] = usuario_iglesia
-            context["pendientes_consolidacion"] = obtener_pendientes_consolidacion(self.request.user)
+            context["pendientes_consolidacion"] = obtener_pendientes_consolidacion(self.request)
 
             # verificar si pertenece a un ministerio
             context["codigo_min"] = ""
@@ -140,6 +161,8 @@ class Menu_principal(LoginRequiredMixin, ListView):
         return context
 
     def get(self, request, *args, **kwargs):
+
+
 
         usuario_iglesia = None
         if not self.request.user.is_superuser: #sino es super
@@ -165,7 +188,7 @@ class Menu_principal(LoginRequiredMixin, ListView):
 #----------------------------------------------------------------
 
 
-class ListaServicio(LoginRequiredMixin, ListView):
+class ListaServicio(VistaProtegida, LoginRequiredMixin, ListView):
     model = Servicio
     context_object_name = 'servicios'
     template_name = 'servicio/servicio_list.html'
@@ -235,7 +258,7 @@ class ListaServicio(LoginRequiredMixin, ListView):
 
 
 
-class DetalleServicio(LoginRequiredMixin,DetailView):
+class DetalleServicio(VistaProtegida,LoginRequiredMixin,DetailView):
     model = Servicio
     context_object_name = 'servicio'
     template_name = 'servicio/servicio.html'
@@ -271,7 +294,7 @@ class DetalleServicio(LoginRequiredMixin,DetailView):
         context['usuario_iglesia'] = usuario_iglesia
         return context
 
-class CrearServicio(LoginRequiredMixin,CreateView):
+class CrearServicio(VistaProtegida,LoginRequiredMixin,CreateView):
     model = Servicio
     form_class = ServicioForm
     template_name = 'servicio/servicio_form.html'
@@ -295,7 +318,7 @@ class CrearServicio(LoginRequiredMixin,CreateView):
     def get_success_url(self):
         return reverse_lazy('servicios')
 
-class EditarServicio(LoginRequiredMixin, UpdateView):
+class EditarServicio(VistaProtegida,LoginRequiredMixin, UpdateView):
 
     model = Servicio
     form_class = ServicioForm
@@ -314,7 +337,7 @@ class EditarServicio(LoginRequiredMixin, UpdateView):
 
 
 
-class EliminarServicios(LoginRequiredMixin,DeleteView):
+class EliminarServicios(VistaProtegida,LoginRequiredMixin,DeleteView):
     model = Servicio
     template_name = 'servicio/servicio_confirm_delete.html'
     context_object_name = 'servicio'
@@ -335,7 +358,7 @@ class EliminarServicios(LoginRequiredMixin,DeleteView):
 
 
 
-class Programar_ministerio(LoginRequiredMixin,DetailView):
+class Programar_ministerio(VistaProtegida,LoginRequiredMixin,DetailView):
     model = Servicio
     context_object_name = 'servicio'
     template_name = 'servicio/programar_miembros.html'
@@ -519,7 +542,7 @@ class Programar_ministerio(LoginRequiredMixin,DetailView):
 
 
 
-
+@login_required(login_url='/login/')
 def guardar_observacion_servicio_ministerio(request):
 
     if request.method == "POST":
@@ -556,7 +579,7 @@ def guardar_observacion_servicio_ministerio(request):
 
 
 
-
+@login_required(login_url='/login/')
 @require_POST
 def enviar_email_ministerio(request):
 
@@ -643,7 +666,7 @@ Bendiciones.
 #----------------------------------------------------------------
 
 # 📌 Listar miembros de la iglesia del usuario logueado
-class MiembroListView(LoginRequiredMixin, ListView):
+class MiembroListView(VistaProtegida,LoginRequiredMixin, ListView):
     model = Miembro
     template_name = 'miembros/miembro_list.html'
     context_object_name = 'miembros'
@@ -669,7 +692,7 @@ class MiembroListView(LoginRequiredMixin, ListView):
 
 
 
-class MiembroDetailView(DetailView):
+class MiembroDetailView(VistaProtegida,DetailView):
     model = Miembro
     template_name = 'miembros/miembro_detail.html'
     context_object_name = 'miembro'
@@ -682,7 +705,7 @@ class MiembroDetailView(DetailView):
         return context
 
 # 📌 Crear un nuevo miembro en la iglesia del usuario
-class MiembroCreateView(LoginRequiredMixin, CreateView):
+class MiembroCreateView(VistaProtegida,LoginRequiredMixin, CreateView):
     model = Miembro
     form_class = MiembroForm
     template_name = 'miembros/miembro_form.html'
@@ -705,7 +728,7 @@ class MiembroCreateView(LoginRequiredMixin, CreateView):
         return super().form_valid(form)
 
 # 📌 Editar un miembro (solo si pertenece a la misma iglesia)
-class MiembroUpdateView(LoginRequiredMixin, UpdateView):
+class MiembroUpdateView(VistaProtegida,LoginRequiredMixin, UpdateView):
     model = Miembro
     form_class = MiembroForm
     template_name = 'miembros/miembro_form.html'
@@ -726,7 +749,7 @@ class MiembroUpdateView(LoginRequiredMixin, UpdateView):
 
 
 # 📌 Eliminar un miembro (solo si pertenece a la misma iglesia)
-class MiembroDeleteView(LoginRequiredMixin, DeleteView):
+class MiembroDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
     model = Miembro
     template_name = 'miembros/miembro_confirm_delete.html'
     success_url = reverse_lazy('miembro-list')
@@ -749,7 +772,7 @@ class MiembroDeleteView(LoginRequiredMixin, DeleteView):
     #                       Gesstionar Miembros a ministerios
     # ----------------------------------------------------------------
 
-class MiembroMinisterioListView(LoginRequiredMixin, ListView):
+class MiembroMinisterioListView(VistaProtegida,LoginRequiredMixin, ListView):
     model = Miembro_ministerio
     template_name = 'miembros_ministerio/miembro_ministerio_list.html'
     context_object_name = 'miembros_ministerios'
@@ -768,7 +791,7 @@ class MiembroMinisterioListView(LoginRequiredMixin, ListView):
         context['usuario_iglesia'] = usuario_iglesia
         return context
 
-class MiembroMinisterioDetailView(LoginRequiredMixin, DetailView):
+class MiembroMinisterioDetailView(VistaProtegida,LoginRequiredMixin, DetailView):
     model = Miembro_ministerio
     template_name = 'miembros_ministerio/miembro_ministerio.html'
     context_object_name = 'miembro_ministerio'
@@ -789,7 +812,7 @@ class MiembroMinisterioDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class MiembroMinisterioCreateView(LoginRequiredMixin, CreateView):
+class MiembroMinisterioCreateView(VistaProtegida,LoginRequiredMixin, CreateView):
     model = Miembro_ministerio
     form_class = MiembroMinisterioForm
     template_name = 'miembros_ministerio/miembro_ministerio_form.html'
@@ -823,7 +846,7 @@ class MiembroMinisterioCreateView(LoginRequiredMixin, CreateView):
     def get_success_url(self):
         return reverse_lazy('miembro-ministerio-list')
 
-class MiembroMinisterioUpdateView(LoginRequiredMixin, UpdateView):
+class MiembroMinisterioUpdateView(VistaProtegida,LoginRequiredMixin, UpdateView):
     model = Miembro_ministerio
     form_class = MiembroMinisterioForm
     template_name = 'miembros_ministerio/miembro_ministerio_form.html'
@@ -846,6 +869,7 @@ class MiembroMinisterioUpdateView(LoginRequiredMixin, UpdateView):
         kwargs["user"] = self.request.user  # Enviar el usuario logueado
         return kwargs
 
+@login_required(login_url='/login/')
 def buscar_miembro_m(request):
     query = request.GET.get('q', '')
     #miembros = Miembro.objects.filter(nombre__icontains=query, apellido__icontains=query, activo=True)[:10]
@@ -853,11 +877,12 @@ def buscar_miembro_m(request):
     resultados = [{'id': miembro.id, 'nombre': miembro.nombre, 'apellido': miembro.apellido} for miembro in miembros]
     return JsonResponse({'miembros': resultados})
 
+@login_required(login_url='/login/')
 def roles_por_ministerio(request, ministerio_id):
     roles = Rol_ministerio.objects.filter(id_ministerio=ministerio_id).values("id", "descripcion")
     return JsonResponse({"roles": list(roles)})
 
-class MiembroMinisterioDeleteView(LoginRequiredMixin, DeleteView):
+class MiembroMinisterioDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
     model = Miembro_ministerio
     template_name = 'miembros_ministerio/miembro_ministerio_confirm_delete.html'
     success_url = reverse_lazy('miembro-ministerio-list')
@@ -867,6 +892,7 @@ class MiembroMinisterioDeleteView(LoginRequiredMixin, DeleteView):
        return Miembro_ministerio.objects.filter(id_ministerio__in=ministerios_usuario)
 
 
+@login_required(login_url='/login/')
 @csrf_exempt
 def actualizar_rol(request):
     if request.method == "POST":
@@ -901,7 +927,7 @@ def actualizar_rol(request):
 #                       Gesstionar Ministerio
 #----------------------------------------------------------------
 
-class MinisterioListView(LoginRequiredMixin, ListView):
+class MinisterioListView(VistaProtegida,LoginRequiredMixin, ListView):
     model = Ministerio
     template_name = 'ministerio/ministerio_list.html'
     context_object_name = 'ministerios'
@@ -930,7 +956,7 @@ class MinisterioListView(LoginRequiredMixin, ListView):
         context['ministerios_con_miembros'] = ministerios_con_miembros
         return context
 
-class MinisterioCreateView(LoginRequiredMixin, CreateView):
+class MinisterioCreateView(VistaProtegida,LoginRequiredMixin, CreateView):
     model = Ministerio
     form_class = MinisterioForm
     template_name = 'ministerio/ministerio_form.html'
@@ -961,7 +987,7 @@ class MinisterioCreateView(LoginRequiredMixin, CreateView):
 
         return context
 
-class MinisterioUpdateView(LoginRequiredMixin, UpdateView):
+class MinisterioUpdateView(VistaProtegida,LoginRequiredMixin, UpdateView):
     model = Ministerio
     form_class = MinisterioForm
     template_name = 'ministerio/ministerio_form.html'
@@ -988,12 +1014,12 @@ class MinisterioUpdateView(LoginRequiredMixin, UpdateView):
 
 
         return context
-class MinisterioDeleteView(LoginRequiredMixin, DeleteView):
+class MinisterioDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
     model = Ministerio
     template_name = 'ministerio/ministerio_confirm_delete.html'
     success_url = reverse_lazy('ministerio-list')
 
-class MinisterioDetailView(LoginRequiredMixin, DetailView):
+class MinisterioDetailView(VistaProtegida,LoginRequiredMixin, DetailView):
     model = Ministerio
     template_name = 'ministerio/ministerio.html'
     context_object_name = 'ministerio'
@@ -1009,7 +1035,7 @@ class MinisterioDetailView(LoginRequiredMixin, DetailView):
         return context
 
 
-class ListaParticipantes_por_servicio(LoginRequiredMixin, ListView):
+class ListaParticipantes_por_servicio(VistaProtegida,LoginRequiredMixin, ListView):
     model = Servicio
     context_object_name = 'servicios'
     template_name = 'ministerio/participantes_por_servicio.html'
@@ -1075,7 +1101,7 @@ class ListaParticipantes_por_servicio(LoginRequiredMixin, ListView):
         return context
 
 
-
+@login_required(login_url='/login/')
 def participantes_por_servicio(request, ministerio_id):
     # Obtener fechas del formulario de búsqueda
     # Obtener fechas del formulario de búsqueda
@@ -1116,7 +1142,7 @@ def participantes_por_servicio(request, ministerio_id):
     #                       Gesstionar Roles en Ministerio
     # ----------------------------------------------------------------
 
-class RolMinisterioListView(LoginRequiredMixin, ListView):
+class RolMinisterioListView(VistaProtegida,LoginRequiredMixin, ListView):
     model = Rol_ministerio
     template_name = "rol_ministerio/rol_ministerio_list.html"
     context_object_name = 'rol_ministerio'
@@ -1147,7 +1173,7 @@ class RolMinisterioListView(LoginRequiredMixin, ListView):
 
 
 
-class RolMinisterioCreateView(LoginRequiredMixin, CreateView):
+class RolMinisterioCreateView(VistaProtegida,LoginRequiredMixin, CreateView):
     model = Rol_ministerio
     form_class = RolMinisterioForm
     template_name = "rol_ministerio/rol_ministerio_form.html"
@@ -1169,7 +1195,7 @@ class RolMinisterioCreateView(LoginRequiredMixin, CreateView):
         return context
 
 
-class RolMinisterioUpdateView(LoginRequiredMixin, UpdateView):
+class RolMinisterioUpdateView(VistaProtegida,LoginRequiredMixin, UpdateView):
     model = Rol_ministerio
     form_class = RolMinisterioForm
     template_name = "rol_ministerio/rol_ministerio_form.html"
@@ -1192,7 +1218,7 @@ class RolMinisterioUpdateView(LoginRequiredMixin, UpdateView):
 
 
 
-class RolMinisterioDeleteView(LoginRequiredMixin, DeleteView):
+class RolMinisterioDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
     model = Rol_ministerio
     template_name = "rol_ministerio/rol_ministerio_confirm_delete.html"
     success_url = reverse_lazy("rol_ministerio_list")
@@ -1212,7 +1238,7 @@ class RolMinisterioDeleteView(LoginRequiredMixin, DeleteView):
     # ----------------------------------------------------------------
 
 # 🔹 Listar Iglesias
-class IglesiaListView(LoginRequiredMixin, ListView):
+class IglesiaListView(VistaProtegida,LoginRequiredMixin, ListView):
     model = Iglesia
     template_name = 'iglesia/iglesia_list.html'
     context_object_name = 'iglesias'
@@ -1225,21 +1251,21 @@ class IglesiaListView(LoginRequiredMixin, ListView):
         )
 
 # 🔹 Crear Iglesia
-class IglesiaCreateView(LoginRequiredMixin, CreateView):
+class IglesiaCreateView(VistaProtegida,LoginRequiredMixin, CreateView):
     model = Iglesia
     form_class = IglesiaForm
     template_name = 'iglesia/iglesia_form.html'
     success_url = reverse_lazy('iglesia_list')
 
 # 🔹 Editar Iglesia
-class IglesiaUpdateView(LoginRequiredMixin, UpdateView):
+class IglesiaUpdateView(VistaProtegida,LoginRequiredMixin, UpdateView):
     model = Iglesia
     form_class = IglesiaForm
     template_name = 'iglesia/iglesia_form.html'
     success_url = reverse_lazy('iglesia_list')
 
 # 🔹 Eliminar Iglesia
-class IglesiaDeleteView(LoginRequiredMixin, DeleteView):
+class IglesiaDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
     model = Iglesia
     template_name = 'iglesia/iglesia_confirm_delete.html'
     success_url = reverse_lazy('iglesia_list')
@@ -1250,7 +1276,7 @@ class IglesiaDeleteView(LoginRequiredMixin, DeleteView):
     # ----------------------------------------------------------------
 
 # 🔹 Listar usuarios de la iglesia
-class UsuarioIglesiaListView(LoginRequiredMixin, ListView):
+class UsuarioIglesiaListView(VistaProtegida,LoginRequiredMixin, ListView):
     model = Usuario_iglesia
     template_name = 'usuario_iglesia/usuario_iglesia_list.html'
     context_object_name = 'usuarios_iglesia'
@@ -1265,7 +1291,7 @@ class UsuarioIglesiaListView(LoginRequiredMixin, ListView):
 
 
 # 🔹 Crear usuario en iglesia
-class UsuarioIglesiaCreateView(LoginRequiredMixin, CreateView):
+class UsuarioIglesiaCreateView(VistaProtegida,LoginRequiredMixin, CreateView):
     model = Usuario_iglesia
     form_class = UsuarioIglesiaForm
     template_name = 'usuario_iglesia/usuario_iglesia_form.html'
@@ -1281,12 +1307,13 @@ class UsuarioIglesiaCreateView(LoginRequiredMixin, CreateView):
         return form
 
 # 🔹 Editar usuario en iglesia
-class UsuarioIglesiaUpdateView(LoginRequiredMixin, UpdateView):
+class UsuarioIglesiaUpdateView(VistaProtegida,LoginRequiredMixin, UpdateView):
     model = Usuario_iglesia
     form_class = UsuarioIglesiaUpdateForm
     template_name = 'usuario_iglesia/usuario_iglesia_form.html'
     success_url = reverse_lazy('usuario_iglesia_list')
 
+@login_required(login_url='/login/')
 @csrf_exempt
 def actualizar_superusuario(request, pk):
     if request.method == "POST":
@@ -1301,11 +1328,13 @@ def actualizar_superusuario(request, pk):
     return JsonResponse({"success": False, "error": "Método no permitido"})
 
 # 🔹 Eliminar usuario de iglesia
-class UsuarioIglesiaDeleteView(LoginRequiredMixin, DeleteView):
+class UsuarioIglesiaDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
     model = Usuario_iglesia
     template_name = 'usuario_iglesia/usuario_iglesia_confirm_delete.html'
     success_url = reverse_lazy('usuario_iglesia_list')
 
+
+@login_required(login_url='/login/')
 def item_list(request):
     return render(request, 'item_list.html')
 
@@ -1315,7 +1344,7 @@ def item_list(request):
     #                       Grupo en casa
     # ----------------------------------------------------------------
 
-class GrupoCasaActivosListView(ListView):
+class GrupoCasaActivosListView(VistaProtegida,ListView):
     model = GrupoCasa
     template_name = "grupo_casa/grupo_casa_list.html"  # Ruta de la plantilla
     context_object_name = "grupos"
@@ -1361,7 +1390,7 @@ class GrupoCasaActivosListView(ListView):
     # -----------------------------------------------------------------
     #                       Bienvenida a los nuevos
     # ----------------------------------------------------------------
-class ListaTipoBienvenida(LoginRequiredMixin, ListView):
+class ListaTipoBienvenida(VistaProtegida,LoginRequiredMixin, ListView):
 
     model = TipoBienvenida
     template_name = "bienvenida/lista_tipos_bienvenida.html"
@@ -1389,7 +1418,7 @@ class ListaTipoBienvenida(LoginRequiredMixin, ListView):
         context['usuario_iglesia'] = usuario_iglesia
         return context
 
-class GestionarBienvenidaUpdateView(LoginRequiredMixin, UpdateView):
+class GestionarBienvenidaUpdateView(VistaProtegida,LoginRequiredMixin, UpdateView):
     model = Bienvenida
     form_class = BienvenidaUpdateForm
 
@@ -1476,7 +1505,7 @@ class VerBienvenidaView(DetailView):
     #                       Seguimiento a los nuevos
     # ----------------------------------------------------------------
 
-class ConsolidacionListView(ListView):
+class ConsolidacionListView(VistaProtegida,ListView):
 
     model = Consolidacion
     template_name = "consolidacion/consolidacion_list.html"
@@ -1552,7 +1581,7 @@ class ConsolidacionListView(ListView):
 
 
 
-class ConsolidacionCreateView(CreateView):
+class ConsolidacionCreateView(VistaProtegida,CreateView):
 
     model = Consolidacion
     form_class = ConsolidacionForm
@@ -1585,7 +1614,7 @@ class ConsolidacionCreateView(CreateView):
 
 
 
-class ConsolidacionUpdateView(UpdateView):
+class ConsolidacionUpdateView(VistaProtegida,UpdateView):
 
     model = Consolidacion
     form_class = ConsolidacionForm
@@ -1602,6 +1631,7 @@ class ConsolidacionUpdateView(UpdateView):
         return kwargs
 
 
+@login_required(login_url='/login/')
 def cambiar_seguimiento(request, pk):
 
     registro = get_object_or_404(Consolidacion, pk=pk)
@@ -1622,10 +1652,9 @@ def cambiar_seguimiento(request, pk):
     return redirect("consolidacion_list")
 
 
-from django.http import JsonResponse
-from .models import Consolidacion
 
 
+@login_required(login_url='/login/')
 def consolidacion_cambiar_ajax(request):
 
     if request.method == "POST":
@@ -1649,7 +1678,9 @@ def consolidacion_cambiar_ajax(request):
             "mensaje": "Estado actualizado correctamente"
         })
 
+
 #Buscar afiliado_
+@login_required(login_url='/login/')
 def buscar_miembro(request):
 
 
@@ -1657,7 +1688,7 @@ def buscar_miembro(request):
 
     usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
     iglesia = usuario_iglesia.id_iglesia
-    miembros = Miembro.objects.filter(Q(nombre__icontains=term) | Q(apellido__icontains=term), activo=True,lider=True )[:10]
+    miembros = Miembro.objects.filter(Q(nombre__icontains=term) | Q(apellido__icontains=term), activo=True )[:10]
 
 
 
@@ -1671,6 +1702,7 @@ def buscar_miembro(request):
 
     return JsonResponse(data, safe=False)
 
+@login_required(login_url='/login/')
 def buscar_grupo(request):
 
     term = request.GET.get("term")
@@ -1694,6 +1726,8 @@ def buscar_grupo(request):
 
     return JsonResponse(data, safe=False)
 
+
+@login_required(login_url='/login/')
 def consolidacion_enviar_correo(request, pk):
 
 
@@ -1762,14 +1796,18 @@ Por favor realizar el seguimiento correspondiente.
     #                       Pendientes por consolidar
     # ----------------------------------------------------------------
 
-def obtener_pendientes_consolidacion(user):
+
+@login_required(login_url='/login/')
+def obtener_pendientes_consolidacion(request ):
 
     total = 0
 
     # verificar si pertenece a un ministerio
     ministerios = Ministerio.objects.filter(
-        id_usuario=user
+        id_usuario=request.user
     )
+
+
 
     for m in ministerios:
         if m.red:
@@ -1780,7 +1818,7 @@ def obtener_pendientes_consolidacion(user):
 
     # verificar si pertenece a un grupo en casa
     grupos = GrupoCasa.objects.filter(
-        id_usuario=user
+        id_usuario=request.user
     )
 
     for g in grupos:
@@ -1791,7 +1829,7 @@ def obtener_pendientes_consolidacion(user):
 
     return total
 
-class PendientesConsolidacionView(TemplateView):
+class PendientesConsolidacionView(VistaProtegida,TemplateView):
 
     template_name = "consolidacion/pendientes.html"
 
@@ -1854,6 +1892,8 @@ class PendientesConsolidacionView(TemplateView):
 
         return context
 
+
+@login_required(login_url='/login/')
 def registrar_seguimiento_consolidacion(request, pk):
 
     registro = get_object_or_404(Consolidacion, pk=pk)
@@ -1890,6 +1930,7 @@ def registrar_seguimiento_consolidacion(request, pk):
     #                       Gestionar los grupos en casa que pertenecen a quien se loguea
     # ----------------------------------------------------------------
 
+@login_required(login_url='/login/')
 def mis_grupos_casa(request):
 
     usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
@@ -1916,7 +1957,7 @@ def mis_grupos_casa(request):
 
 
 
-
+@login_required(login_url='/login/')
 def gestionar_grupo_casa(request, pk):
 
 
@@ -1956,7 +1997,7 @@ def gestionar_grupo_casa(request, pk):
 
 
 
-
+@login_required(login_url='/login/')
 def cambiar_rol_equipo(request, pk):
 
     equipo = get_object_or_404(EquipoGrupoCasa, pk=pk)
@@ -1971,7 +2012,7 @@ def cambiar_rol_equipo(request, pk):
 
     return redirect(request.META.get("HTTP_REFERER"))
 
-
+@login_required(login_url='/login/')
 def eliminar_equipo(request, pk):
 
     equipo = get_object_or_404(EquipoGrupoCasa, pk=pk)
@@ -1982,6 +2023,8 @@ def eliminar_equipo(request, pk):
 
     return redirect("gestionar_grupo_casa", pk=grupo_id)
 
+
+@login_required(login_url='/login/')
 def agregar_equipo_grupo(request, grupo_id):
 
     grupo = get_object_or_404(
@@ -2023,10 +2066,7 @@ def agregar_equipo_grupo(request, grupo_id):
 
 
 
-
-
-
-
+@login_required(login_url='/login/')
 def eliminar_asistente_grupo(request, pk):
 
     asistente = get_object_or_404(AsistentesGrupoCasa, pk=pk)
@@ -2041,7 +2081,7 @@ def eliminar_asistente_grupo(request, pk):
     return redirect("gestionar_grupo_casa", pk=grupo_id)
 
 
-
+@login_required(login_url='/login/')
 def buscar_miembro_equipo(request):
 
     term = request.GET.get("term")
@@ -2074,7 +2114,7 @@ def buscar_miembro_equipo(request):
 
     return JsonResponse(data, safe=False)
 
-
+@login_required(login_url='/login/')
 def buscar_miembro_asistente(request):
 
     term = request.GET.get("term")
@@ -2099,6 +2139,8 @@ def buscar_miembro_asistente(request):
 
     return JsonResponse(data, safe=False)
 
+
+@login_required(login_url='/login/')
 def buscar_miembro_asistente(request):
 
     term = request.GET.get("term")
@@ -2123,6 +2165,8 @@ def buscar_miembro_asistente(request):
 
     return JsonResponse(data, safe=False)
 
+
+@login_required(login_url='/login/')
 def agregar_asistente_grupo(request, grupo_id):
 
     if request.method == "POST":
@@ -2158,7 +2202,7 @@ def agregar_asistente_grupo(request, grupo_id):
 
 
 
-
+@login_required(login_url='/login/')
 def cambiar_estado_asistente_grupo_ajax(request):
 
     if request.method == "POST":
@@ -2193,9 +2237,9 @@ def cambiar_estado_asistente_grupo_ajax(request):
             "mensaje": "Estado actualizado correctamente"
         })
 
-from .models import EquipoGrupoCasa
 
 
+@login_required(login_url='/login/')
 def cambiar_encargado_asistente_grupo_ajax(request):
 
     if request.method == "POST":
@@ -2222,7 +2266,7 @@ def cambiar_encargado_asistente_grupo_ajax(request):
     #                       Gestionar las redes en cuanto a los asistentes de acuerdo a quien se loguea
     # ----------------------------------------------------------------
 
-
+@login_required(login_url='/login/')
 def mis_redes(request):
     usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
     iglesia = usuario_iglesia.id_iglesia
@@ -2251,7 +2295,7 @@ def mis_redes(request):
 
 
 
-
+@login_required(login_url='/login/')
 def gestionar_misred(request, red_id):
     usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=request.user)
     iglesia = usuario_iglesia.id_iglesia
@@ -2284,7 +2328,7 @@ def gestionar_misred(request, red_id):
 
     })
 
-
+@login_required(login_url='/login/')
 def actualizar_email_red(request, red_id):
 
     if request.method == "POST":
@@ -2300,7 +2344,7 @@ def actualizar_email_red(request, red_id):
 
 
 
-
+@login_required(login_url='/login/')
 def cambiar_estado_asistente_red_ajax(request):
 
     if request.method == "POST":
@@ -2334,7 +2378,7 @@ def cambiar_estado_asistente_red_ajax(request):
         return JsonResponse({"ok": True})
 
 
-
+@login_required(login_url='/login/')
 def eliminar_asistente_red(request, pk):
 
     asistente = get_object_or_404(AsistentesRed, pk=pk)
@@ -2360,7 +2404,7 @@ def eliminar_asistente_red(request, pk):
 
 
 
-
+@login_required(login_url='/login/')
 def buscar_miembro_misred(request):
 
     term = request.GET.get("term")
@@ -2396,7 +2440,7 @@ def buscar_miembro_misred(request):
 
 
 
-
+@login_required(login_url='/login/')
 def agregar_asistente_misred(request, red_id):
 
     if request.method == "POST":
@@ -2447,7 +2491,7 @@ def agregar_asistente_misred(request, red_id):
 
 
 
-
+@login_required(login_url='/login/')
 def cambiar_encargado_asistente_misred_ajax(request):
 
     if request.method == "POST":
@@ -2475,7 +2519,7 @@ def cambiar_encargado_asistente_misred_ajax(request):
     #                       Enviar mensaje whatsapp
     # ----------------------------------------------------------------
 
-
+@login_required(login_url='/login/')
 def consolidacion_enviar_whatsapp(request):
 
     if request.method == "POST":
@@ -2532,3 +2576,922 @@ def consolidacion_enviar_whatsapp(request):
             "ok": True,
             "link": link
         })
+
+
+
+    # -----------------------------------------------------------------
+    #                      Reporte Anual
+    # ----------------------------------------------------------------
+@login_required(login_url='/login/')
+def mis_reportes_anuales(request):
+
+    usuario_iglesia = get_object_or_404(
+        Usuario_iglesia,
+        id_usuario=request.user,
+        id_iglesia__activa=True
+    )
+
+    iglesia = usuario_iglesia.id_iglesia
+
+    reportes = ReporteAnualIglesia.objects.filter(
+        iglesia=iglesia
+    ).order_by("anio") # order_by("-anio")
+
+    ultimo_anio = reportes.last().anio if reportes else None
+    for r in reportes:
+        config = ConfiPresbiterio.objects.filter(
+            presbiterio=iglesia.presbiterio
+        ).first()
+
+        #r.puede_editar = config and date.today() <= config.fecha_reporte
+
+        r.puede_editar = ( r.anio == ultimo_anio and  config and  date.today() <= config.fecha_reporte   )
+
+
+
+
+    return render(request, "reportes/estadisticas_anual/mis_reportes.html", {
+        "reportes": reportes
+    })
+
+
+@login_required(login_url='/login/')
+def reporte_anual_form(request, anio=None):
+
+    usuario_iglesia = get_object_or_404(
+        Usuario_iglesia,
+        id_usuario=request.user,
+        id_iglesia__activa=True
+    )
+
+
+    iglesia = usuario_iglesia.id_iglesia
+
+    instancia = None
+
+    if anio:
+        instancia = ReporteAnualIglesia.objects.filter(
+            iglesia=iglesia,
+            anio=anio
+        ).first()
+
+
+    if request.method == "POST":
+        form = ReporteAnualForm(
+            request.POST,
+            instance=instancia,
+            iglesia=iglesia
+        )
+
+        if form.is_valid():
+            reporte = form.save(commit=False)
+            reporte.iglesia = iglesia
+            reporte.save()
+            return redirect("mis_reportes_anuales")
+
+    else:
+        form = ReporteAnualForm(instance=instancia, iglesia=iglesia)
+
+
+    form.iglesia=iglesia
+    hay_anios = len(form.fields["anio"].choices) > 0
+
+    return render(request, "reportes/estadisticas_anual/reporte_form.html", {
+        "form": form, "iglesia": iglesia,"hay_anios": hay_anios
+    })
+
+
+
+@login_required(login_url='/login/')
+def grafica_iglesia_anio_anio(request):
+
+    usuario_iglesia = get_object_or_404(
+        Usuario_iglesia,
+        id_usuario=request.user,
+        id_iglesia__activa=True
+    )
+
+    iglesia = usuario_iglesia.id_iglesia
+
+
+    config = ConfiPresbiterio.objects.filter(presbiterio=iglesia.presbiterio).first()
+
+
+
+
+    anio_actual = date.today().year
+    anio_inicio = anio_actual - config.cantidad_anios #---------
+
+
+    reportes = ReporteAnualIglesia.objects.filter(
+        iglesia=iglesia,
+        anio__gte=anio_inicio,   # 👈 últimos 5 años
+        anio__lte=anio_actual
+    ).order_by("anio")
+
+    anios = []
+    inicio = []
+    final = []
+    ganados = []
+    perdidos = []
+
+    for r in reportes:
+        anios.append(r.anio)
+        inicio.append(r.miembros_inicio or 0)
+        final.append(r.miembros_final or 0)
+        ganados.append(r.miembros_ganados or 0)
+        perdidos.append(r.miembros_perdidos or 0)
+
+    return render(request, "reportes/estadisticas_anual/grafica_igle_anio_anio.html", {
+        "anios": anios,
+        "inicio": inicio,
+        "final": final,
+        "ganados": ganados,
+        "perdidos": perdidos,
+        "anio_actual":anio_actual,
+        "anio_inicio": anio_inicio
+    })
+
+#   *****************************************************************
+#                   EVENTO
+#   *****************************************************************
+@login_required(login_url='/login/')
+def checkin_evento(request, evento_id):
+    iglesia = obtener_iglesia(request)
+
+    evento = get_object_or_404(
+        EventoProgramado,
+        id=evento_id,
+        iglesia=iglesia
+    )
+
+    ultimos = AsistenciaEvento.objects.filter(
+        evento_programado=evento
+    ).order_by("-fecha_checkin")[:10]
+
+    return render(request, "eventos/checkin.html", {
+        "evento": evento,
+        "ultimos": ultimos
+    })
+
+@login_required(login_url='/login/')
+def checkin_ajax(request):
+    if request.method == "POST":
+        iglesia = obtener_iglesia(request)
+
+        identificacion = request.POST.get("identificacion")
+        evento_id = request.POST.get("evento_id")
+
+        evento = EventoProgramado.objects.get(
+            id=evento_id,
+            iglesia=iglesia
+        )
+
+        # 🔹 buscar miembro
+        miembro = Miembro.objects.filter(
+            identificacion=identificacion,
+            iglesia=iglesia
+        ).first()
+
+        try:
+            asistencia = AsistenciaEvento.objects.create(
+                evento_programado=evento,
+                miembro=miembro if miembro else None,
+                nombre=miembro.nombre if miembro else "Visitante",
+                identificacion=identificacion,
+                telefono=miembro.telefono if miembro else "",
+                es_miembro=bool(miembro)
+            )
+
+            return JsonResponse({
+                "ok": True,
+                "nombre": asistencia.nombre,
+                "tipo": "Miembro" if asistencia.es_miembro else "Visitante",
+                "cupos": evento.cupos_disponibles()
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                "ok": False,
+                "error": str(e)
+            })
+
+
+
+
+@login_required(login_url='/login/')
+def evento_list(request):
+    iglesia = obtener_iglesia(request)
+
+    q = request.GET.get("q")
+
+    eventos = Evento.objects.filter(
+        iglesia=iglesia
+    )
+
+    if q:
+        eventos = eventos.filter(
+            Q(nombre__icontains=q) |
+            Q(tipo__nombre__icontains=q)
+        )
+
+    eventos = eventos.order_by("nombre")
+
+    paginator = Paginator(eventos, 10)
+    page = request.GET.get("page")
+    eventos = paginator.get_page(page)
+
+    return render(request, "eventos/evento_list.html", {
+        "eventos": eventos,
+        "q": q
+    })
+
+
+@login_required(login_url='/login/')
+def evento_create(request):
+    iglesia = obtener_iglesia(request)
+
+    if request.method == "POST":
+        form = EventoForm(request.POST, iglesia=iglesia)
+
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.iglesia = iglesia
+            obj.creado_por = request.user
+            obj.save()
+
+            return redirect("evento_list")
+    else:
+        form = EventoForm(iglesia=iglesia)
+
+    return render(request, "eventos/evento_form.html", {
+        "form": form
+    })
+
+@login_required(login_url='/login/')
+def evento_update(request, pk):
+    iglesia = obtener_iglesia(request)
+
+    evento = get_object_or_404(
+        Evento,
+        pk=pk,
+        iglesia=iglesia
+    )
+
+    if request.method == "POST":
+        form = EventoForm(request.POST, instance=evento, iglesia=iglesia)
+
+        if form.is_valid():
+            form.save()
+            return redirect("evento_list")
+    else:
+        form = EventoForm(instance=evento, iglesia=iglesia)
+
+    return render(request, "eventos/evento_form.html", {
+        "form": form
+    })
+
+@login_required(login_url='/login/')
+def evento_delete(request, pk):
+    iglesia = obtener_iglesia(request)
+
+    evento = get_object_or_404(
+        Evento,
+        pk=pk,
+        iglesia=iglesia
+    )
+
+    if request.method == "POST":
+        evento.delete()
+        return redirect("evento_list")
+
+    return render(request, "eventos/evento_confirm_delete.html", {
+        "evento": evento
+    })
+
+@login_required(login_url='/login/')
+def evento_programado_list(request):
+    iglesia = obtener_iglesia(request)
+
+    q = request.GET.get("q")
+
+    eventos = EventoProgramado.objects.filter(
+        iglesia=iglesia
+    ).select_related("evento")
+
+    if q:
+        eventos = eventos.filter(
+            Q(evento__nombre__icontains=q) |
+            Q(fecha__icontains=q)
+        )
+
+    eventos = eventos.order_by("-fecha", "-hora")
+
+    paginator = Paginator(eventos, 10)
+    page = request.GET.get("page")
+    eventos = paginator.get_page(page)
+
+    return render(request, "eventos/evento_programado_list.html", {
+        "eventos": eventos,
+        "q": q
+    })
+
+@login_required(login_url='/login/')
+def evento_programado_create(request):
+    iglesia = obtener_iglesia(request)
+
+    if request.method == "POST":
+        form = EventoProgramadoForm(request.POST, iglesia=iglesia)
+
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.iglesia = iglesia
+            obj.save()
+
+            return redirect("evento_programado_list")
+    else:
+        form = EventoProgramadoForm(iglesia=iglesia)
+
+    return render(request, "eventos/evento_programado_form.html", {
+        "form": form
+    })
+
+@login_required(login_url='/login/')
+def evento_programado_update(request, pk):
+    iglesia = obtener_iglesia(request)
+
+    obj = get_object_or_404(
+        EventoProgramado,
+        pk=pk,
+        iglesia=iglesia
+    )
+
+    if request.method == "POST":
+        form = EventoProgramadoForm(request.POST, instance=obj, iglesia=iglesia)
+
+        if form.is_valid():
+            form.save()
+            return redirect("evento_programado_list")
+    else:
+        form = EventoProgramadoForm(instance=obj, iglesia=iglesia)
+
+    return render(request, "eventos/evento_programado_form.html", {
+        "form": form
+    })
+
+@login_required(login_url='/login/')
+def evento_programado_delete(request, pk):
+    iglesia = obtener_iglesia(request)
+
+    obj = get_object_or_404(
+        EventoProgramado,
+        pk=pk,
+        iglesia=iglesia
+    )
+
+    if request.method == "POST":
+        obj.delete()
+        return redirect("evento_programado_list")
+
+    return render(request, "eventos/evento_programado_confirm_delete.html", {
+        "obj": obj
+    })
+
+@login_required(login_url='/login/')
+def inscripcion_evento(request, evento_id):
+
+    iglesia = obtener_iglesia(request)
+    form_class = InscripcionEventoForm
+
+    evento = get_object_or_404(
+        EventoProgramado,
+        id=evento_id,
+        iglesia=iglesia
+    )
+
+    rangos = RangoEdad.objects.filter(
+        iglesia=iglesia
+    ).order_by("orden")
+
+    miembro = None
+    mostrar_form_visitante = False
+    identificacion = request.POST.get("identificacion")
+
+    if request.method == "POST":
+
+        accion = request.POST.get("accion")
+
+        # =========================================
+        # 🔍 PASO 1: BUSCAR
+        # =========================================
+        if accion == "buscar":
+
+            identificacion = request.POST.get("identificacion", "").strip()
+
+            if not identificacion:
+                messages.error(request, "Debe ingresar la identificación.")
+                return redirect(request.path)
+
+            if not identificacion.isdigit():
+                messages.error(request, "La identificación debe ser numérica.")
+                return redirect(request.path)
+
+
+
+            miembro = Miembro.objects.filter(
+                identificacion=identificacion,
+                iglesia=iglesia
+            ).first()
+
+            if not miembro:
+                mostrar_form_visitante = True
+
+            # 🔥 validar duplicado solo si hay miembro
+            if miembro:
+                existe = InscripcionEvento.objects.filter(
+                    evento_programado=evento,
+                    miembro=miembro
+                ).exists()
+
+                if existe:
+                    messages.error(request, "Ya está inscrito.")
+                    return redirect(request.path)
+
+        # =========================================
+        # ✅ PASO 2: INSCRIBIR
+        # =========================================
+        elif accion == "inscribir":
+
+            form = form_class(request.POST)
+
+            if not form.is_valid():
+                messages.error(request, form.errors)
+                return render(request, "eventos/inscripcion.html", {
+                    "evento": evento,
+                    "miembro": None,
+                    "mostrar_form_visitante": True,
+                    "identificacion": request.POST.get("identificacion"),
+                    "rangos": rangos
+                })
+
+            data = form.cleaned_data
+            identificacion = data["identificacion"]
+
+            miembro = Miembro.objects.filter(
+                identificacion=identificacion,
+                iglesia=iglesia
+            ).first()
+
+            # 🔥 validar duplicado
+            if miembro:
+                existe = InscripcionEvento.objects.filter(
+                    evento_programado=evento,
+                    miembro=miembro
+                ).exists()
+
+                if existe:
+                    messages.error(request, "Ya está inscrito.")
+                    return redirect(request.path)
+
+            # 🔥 validar rango
+            rango = RangoEdad.objects.filter(
+                id=data["rango_edad"],
+                iglesia=iglesia
+            ).first()
+
+            if not rango:
+                messages.error(request, "Debe seleccionar un rango válido.")
+                return redirect(request.path)
+
+            # 🔥 validar acceso por red
+            redes_ids = obtener_redes_usuario(request.user)
+
+            #if rango.red_id and rango.red_id not in redes_ids:
+            #    messages.error(request, "No tiene permiso para este rango.")
+            #    return redirect(request.path)
+
+            # 🔥 validar cupo
+            inscritos = InscripcionEvento.objects.filter(
+                evento_programado=evento
+            ).count()
+
+            if inscritos >= evento.capacidad:
+                messages.error(request, "Evento lleno.")
+                return redirect(request.path)
+
+            # =========================================
+            # 👤 CREAR / USAR MIEMBRO
+            # =========================================
+
+            if not miembro:
+                miembro = Miembro.objects.create(
+                    iglesia=iglesia,
+                    nombre=data.get("nombre"),
+                    apellido=data.get("apellido"),
+                    identificacion=identificacion,
+                    telefono=data.get("telefono"),
+                    celular=data.get("telefono"),
+                    correo=data.get("correo")
+                )
+
+            # =========================================
+            # 📝 CREAR INSCRIPCIÓN
+            # =========================================
+
+            inscripcion = InscripcionEvento.objects.create(
+                evento_programado=evento,
+                miembro=miembro,
+                rango_edad=rango
+            )
+
+            # 🔥 envío de confirmación
+            enviar_confirmacion_evento(inscripcion)
+
+            messages.success(request, "Inscripción realizada correctamente.")
+            return redirect(request.path)
+
+    return render(request, "eventos/inscripcion.html", {
+        "evento": evento,
+        "miembro": miembro,
+        "mostrar_form_visitante": mostrar_form_visitante,
+        "identificacion": identificacion,
+        "rangos": rangos
+    })
+
+
+def enviar_confirmacion_evento(inscripcion):
+    asunto = f"""Confirmación de inscripción {inscripcion.evento_programado.evento.tipo.nombre} - {inscripcion.evento_programado.evento.nombre}"""
+
+    mensaje = f"""
+Hola {inscripcion.miembro.nombre} {inscripcion.miembro.apellido},
+
+Tu inscripción fue realizada con éxito.
+
+Evento: {inscripcion.evento_programado.evento.tipo.nombre} - {inscripcion.evento_programado.evento.nombre}
+Fecha: {inscripcion.evento_programado.fecha}
+
+Te esperamos.
+"""
+
+    if inscripcion.miembro and inscripcion.miembro.correo:
+        destinatario = [inscripcion.miembro.correo]
+    else:
+        # si guardas correo en inscripción (recomendado)
+        destinatario = []
+
+    if destinatario:
+
+        email = EmailMessage(
+            subject=asunto,
+            body=mensaje,
+            to=destinatario
+        )
+        email.send()
+
+
+def auto_inscripcion_evento(request, evento_id):
+    iglesia = obtener_iglesia(request)
+    form_class = InscripcionEventoForm
+
+    evento = get_object_or_404(
+        EventoProgramado,
+        id=evento_id,
+        iglesia=iglesia
+    )
+
+    rangos = RangoEdad.objects.filter(
+        iglesia=iglesia
+    ).order_by("orden")
+
+    miembro = None
+    mostrar_form_visitante = False
+    identificacion = request.POST.get("identificacion")
+
+    if request.method == "POST":
+
+        accion = request.POST.get("accion")
+
+        # =========================================
+        # 🔍 PASO 1: BUSCAR
+        # =========================================
+        if accion == "buscar":
+
+            identificacion = request.POST.get("identificacion", "").strip()
+
+            if not identificacion:
+                messages.error(request, "Debe ingresar la identificación.")
+                return redirect(request.path)
+
+            if not identificacion.isdigit():
+                messages.error(request, "La identificación debe ser numérica.")
+                return redirect(request.path)
+
+
+
+            miembro = Miembro.objects.filter(
+                identificacion=identificacion,
+                iglesia=iglesia
+            ).first()
+
+            if not miembro:
+                mostrar_form_visitante = True
+
+            # 🔥 validar duplicado solo si hay miembro
+            if miembro:
+                existe = InscripcionEvento.objects.filter(
+                    evento_programado=evento,
+                    miembro=miembro
+                ).exists()
+
+                if existe:
+                    messages.error(request, "Ya está inscrito.")
+                    return redirect(request.path)
+
+        # =========================================
+        # ✅ PASO 2: INSCRIBIR
+        # =========================================
+        elif accion == "inscribir":
+
+            form = form_class(request.POST)
+
+            if not form.is_valid():
+                messages.error(request, form.errors)
+                return render(request, "eventos/auto_inscripcion.html", {
+                    "evento": evento,
+                    "miembro": None,
+                    "mostrar_form_visitante": True,
+                    "identificacion": request.POST.get("identificacion"),
+                    "rangos": rangos
+                })
+
+            data = form.cleaned_data
+            identificacion = data["identificacion"]
+
+            miembro = Miembro.objects.filter(
+                identificacion=identificacion,
+                iglesia=iglesia
+            ).first()
+
+            # 🔥 validar duplicado
+            if miembro:
+                existe = InscripcionEvento.objects.filter(
+                    evento_programado=evento,
+                    miembro=miembro
+                ).exists()
+
+                if existe:
+                    messages.error(request, "Ya está inscrito.")
+                    return redirect(request.path)
+
+            # 🔥 validar rango
+            rango = RangoEdad.objects.filter(
+                id=data["rango_edad"],
+                iglesia=iglesia
+            ).first()
+
+            if not rango:
+                messages.error(request, "Debe seleccionar un rango válido.")
+                return redirect(request.path)
+
+            # 🔥 validar acceso por red
+            redes_ids = obtener_redes_usuario(request.user)
+
+            #if rango.red_id and rango.red_id not in redes_ids:
+            #    messages.error(request, "No tiene permiso para este rango.")
+            #    return redirect(request.path)
+
+            # 🔥 validar cupo
+            inscritos = InscripcionEvento.objects.filter(
+                evento_programado=evento
+            ).count()
+
+            if inscritos >= evento.capacidad:
+                messages.error(request, "Evento lleno.")
+                return redirect(request.path)
+
+            # =========================================
+            # 👤 CREAR / USAR MIEMBRO
+            # =========================================
+
+            if not miembro:
+                miembro = Miembro.objects.create(
+                    iglesia=iglesia,
+                    nombre=data.get("nombre"),
+                    apellido=data.get("apellido"),
+                    identificacion=identificacion,
+                    telefono=data.get("telefono"),
+                    celular=data.get("telefono"),
+                    correo=data.get("correo")
+                )
+
+            # =========================================
+            # 📝 CREAR INSCRIPCIÓN
+            # =========================================
+
+            inscripcion = InscripcionEvento.objects.create(
+                evento_programado=evento,
+                miembro=miembro,
+                rango_edad=rango
+            )
+
+            # 🔥 envío de confirmación
+            enviar_confirmacion_evento(inscripcion)
+
+            messages.success(request, "Inscripción realizada correctamente.")
+            return redirect(request.path)
+
+    return render(request, "eventos/auto_inscripcion.html", {
+        "evento": evento,
+        "miembro": miembro,
+        "mostrar_form_visitante": mostrar_form_visitante,
+        "identificacion": identificacion,
+        "rangos": rangos
+    })
+
+
+@login_required(login_url='/login/')
+def panel_evento(request, evento_id):
+    iglesia = obtener_iglesia(request)
+
+    evento = get_object_or_404(
+        EventoProgramado,
+        id=evento_id,
+        iglesia=iglesia
+    )
+
+    inscripciones = InscripcionEvento.objects.filter(
+        evento_programado=evento
+    ).select_related("miembro", "rango_edad")
+
+    asistentes = AsistenciaEvento.objects.filter(
+        evento_programado=evento
+    )
+
+    total_inscritos = inscripciones.count()
+    total_asistentes = asistentes.count()
+    cupos_disponibles = max(evento.capacidad - total_inscritos, 0)
+
+    # 🔥 unir info para tabla
+    registros = []
+
+    asistentes_ids = set(
+        asistentes.values_list("identificacion", flat=True)
+    )
+
+
+
+
+    for i in inscripciones:
+
+
+        miembro =Miembro.objects.get(id=i.miembro.id)
+
+        registros.append({
+            "nombre": miembro.nombre,
+            "identificacion": miembro.identificacion,
+            "telefono": miembro.telefono,
+            "rango": i.rango_edad.nombre if i.rango_edad else "",
+            "asistio": miembro.identificacion in asistentes_ids
+        })
+
+    return render(request, "eventos/panel.html", {
+        "evento": evento,
+        "total_inscritos": total_inscritos,
+        "total_asistentes": total_asistentes,
+        "cupos_disponibles": cupos_disponibles,
+        "registros": registros
+    })
+
+@login_required(login_url='/login/')
+def pantalla_publica(request, evento_id):
+    iglesia = obtener_iglesia(request)
+
+    evento = get_object_or_404(EventoProgramado, id=evento_id, iglesia=iglesia)
+
+    asistentes = AsistenciaEvento.objects.filter(
+        evento_programado=evento
+    ).order_by("-fecha_checkin")
+
+    return render(request, "eventos/pantalla.html", {
+        "evento": evento,
+        "asistentes": asistentes[:20]
+    })
+
+@login_required(login_url='/login/')
+def evento_inscritos(request, evento_id):
+    iglesia = obtener_iglesia(request)
+
+    inscripciones = []
+    usuario_iglesia = get_object_or_404(
+        Usuario_iglesia,
+        id_usuario=request.user,
+        id_iglesia__activa=True
+    )
+
+    ultima_red = AsistentesRed.objects.filter(
+        miembro=OuterRef("miembro")
+    ).order_by("-fecha").values("red__nombre")[:1]
+
+    evento = get_object_or_404(
+        EventoProgramado,
+        id=evento_id,
+        iglesia=iglesia
+    )
+
+    inscripciones = InscripcionEvento.objects.filter(
+        evento_programado=evento
+    ).select_related("miembro", "rango_edad").order_by("rango_edad__orden").annotate(
+    red_nombre=Subquery(ultima_red)
+)
+
+    if not usuario_iglesia.superusuario:
+        redes_ids = obtener_redes_usuario(request.user)
+        if redes_ids:
+            inscripciones = inscripciones.filter(
+                Q(rango_edad__red_id__in=redes_ids) |
+                Q(rango_edad__red__isnull=True)
+            )
+        else:
+            inscripciones = []
+
+
+    return render(request, "eventos/inscritos.html", {
+        "evento": evento,
+        "inscripciones": inscripciones
+    })
+
+def obtener_redes_usuario(user):
+    return Ministerio.objects.filter(
+        id_usuario=user
+    ).exclude(
+        red__isnull=True
+    ).values_list("red_id", flat=True)
+
+from django.db.models import Count, Q
+
+
+
+@login_required(login_url='/login/')
+def dashboard_rangos(request, evento_id):
+    iglesia = obtener_iglesia(request)
+
+    evento = get_object_or_404(
+        EventoProgramado,
+        id=evento_id,
+        iglesia=iglesia
+    )
+
+    asistentes = AsistenciaEvento.objects.filter(
+        evento_programado=evento
+    )
+
+    miembros_asistentes = asistentes.values_list("miembro_id", flat=True)
+    ids_asistentes = asistentes.values_list("identificacion", flat=True)
+
+    data = InscripcionEvento.objects.filter(
+        evento_programado=evento
+    ).values(
+        "rango_edad__nombre"
+    ).annotate(
+        inscritos=Count("id"),
+        asistentes=Count(
+            "id",
+            filter=Q(
+                miembro__asistenciaevento__evento_programado=evento
+            )
+        )
+    ).order_by("rango_edad__nombre")
+
+    resultados = []
+
+
+    for d in data:
+        inscritos = d["inscritos"]
+        asistentes = d["asistentes"]
+        porcentaje = (asistentes / inscritos * 100) if inscritos else 0
+
+        resultados.append({
+            "rango": d["rango_edad__nombre"] or "Sin rango",
+            "inscritos": inscritos,
+            "asistentes": asistentes,
+            "porcentaje": round(porcentaje, 1)
+        })
+
+    return JsonResponse({
+        "data": resultados
+    })
+
+
+@login_required(login_url='/login/')
+def dashboard_rangos_view(request, evento_id):
+    iglesia = obtener_iglesia(request)
+
+    evento = get_object_or_404(
+        EventoProgramado,
+        id=evento_id,
+        iglesia=iglesia
+    )
+
+    return render(request, "eventos/dashboard_rangos.html", {
+        "evento": evento
+    })

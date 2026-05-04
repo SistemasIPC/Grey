@@ -1,0 +1,74 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3>
+        Inscritos - {{ evento.evento.nombre }} <br>
+        <small>{{ evento.fecha }}</small>
+    </h3>
+
+    {% regroup inscripciones by rango_edad as grupos %}
+
+    {% for grupo in grupos %}
+
+        <div class="mt-4">
+            <h5 class="bg-light p-2">
+                {{ grupo.grouper.nombre }} ({{ grupo.list|length }})
+            </h5>
+
+            <table class="table table-bordered table-sm">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Identificación</th>
+                        <th>Teléfono</th>
+                        <th>Red</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for i in grupo.list %}
+                    <tr class="
+                        {% if i.red_nombre %}
+                            table-success
+                        {% else %}
+                            table-light
+                        {% endif %}
+                    ">
+                        <td>
+                            {% if i.miembro %}
+                                {{ i.miembro.nombre }} {{ i.miembro.apellido }}
+                            {% else %}
+                                {{ i.nombre }}
+                            {% endif %}
+
+                        </td>
+                        <td>
+                            {% if i.miembro %}
+                                {{ i.miembro.identificacion }}
+                            {% else %}
+                                {{ i.identificacion }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if i.miembro %}
+                                {{ i.miembro.telefono }}
+                            {% else %}
+                                {{ i.telefono }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ i.red_nombre|default:"-" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% endfor %}
+
+</div>
+
+{% endblock %}

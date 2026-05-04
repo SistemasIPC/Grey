@@ -5,7 +5,7 @@ from .models import Pais, Departamento, Municipio, Comuna, Barrio, Estado_grupoC
 from .models import Bienvenida, TipoBienvenida, Red, Consolidacion, ConfiguracionIglesia
 from .models import AsistentesGrupoCasa, AsistentesRed, RolEquipoGrupo, ServicioMinisterio
 # Register your models here.
-
+from .models import Categoria_iglesia, Evento, EventoDia, EventoProgramado, TipoEvento, InscripcionEvento, RangoEdad, AsistenciaEvento
 
 # Register your models here.
 admin.site.register(Iglesia)
@@ -33,3 +33,11 @@ admin.site.register(AsistentesGrupoCasa)
 admin.site.register(AsistentesRed)
 admin.site.register(RolEquipoGrupo)
 admin.site.register(ServicioMinisterio)
+admin.site.register(Categoria_iglesia)
+admin.site.register(TipoEvento)
+admin.site.register(Evento)
+admin.site.register(EventoDia)
+admin.site.register(EventoProgramado)
+admin.site.register(InscripcionEvento)
+admin.site.register(RangoEdad)
+admin.site.register(AsistenciaEvento)

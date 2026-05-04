@@ -1,0 +1,54 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Materiales - {{ tema.nombre }}</h3>
+
+<a href="{% url 'material_create' tema.id %}" class="btn btn-success mb-3">
+    Nuevo Material
+</a>
+
+<table class="table table-bordered">
+
+<thead>
+<tr>
+    <th>Orden</th>
+    <th>Nombre</th>
+    <th>Archivo</th>
+    <th>URL</th>
+    <th>Acciones</th>
+</tr>
+</thead>
+
+<tbody>
+{% for m in materiales %}
+<tr>
+    <td>{{ m.orden }}</td>
+    <td>{{ m.nombre }}</td>
+    <td>
+        {% if m.archivo %}
+            <a href="{{ m.archivo.url }}" target="_blank">Ver</a>
+        {% endif %}
+    </td>
+    <td>
+        {% if m.url %}
+            <a href="{{ m.url }}" target="_blank">Abrir</a>
+        {% endif %}
+    </td>
+    <td>
+        <a href="{% url 'material_edit' m.id %}" class="btn btn-primary btn-sm">Editar</a>
+        <a href="{% url 'material_delete' m.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="5">No hay materiales</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+
+<a href="{% url 'tema_list' %}" class="btn btn-secondary">Volver</a>
+
+{% endblock %}

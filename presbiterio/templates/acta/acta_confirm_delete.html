@@ -1,0 +1,14 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<h2>Eliminar Acta</h2>
+<p>¿Seguro que deseas eliminar el acta <strong>{{ object.numero }}</strong> titulada "<strong>{{ object.titulo }}</strong>"?</p>
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit">Eliminar</button>
+</form>
+
+<a href="{% url 'acta_list' acta.id_organo.id %}">Cancelar</a>
+{% endblock content %}

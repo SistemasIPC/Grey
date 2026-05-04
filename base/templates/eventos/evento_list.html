@@ -1,0 +1,64 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<h3>Eventos</h3>
+
+<form method="get" class="mb-3">
+    <input type="text" name="q" value="{{ q }}"
+           class="form-control"
+           placeholder="Buscar evento...">
+</form>
+
+<a href="{% url 'evento_create' %}" class="btn btn-primary mb-3">
+    Nuevo Evento
+</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Tipo</th>
+            <th>Capacidad</th>
+            <th>Activo</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in eventos %}
+        <tr>
+            <td>{{ e.nombre }}</td>
+            <td>{{ e.tipo }}</td>
+            <td>{{ e.capacidad }}</td>
+            <td>{{ e.activo }}</td>
+            <td>
+
+                <a href="{% url 'evento_update' e.id %}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{% url 'evento_delete' e.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- paginador -->
+<nav>
+    <ul class="pagination">
+        {% if eventos.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ eventos.previous_page_number }}">Anterior</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link">{{ eventos.number }}</span>
+        </li>
+
+        {% if eventos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ eventos.next_page_number }}">Siguiente</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Periodos</h3>
+
+<a href="{% url 'periodo_create' %}" class="btn btn-success mb-3">
+    Nuevo Periodo
+</a>
+
+<!-- 🔍 Buscador -->
+<form method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nombre...">
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary">Buscar</button>
+    </div>
+</form>
+
+<table class="table table-bordered table-hover">
+
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Fin</th>
+            <th>&nbsp;</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for p in page_obj %}
+        <tr>
+            <td>{{ p.nombre }}</td>
+            <td>{{ p.fecha_inicio }}</td>
+            <td>{{ p.fecha_fin }}</td>
+            <td>
+                <a href="{% url 'cursos_por_periodo' p.id %}">
+                        Cursos
+                </a>
+            </td>
+            <td>
+                <a href="{% url 'periodo_edit' p.id %}" class="btn btn-primary btn-sm">
+                    Editar
+                </a>
+
+                <a href="{% url 'periodo_delete' p.id %}" class="btn btn-danger btn-sm">
+                    Eliminar
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay resultados</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
+<!-- 📄 PAGINACIÓN -->
+<div class="pagination">
+
+    {% if page_obj.has_previous %}
+        <a href="?page=1{% if q %}&q={{ q }}{% endif %}">Primera</a>
+        <a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">
+            Anterior
+        </a>
+    {% endif %}
+
+    <span>
+        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+    </span>
+
+    {% if page_obj.has_next %}
+        <a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}">
+            Siguiente
+        </a>
+        <a href="?page={{ page_obj.paginator.num_pages }}{% if q %}&q={{ q }}{% endif %}">
+            Última
+        </a>
+    {% endif %}
+
+</div>
+
+{% endblock %}

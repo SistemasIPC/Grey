@@ -1,0 +1,94 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<h3>Eventos Programados</h3>
+
+<form method="get" class="mb-3">
+    <input type="text" name="q" value="{{ q }}"
+           class="form-control"
+           placeholder="Buscar por evento o fecha...">
+</form>
+
+<a href="{% url 'evento_programado_create' %}" class="btn btn-primary mb-3">
+    Nuevo Evento Programado
+</a>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Evento</th>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Cupos</th>
+            <th>Estado</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for e in eventos %}
+        <tr>
+            <td>{{ e.evento.nombre }}</td>
+            <td>{{ e.fecha }}</td>
+            <td>{{ e.hora }}</td>
+            <td>{{ e.capacidad }}</td>
+            <td>{{ e.get_estado_display }}</td>
+            <td>
+            <a href="{% url 'dashboard_rangos' e.id %}" class="btn btn-sm btn-info">
+                Dashoboard
+            </a>
+
+            <a href="{% url 'evento_inscritos' e.id %}" class="btn btn-sm btn-info">
+                Inscritos
+            </a>
+
+                <a href="{% url 'panel_evento' e.id %}" class="btn btn-sm btn-info">
+                    Panel
+                </a>
+                <a href="{% url 'inscripcion_evento' e.id %}" class="btn btn-sm btn-info">
+                    Inscribir
+                </a>
+
+                <a href="{% url 'checkin_evento' e.id %}" class="btn btn-sm btn-success">
+                    Check-in
+                </a>
+
+                <a href="{% url 'pantalla_publica' e.id %}" class="btn btn-sm btn-dark">
+                    Pantalla
+                </a>
+
+                <a href="{% url 'evento_programado_update' e.id %}" class="btn btn-sm btn-warning">
+                    Editar
+                </a>
+
+                <a href="{% url 'evento_programado_delete' e.id %}" class="btn btn-sm btn-danger">
+                    Eliminar
+                </a>
+
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<!-- paginador -->
+<nav>
+    <ul class="pagination">
+        {% if eventos.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ eventos.previous_page_number }}">Anterior</a>
+            </li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link">{{ eventos.number }}</span>
+        </li>
+
+        {% if eventos.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ eventos.next_page_number }}">Siguiente</a>
+            </li>
+        {% endif %}
+    </ul>
+</nav>
+
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<h3>Reporte Anual</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="row">
+
+        <div class="col-md-3">
+            <label>Año</label>
+            <select name="anio" class="form-control">
+    {% for val, label in form.fields.anio.choices %}
+        <option value="{{ val }}">{{ label }}</option>
+    {% endfor %}
+</select>
+        </div>
+
+        <div class="col-md-4">
+            <label>Miembros inicio</label>
+            {{ form.miembros_inicio }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Ganados</label>
+            {{ form.miembros_ganados }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Perdidos</label>
+            {{ form.miembros_perdidos }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Final</label>
+            {{ form.miembros_final }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Activos</label>
+            {{ form.miembros_activos }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Promedio Escuela Dominical</label>
+            {{ form.promedio_escuela }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Diezmos y Ofrendas</label>
+            {{ form.diezmos_ofrendas }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Aportes Presbiterio</label>
+            {{ form.aportes_presbiterio }}
+        </div>
+
+        <div class="col-md-4">
+            <label>Otros gastos</label>
+            {{ form.otros_gastos }}
+        </div>
+
+    </div>
+
+    <br>
+
+    <button class="btn btn-primary"  onclick="return confirm('¿Desea crear un nuevo reporte?')" {% if not hay_anios %} disabled {% endif %}>Guardar</button>
+    <a href="{% url 'mis_reportes_anuales' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+
+{% endblock %}
+
+
+
+{% if not puede_editar %}
+<script>
+$("form :input").prop("disabled", true)
+</script>
+{% endif %}
+
+
+<script>
+function calcularFinal(){
+    let inicio = parseInt(document.getElementById("id_miembros_inicio").value) || 0
+    let ganados = parseInt(document.getElementById("id_miembros_ganados").value) || 0
+    let perdidos = parseInt(document.getElementById("id_miembros_perdidos").value) || 0
+
+    document.getElementById("id_miembros_final").value = inicio + ganados - perdidos
+}
+
+document.querySelectorAll(
+    "#id_miembros_inicio, #id_miembros_ganados, #id_miembros_perdidos"
+).forEach(el => {
+    el.addEventListener("input", calcularFinal)
+})
+</script>

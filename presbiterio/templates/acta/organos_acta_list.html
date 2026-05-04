@@ -1,0 +1,14 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<h2>Órganos donde eres Secretario (SE)</h2>
+
+<ul>
+    {% for organo in organos %}
+        <li><a href="{% url 'acta_list' organo.id %}">{{ organo.descripcion }}</a></li>
+    {% empty %}
+        <li>No perteneces a ningún órgano con el cargo de Secretario.</li>
+    {% endfor %}
+</ul>
+{% endblock content %}

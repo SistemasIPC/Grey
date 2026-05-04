@@ -1,15 +1,31 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from datetime import time
 from datetime import timedelta
 # Create your models here.
 
-
+from presbiterio.models import Presbiterio
 
 class Iglesia(models.Model):
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(null=True,
                                    blank=True)
+    presbiterio = models.ForeignKey('presbiterio.Presbiterio', on_delete=models.CASCADE)
+    categoria = models.ForeignKey(
+        "Categoria_iglesia",
+        on_delete=models.CASCADE,
+        null=False,
+        blank=True
+    )
+
+    iglesia_padre = models.ForeignKey(
+        "self",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="hijas"
+    )
     direccion = models.TextField(null=True, blank=True)
     telefono = models.CharField(max_length=50, null=True, blank=True)
     correo = models.CharField(max_length=100, null=True, blank=True)
@@ -22,6 +38,13 @@ class Iglesia(models.Model):
 
     class Meta:
         ordering = ['nombre']
+
+class Categoria_iglesia(models.Model):
+    presbiterio = models.ForeignKey('presbiterio.Presbiterio', on_delete=models.CASCADE)
+    descripcion = models.CharField(max_length=200)
+
+    def __str__(self):
+        return f" {self.descripcion} - {self.presbiterio.descripcion}"
 
 
 class Usuario_iglesia(models.Model):
@@ -452,6 +475,24 @@ class Bienvenida(models.Model):
 
     fecha_actualizacion = models.DateTimeField(auto_now=True)
 
+    informacion_general = models.TextField(
+        blank=True,
+        null=True
+    )
+    horario_general = models.TextField(
+        blank=True,
+        null=True
+    )
+    informacion_general_min = models.TextField(
+        blank=True,
+        null=True
+    )
+    horario_general_min = models.TextField(
+         blank=True,
+        null=True
+    )
+
+
     def __str__(self):
         return f"Bienvenida - {self.id_tipo_bienvenida.nombre}"
 
@@ -598,4 +639,165 @@ class AsistentesRed(models.Model):
 
     def __str__(self):
         return f"{self.miembro} - {self.get_estado_display()}"
+
+#   *****************************************************************
+#                   EVENTO
+#   *****************************************************************
+
+
+
+class TipoEvento(models.Model):
+    iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
+    nombre = models.CharField(max_length=100)
+
+    def __str__(self):
+        return self.nombre
+
+
+class Evento(models.Model):
+    ESTADOS = [
+        ('borrador', 'Borrador'),
+        ('publicado', 'Publicado'),
+        ('cerrado', 'Cerrado'),
+    ]
+
+    iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
+
+    nombre = models.CharField(max_length=150)
+    tipo = models.ForeignKey(TipoEvento, on_delete=models.PROTECT)
+
+    ministerio = models.ForeignKey(Ministerio, on_delete=models.SET_NULL, null=True, blank=True)
+    red = models.ForeignKey(Red, on_delete=models.SET_NULL, null=True, blank=True)
+
+    capacidad = models.IntegerField(default=0)
+
+    es_recurrente = models.BooleanField(default=False)
+
+    fecha_inicio = models.DateField(null=True, blank=True)
+    fecha_fin = models.DateField(null=True, blank=True)
+    activo = models.BooleanField(default=True)
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='borrador')
+
+    observaciones = models.TextField(blank=True, null=True)
+
+    creado_por = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return self.nombre
+
+
+class EventoDia(models.Model):
+    DIAS = [
+        (0, 'Lunes'),
+        (1, 'Martes'),
+        (2, 'Miércoles'),
+        (3, 'Jueves'),
+        (4, 'Viernes'),
+        (5, 'Sábado'),
+        (6, 'Domingo'),
+    ]
+
+    evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
+    dia_semana = models.IntegerField(choices=DIAS)
+    hora_inicio = models.TimeField()
+    hora_fin = models.TimeField()
+
+    def __str__(self):
+        return f"{self.evento.nombre} - {self.get_dia_semana_display()}"
+
+
+
+
+class EventoProgramado(models.Model):
+    ESTADOS = [
+        ('borrador', 'Borrador'),
+        ('publicado', 'Publicado'),
+        ('cerrado', 'Cerrado'),
+    ]
+    iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
+    evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
+
+    fecha = models.DateField()
+    hora = models.TimeField(null=True, blank=True)
+    capacidad = models.IntegerField()  # puede heredar o modificarse
+    estado = models.CharField(max_length=20, choices=ESTADOS, default='borrador')
+    class Meta:
+        unique_together = ('evento', 'fecha')
+
+    def __str__(self):
+        return f"{self.evento.nombre} - {self.fecha}"
+
+
+class RangoEdad(models.Model):
+    iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
+
+    nombre = models.CharField(max_length=50)
+    edad_min = models.IntegerField(null=True, blank=True)
+    edad_max = models.IntegerField(null=True, blank=True)
+    orden = models.IntegerField(default=0)
+    red = models.ForeignKey(Red, on_delete=models.SET_NULL, null=True, blank=True)
+    def __str__(self):
+        return self.nombre
+
+
+class InscripcionEvento(models.Model):
+
+    evento_programado = models.ForeignKey(
+        EventoProgramado,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    miembro = models.ForeignKey(Miembro, on_delete=models.CASCADE)
+
+    rango_edad = models.ForeignKey(RangoEdad,on_delete=models.PROTECT   )
+    fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+
+    estado = models.CharField(
+        max_length=20,
+        choices=[
+            ('activo', 'Activo'),
+            ('cancelado', 'Cancelado'),
+        ],
+        default='activo'
+    )
+
+    class Meta:
+        unique_together = ('evento_programado', 'miembro')
+
+    def __str__(self):
+        return f"{self.miembro.nombre} - {self.evento_programado.evento.nombre}"
+
+
+
+
+
+
+
+class AsistenciaEvento(models.Model):
+    evento_programado = models.ForeignKey(EventoProgramado, on_delete=models.CASCADE)
+
+    miembro = models.ForeignKey(Miembro, on_delete=models.SET_NULL, null=True, blank=True)
+
+    identificacion = models.CharField(max_length=20)
+    nombre = models.CharField(max_length=150)
+
+    celular = models.CharField(max_length=20, blank=True, null=True)
+    correo = models.EmailField(blank=True, null=True)
+
+    rango_edad = models.ForeignKey(RangoEdad, on_delete=models.SET_NULL, null=True)
+
+    es_visitante = models.BooleanField(default=False)
+
+    observaciones = models.TextField(blank=True, null=True)
+
+    registrado_por = models.ForeignKey("auth.User", on_delete=models.SET_NULL, null=True)
+
+    fecha_checkin = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('evento_programado', 'identificacion')
+
+    def __str__(self):
+        return f"{self.nombre} - {self.evento_programado}"
 

@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from django.contrib.auth.views import LogoutView
-from .views import Logueo, PaginaRegistro, Menu_principal, Sin_iglesia, Menu_super
+from .views import LoginIglesiaView, PaginaRegistro, Menu_principal, Sin_iglesia, Menu_super
 from .views import ListaServicio, DetalleServicio, EditarServicio, CrearServicio, EliminarServicios
 from .views import Programar_ministerio
 from .views import MiembroListView, MiembroCreateView, MiembroUpdateView, MiembroDeleteView, MiembroDetailView
@@ -18,9 +18,9 @@ from .views import ListaTipoBienvenida, GestionarBienvenidaUpdateView, VerBienve
 from .views import ConsolidacionListView, ConsolidacionCreateView,  ConsolidacionUpdateView, cambiar_seguimiento
 from .views import PendientesConsolidacionView, Iglesia_off
 
-urlpatterns = [path('login/',Logueo.as_view(),name='login'),
-               path('registro/',PaginaRegistro.as_view(),name='registro'),
-               path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+# path('login/',LoginIglesiaView.as_view(),name='login'),
+urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_iglesia'),
+               path('logout/', LogoutView.as_view(next_page='login_iglesia'), name='logout'),
                path('',Menu_principal.as_view(),name='menu_principal'),
                path('inicio-usuario', Sin_iglesia.as_view(), name='inicio-usuario'),
                path('iglesia-off', Iglesia_off.as_view(), name='iglesia-off'),
@@ -156,4 +156,34 @@ urlpatterns = [path('login/',Logueo.as_view(),name='login'),
                path( "ajax/buscar-miembro-mredes/",  views.buscar_miembro_misred,    name="buscar_miembro_mredes"),
                path( "ajax/cambiar-encargado-asistente-mred/", views.cambiar_encargado_asistente_misred_ajax,  name="cambiar_encargado_asistente_misred_ajax" ),
                path("consolidacion/cambiar-ajax/", views.consolidacion_cambiar_ajax, name="consolidacion_cambiar_ajax" ),
+
+                   # ==========================================
+                   # Reportes anuales
+                   # ==========================================
+               path("reportes/estadistica_anual/historial/", views.mis_reportes_anuales, name="mis_reportes_anuales"),
+               path("reportes/estadistica_anual/nuevo/", views.reporte_anual_form, name="reporte_anual_form"),
+               path("reportes/estadistica_anual/<int:anio>/", views.reporte_anual_form, name="reporte_anual_form_editar"),
+               path("reportes/estadistica_anual/grafica/", views.grafica_iglesia_anio_anio, name="grafica_iglesia_anio_anio"),
+
+
+                path("eventos/", views.evento_list, name="evento_list"),
+                path("eventos/create/", views.evento_create, name="evento_create"),
+                path("eventos/<int:pk>/edit/", views.evento_update, name="evento_update"),
+                path("eventos/<int:pk>/delete/", views.evento_delete, name="evento_delete"),
+                path("evento-programado/", views.evento_programado_list, name="evento_programado_list"),
+                path("evento-programado/create/", views.evento_programado_create, name="evento_programado_create"),
+                path("evento-programado/<int:pk>/edit/", views.evento_programado_update, name="evento_programado_update"),
+                path("evento-programado/<int:pk>/delete/", views.evento_programado_delete, name="evento_programado_delete"),
+                path("inscripcion/<int:evento_id>/", views.inscripcion_evento, name="inscripcion_evento"),
+                path("auto_inscripcion/<int:evento_id>/", views.auto_inscripcion_evento, name="auto_inscripcion_evento"),
+                path("checkin/<int:evento_id>/", views.checkin_evento, name="checkin_evento"),
+                path("checkin/ajax/", views.checkin_ajax, name="checkin_ajax"),
+                path('evento/<int:evento_id>/panel/', views.panel_evento, name='panel_evento'),
+                path('evento/<int:evento_id>/pantalla/', views.pantalla_publica, name='pantalla_publica'),
+                path('evento-programado/<int:evento_id>/inscritos/',  views.evento_inscritos,   name='evento_inscritos'),
+
+                path('evento/<int:evento_id>/dashboard-rangos/',  views.dashboard_rangos_view, name='dashboard_rangos'),
+                path('evento/<int:evento_id>/dashboard-rangos/data/', views.dashboard_rangos,  name='dashboard_rangos_data'),
+
+
                ]

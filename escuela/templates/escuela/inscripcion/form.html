@@ -1,0 +1,65 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Inscribir estudiante</h3>
+
+<p>
+<strong>Curso:</strong> {{ curso_periodo.curso.nombre }} <br>
+<strong>Periodo:</strong> {{ curso_periodo.periodo.nombre }} <br>
+<strong>Cupo:</strong> {{ curso_periodo.cupo }}
+</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label>Identificación</label>
+        {{ form.identificacion }}
+    </div>
+
+    <div class="mb-3">
+        <label>Observación</label>
+        {{ form.observacion }}
+    </div>
+
+    <button class="btn btn-primary">Buscar / Inscribir</button>
+
+</form>
+
+<hr>
+
+{% if miembro %}
+    <h5>Datos del estudiante</h5>
+    <p>
+        <strong>Nombre:</strong> {{ miembro.nombre }} <br>
+        <strong>Identificación:</strong> {{ miembro.identificacion }}
+    </p>
+
+    <h5>Historial académico</h5>
+
+    <table class="table table-bordered">
+        <thead>
+            <tr>
+                <th>Curso</th>
+                <th>Periodo</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for h in historial %}
+            <tr>
+                <td>{{ h.curso_periodo.curso.nombre }}</td>
+                <td>{{ h.curso_periodo.periodo.nombre }}</td>
+                <td>{{ h.estado }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">Sin historial</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}
+
+{% endblock %}

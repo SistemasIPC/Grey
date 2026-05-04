@@ -1,0 +1,59 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<h2>Reporte del Órgano: {{ organo.descripcion }}</h2>
+
+<!-- Listado de Miembros -->
+<h3>Miembros del Órgano</h3>
+<table border="1" width="100%">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Cargo</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for mo in miembros_organo %}
+        <tr>
+            <td>{{ mo.id_miembro.nombre }} {{ mo.id_miembro.apellido }}</td>
+            <td>{{ mo.id_cargo.descripcion }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="2">No hay miembros en este órgano.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<!-- Listado de Postulados -->
+<h3>Postulados del Órgano</h3>
+<table border="1" width="100%">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Cargo</th>
+            <th>Elegido</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for p in postulados %}
+        <!-- Resaltar con color si p.elegido == True -->
+        <tr {% if p.elegido %} style="background-color: lightgreen;" {% endif %}>
+            <td>{{ p.id_miembro.nombre }} {{ p.id_miembro.apellido }}</td>
+            <td>{{ p.id_cargo.descripcion }}</td>
+            <td>
+                {% if p.elegido %}
+                    Sí
+                {% else %}
+                    No
+                {% endif %}
+            </td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="3">No hay postulados registrados en este órgano.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'reporte_organo_list' %}">Volver a Lista de Órganos</a>
+{% endblock %}

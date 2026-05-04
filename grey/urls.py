@@ -16,8 +16,33 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from base.views import LoginIglesiaView
+from presbiterio.views import LoginPresbiterioView
+from escuela.views import LoginEscuelaView
+
+
+#urlpatterns = [
+#   path('admin/', admin.site.urls),
+#    path('', include('base.urls')),
+#    path('presbiterio/', include('presbiterio.urls')),
+#]
+
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+
+    # LOGIN IGLESIA
+    path('login/', LoginIglesiaView.as_view(), name='login_iglesia'),
+
+    # LOGIN PRESBITERIO
+    path('presbiterio/login/', LoginPresbiterioView.as_view(), name='login_presbiterio'),
+
+    # LOGIN ESCUELA
+    path('escuela/login/', LoginEscuelaView.as_view(), name='login_escuela'),
+
+    # MÓDULOS
     path('', include('base.urls')),
+    path('presbiterio/', include('presbiterio.urls')),
+    path('escuela/', include('escuela.urls')),
 ]

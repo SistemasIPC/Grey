@@ -1,0 +1,30 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Formulario Periodo</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label>Nombre</label>
+        {{ form.nombre }}
+    </div>
+
+    <div class="mb-3">
+        <label>Fecha Inicio</label>
+        {{ form.fecha_inicio }}
+    </div>
+
+    <div class="mb-3">
+        <label>Fecha Fin</label>
+        {{ form.fecha_fin }}
+    </div>
+
+    <button class="btn btn-success">Guardar</button>
+    <a href="{% url 'periodo_list' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+
+{% endblock %}

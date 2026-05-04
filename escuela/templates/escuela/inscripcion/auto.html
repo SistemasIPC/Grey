@@ -1,0 +1,70 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Auto inscripción</h3>
+
+<p><strong>Periodo:</strong> {{ periodo.nombre }}</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label>Identificación</label>
+        <input type="text" name="identificacion" class="form-control" required>
+    </div>
+
+    <button name="accion" value="buscar" class="btn btn-primary">
+        Validar
+    </button>
+
+    {% if miembro %}
+        <hr>
+
+        <h5>Datos del estudiante</h5>
+        <p>
+            <strong>Nombre:</strong> {{ miembro.nombre }}<br>
+            <strong>Identificación:</strong> {{ miembro.identificacion }}
+        </p>
+
+        {% if ultimo_aprobado %}
+            <p>
+                <strong>Último curso aprobado:</strong>
+                {{ ultimo_aprobado.curso_periodo.curso.nombre }}
+                (Nivel {{ ultimo_aprobado.curso_periodo.curso.nivel.orden }})
+            </p>
+        {% else %}
+            <p><strong>No tiene cursos aprobados</strong></p>
+        {% endif %}
+
+        {% if curso_sugerido %}
+            <h5>Curso asignado</h5>
+            <p>
+                {{ curso_sugerido.nombre }}<br>
+                Nivel {{ curso_sugerido.nivel.orden }}
+            </p>
+        {% endif %}
+
+        {% if curso_periodo %}
+            <p>
+                <strong>Grupo:</strong> {{ curso_periodo.nombre_grupo }}<br>
+                <strong>Aula:</strong> {{ curso_periodo.aula }}<br>
+                <strong>Día:</strong> {{ curso_periodo.get_dia_semana_display }}<br>
+                <strong>Hora:</strong> {{ curso_periodo.hora }}
+            </p>
+        {% endif %}
+
+        {% if puede_inscribir %}
+            <button name="accion" value="inscribir" class="btn btn-success">
+                Confirmar inscripción
+            </button>
+        {% else %}
+            <div class="alert alert-warning mt-2">
+                No se puede realizar la inscripción
+            </div>
+        {% endif %}
+    {% endif %}
+
+</form>
+
+{% endblock %}

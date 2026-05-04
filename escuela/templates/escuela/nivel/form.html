@@ -1,0 +1,32 @@
+<!-- templates/escuela/nivel/form.html -->
+
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Formulario Nivel</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label>Nombre</label>
+        {{ form.nombre }}
+    </div>
+
+    <div class="mb-3">
+        <label>Orden</label>
+        {{ form.orden }}
+    </div>
+
+    <div class="mb-3">
+        <label>Nivel Padre</label>
+        {{ form.nivel_padre }}
+    </div>
+
+    <button class="btn btn-success">Guardar</button>
+    <a href="{% url 'nivel_list' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+
+{% endblock %}

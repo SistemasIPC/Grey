@@ -1,0 +1,84 @@
+{% extends "principal_sin_menu.html" %}
+{% block content %}
+
+<h3>{{ evento.evento.tipo.nombre }}: {{ evento.evento.nombre }}</h3>
+
+<!-- 🔍 BUSCAR -->
+<form method="post">
+    {% csrf_token %}
+
+    <input type="hidden" name="accion" value="buscar">
+    <input type="hidden" name="accion_val" value="buscar">
+
+    <input type="text"
+           name="identificacion"
+           value="{{ identificacion }}"
+           class="form-control"
+           placeholder="Identificación"
+            pattern="[0-9]+"
+    >
+
+    <button class="btn btn-primary mt-2">
+        Buscar
+    </button>
+</form>
+
+<hr>
+
+<!-- 👤 SI ES MIEMBRO -->
+{% if miembro %}
+    <div class="alert alert-success">
+        {{ miembro.nombre }} <br>
+        {{ miembro.identificacion }}
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="inscribir">
+        <input type="hidden" name="identificacion" value="{{ miembro.identificacion }}">
+
+           <select name="rango_edad" class="form-control mb-2" >
+                <option value="">Seleccione rango de edad</option>
+                {% for r in rangos %}
+                    <option value="{{ r.id }}">{{ r.edad_min }} - {{ r.edad_max }} años |{{ r.nombre }}</option>
+                {% endfor %}
+            </select>
+
+
+        <button class="btn btn-success">
+            Inscribir
+        </button>
+    </form>
+{% endif %}
+
+<!-- 👥 SI ES VISITANTE -->
+{% if mostrar_form_visitante %}
+    <div class="alert alert-warning">
+        No existe en miembros. Registrar visitante:
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+
+        <input type="hidden" name="accion" value="inscribir">
+        <input type="hidden" name="identificacion" value="{{ identificacion }}"  pattern="[0-9]+">
+
+        <input type="text" name="nombre" class="form-control mb-2" placeholder="Nombre" required pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñÜü]+(?:[ '-][A-Za-zÁÉÍÓÚáéíóúÑñÜü]+)*$">
+        <input type="text" name="apellido" class="form-control mb-2" placeholder="Apellido" required pattern="^[A-Za-zÁÉÍÓÚáéíóúÑñÜü]+(?:[ '-][A-Za-zÁÉÍÓÚáéíóúÑñÜü]+)*$">
+        <input type="text" name="telefono" class="form-control mb-2" placeholder="Celular" pattern="\+?[0-9]{7,15}" required>
+        <input type="email" name="correo" class="form-control mb-2" placeholder="Correo" required>
+
+           <select name="rango_edad" class="form-control mb-2" required>
+                <option value="">Seleccione rango de edad</option>
+                {% for r in rangos %}
+                    <option value="{{ r.id }}">{{ r.edad_min }} - {{ r.edad_max }} años |{{ r.nombre }}</option>
+                {% endfor %}
+            </select>
+
+        <button class="btn btn-success">
+            Inscribir visitante
+        </button>
+    </form>
+{% endif %}
+
+{% endblock %}

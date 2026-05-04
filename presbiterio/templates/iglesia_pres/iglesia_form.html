@@ -1,0 +1,86 @@
+{% extends "presbiterio/principal.html" %}
+
+{% block content %}
+
+<h3>{% if form.instance.pk %}Editar Iglesia{% else %}Nueva Iglesia{% endif %}</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="mb-3">
+        <label>Nombre</label>
+        <input type="text" name="nombre" class="form-control"
+               value="{{ form.nombre.value|default:'' }}" required>
+    </div>
+
+    <div class="mb-3">
+        <label>Categoría</label>
+        <select name="categoria" class="form-control">
+            <option value="">---</option>
+            {% for c in form.fields.categoria.queryset %}
+                <option value="{{ c.id }}"
+                    {% if form.categoria.value|stringformat:"s" == c.id|stringformat:"s" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ c }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="mb-3">
+        <label>Iglesia Padre</label>
+        <select name="iglesia_padre" class="form-control">
+            <option value="">---</option>
+            {% for i in form.fields.iglesia_padre.queryset %}
+                <option value="{{ i.id }}"
+                    {% if form.iglesia_padre.value|stringformat:"s" == i.id|stringformat:"s" %}
+                        selected
+                    {% endif %}
+                >
+                    {{ i }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="form-check mb-3">
+        <input type="checkbox" name="activa" class="form-check-input"
+               {% if form.activa.value %}checked{% endif %}>
+        <label class="form-check-label">Activa</label>
+    </div>
+
+
+    <div class="mb-3">
+        <label>Direccion</label>
+        <input type="text" name="direccion" class="form-control"
+               value="{{ form.direccion.value|default:'' }}">
+    </div>
+    <div class="mb-3">
+        <label>Telefono</label>
+        <input type="text" name="telefono" class="form-control"
+               value="{{ form.telefono.value|default:'' }}">
+    </div>
+    <div class="mb-3">
+        <label>Correo</label>
+        <input type="text" name="correo" class="form-control"
+               value="{{ form.correo.value|default:'' }}">
+    </div>
+
+
+
+
+
+
+    <button type="submit" class="btn btn-primary">
+        Guardar
+    </button>
+
+    <a href="{% url 'iglesias_pres_list' %}" class="btn btn-secondary">
+        Cancelar
+    </a>
+
+</form>
+
+{% endblock %}

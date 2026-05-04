@@ -1,0 +1,91 @@
+{% extends "escuela/principal.html" %}
+{% load custom_tags %}
+
+{% block content %}
+
+<h3>
+Materiales: {{ tema_cp.nombre }}
+<br>
+<small>{{ tema_cp.curso_periodo.curso.nombre }} - {{ tema_cp.curso_periodo.periodo.nombre }}</small>
+</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    <table class="table table-bordered">
+
+        <thead>
+            <tr>
+                <th></th>
+                <th>Activo</th>
+                <th>Nombre</th>
+            </tr>
+        </thead>
+
+        <tbody id="sortable">
+
+            {% for m in materiales_base %}
+            {% with mcp=materiales_cp_dict|get_item:m.id %}
+
+            <tr data-id="{{ mcp.id|default:'0' }}">
+
+                <td style="cursor: move;">☰</td>
+
+                <td>
+                    <input type="checkbox" name="materiales" value="{{ m.id }}"
+                    {% if mcp and mcp.activo %}checked{% endif %}>
+                </td>
+
+                <td>{{ m.nombre }}</td>
+
+            </tr>
+
+            {% endwith %}
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    <button class="btn btn-success">Guardar</button>
+
+</form>
+
+<!-- 🔥 Sortable -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+const sortable = new Sortable(document.getElementById('sortable'), {
+    animation: 150,
+    onEnd: function () {
+        guardarOrden();
+    }
+});
+
+function guardarOrden() {
+
+    let items = document.querySelectorAll("#sortable tr");
+    let orden = [];
+
+    items.forEach(el => {
+        if (el.dataset.id !== "0") {
+            orden.push(el.dataset.id);
+        }
+    });
+
+    fetch("{% url 'material_curso_periodo_orden' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({orden: orden})
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Orden guardado");
+    });
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,49 @@
+<!-- templates/escuela/nivel/list.html -->
+
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Niveles</h3>
+
+<a href="{% url 'nivel_create' %}" class="btn btn-success mb-3">
+    Nuevo Nivel
+</a>
+
+<table class="table table-bordered">
+
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Orden</th>
+            <th>Nivel Padre</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for n in niveles %}
+        <tr>
+            <td>{{ n.nombre }}</td>
+            <td>{{ n.orden }}</td>
+            <td>{{ n.nivel_padre }}</td>
+            <td>
+                <a href="{% url 'nivel_edit' n.id %}" class="btn btn-primary btn-sm">
+                    Editar
+                </a>
+
+                <a href="{% url 'nivel_delete' n.id %}" class="btn btn-danger btn-sm">
+                    Eliminar
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay niveles</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
+{% endblock %}

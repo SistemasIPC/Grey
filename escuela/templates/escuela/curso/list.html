@@ -1,0 +1,47 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Cursos</h3>
+
+<a href="{% url 'curso_create' %}" class="btn btn-success mb-3">
+    Nuevo Curso
+</a>
+
+<table class="table table-bordered table-hover">
+
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Nivel</th>
+            <th>Descripción</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for c in cursos %}
+        <tr>
+            <td>{{ c.nombre }}</td>
+            <td>{{ c.nivel }}</td>
+            <td>{{ c.descripcion }}</td>
+            <td>
+                <a href="{% url 'curso_edit' c.id %}" class="btn btn-primary btn-sm">
+                    Editar
+                </a>
+
+                <a href="{% url 'curso_delete' c.id %}" class="btn btn-danger btn-sm">
+                    Eliminar
+                </a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay cursos</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+
+</table>
+
+{% endblock %}

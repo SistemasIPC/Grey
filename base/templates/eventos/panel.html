@@ -1,0 +1,104 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<div class="container mt-4">
+
+    <h3>
+        {{ evento.evento.nombre }} <br>
+        <small>{{ evento.fecha }}</small>
+    </h3>
+
+    <!-- 🔥 MÉTRICAS -->
+    <div class="row mt-4 text-center">
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <h5>Inscritos</h5>
+                <h2>{{ total_inscritos }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <h5>Asistentes</h5>
+                <h2>{{ total_asistentes }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card p-3">
+                <h5>Cupos</h5>
+                <h2>{{ cupos_disponibles }}</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 🔥 BOTONES -->
+    <div class="mt-4">
+
+        <a href="{% url 'checkin_evento' evento.id %}"
+           class="btn btn-success">
+            Abrir Check-in
+        </a>
+
+        <a href="{% url 'pantalla_publica' evento.id %}"
+           target="_blank"
+           class="btn btn-dark">
+            Pantalla Pública
+        </a>
+
+    </div>
+
+    <!-- 🔥 TABLA -->
+    <div class="mt-4">
+
+        <input type="text" id="buscador" class="form-control mb-2" placeholder="Buscar...">
+
+        <table class="table table-bordered table-sm" id="tabla">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Identificación</th>
+                    <th>Teléfono</th>
+                    <th>Rango</th>
+                    <th>Asistencia</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in registros %}
+                <tr>
+                    <td>{{ r.nombre }}</td>
+                    <td>{{ r.identificacion }}</td>
+                    <td>{{ r.telefono }}</td>
+                    <td>{{ r.rango }}</td>
+                    <td>
+                        {% if r.asistio %}
+                            ✅
+                        {% else %}
+                            ❌
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<!-- 🔥 BUSCADOR JS -->
+<script>
+document.getElementById("buscador").addEventListener("keyup", function() {
+    let filtro = this.value.toLowerCase();
+    let filas = document.querySelectorAll("#tabla tbody tr");
+
+    filas.forEach(f => {
+        f.style.display = f.innerText.toLowerCase().includes(filtro) ? "" : "none";
+    });
+});
+</script>
+
+{% endblock %}

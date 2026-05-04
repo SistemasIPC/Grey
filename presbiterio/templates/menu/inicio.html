@@ -1,0 +1,106 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <div>
+        <h1> Hola  {{request.user|title}}</h1>
+
+
+    </div>
+
+
+
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+
+</div>
+
+
+
+
+<div id="envoltorio-agregar-buscar">
+
+    <table border="0" align="center">
+
+
+        <tr>
+            <td align="center" colspan="3">
+                    <a href="{% url 'tablero_asamblea'  %}"> TABLERO aca </a>
+            </td>
+        </tr>
+        <tr>
+            <td align="center" colspan="3">
+                    <a href="{% url 'reporte_organo_list'  %}"> Reporte de postulados en organos  </a>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="center" colspan="3">
+                    <a href="{% url 'organo_habilitar_postulacion_list'  %}"> Habilitar/Deshabilitar Para votacion  </a>
+            </td>
+        </tr>
+
+        <tr>
+            <td align="center" colspan="3">
+                    <a href="{% url 'postulacion_all_organs' %}">Hacer Postulaciones </a>
+            </td>
+        </tr>
+        {%  if organo    %}
+
+        <tr>
+            <td align="center" colspan="3">
+                    <a href="{% url 'grafica_votos' organo.id  %}"> Ver ultima votacion  </a>
+            </td>
+        </tr>
+        {%  endif    %}
+        <tr>
+            <td align="center" colspan="3">
+                    <a href="{% url 'votar_postulados' %}">Votacion del organo establecido </a>
+            </td>
+        </tr>
+
+
+
+
+        <tr>
+            <td align="center" colspan="3">
+                    <a href="{% url 'organo_acta_list' %}">Actas </a>
+            </td>
+        </tr>
+
+
+        <tr>
+
+
+            <td align="center" colspan="3">
+                {% if asamblea %}
+                    <a href="{% url 'asamblea' asamblea.id %}">Asamblea Vigente </a>
+                {% else %}
+                    <h3>----No hay asamblea vigente </h3>
+                 {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <td ><a href="{% url 'asambleas' %}">Asambleas </a> </td>
+
+            {% if asamblea %}
+            <td >     <a href="{% url 'mociones' asamblea.id  %}">Mociones </a></td>
+
+            {% endif %}
+
+            <td align="center"><a href="{% url 'votacion' %}">Votacion </a> </td>
+        </tr>
+
+    </table>
+</div>
+
+
+
+{% endblock content %}

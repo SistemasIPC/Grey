@@ -1,0 +1,32 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+
+
+
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+
+
+     <div>
+        <h1> ASAMBLEA:<a href="{% url 'asamblea' asamblea.id %}"> {{asamblea|title}} </a></h1>
+        <h3 style="margin:0">  <i>{{count}}</i> asistente{{count|pluralize}} </h3>
+
+    </div>
+
+
+</div>
+
+<h1>Mocion: {{Mocion}}</h1>
+
+<a href="{% url 'mociones'  %}">Volver </a>
+
+{% endblock content %}

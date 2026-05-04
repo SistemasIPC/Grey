@@ -1,0 +1,102 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <div>
+
+    {% if request.user.is_authenticated %}
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit">logout</button>
+            </form>
+        {% else %}
+             <a href="{% url 'login' %}">Ingresar </a>
+        {% endif %}
+
+        <h1> Hola {{request.user|title}}</h1>
+
+         {% if asamblea %}
+        <h1> ASAMBLEA:<a href="{% url 'asamblea' asamblea.id %}"> {{asamblea|title}} </a></h1>
+        <h2> Mocion: {{mocion.titulo}}</h2>
+
+        <h3 style="margin:0">  <i>Total Votas:</i> {{count}} </h3>
+        {% endif %}
+    </div>
+
+
+
+</div>
+
+
+
+<a href="{% url 'menu_principal'  %}">Volver </a>
+
+<br><br>
+
+        <div >
+            <i><b>Votantes Habilitados:</b> {{countVotantes}}</i>
+            <br>
+            <i><b>Tipo de Mocion:</b> {{mocion.id_tipo.descripcion}}</i>
+
+        </div>
+
+        <div class="titulo-tarea">
+            <div class="icono-mocion-{{resultado_aprobacion}}">
+                <b><b>Resultado:</b> {{msg_resultado_aprobacion}}
+            </div>
+
+        </div>
+
+<hr>
+        <div class="titulo-tarea">
+            <div class="icono-votacion-favor"></div>
+            <i>A favor: {{votacionFavor}}</i>
+        </div>
+
+        <div class="titulo-tarea">
+            <div class="icono-votacion-contra"></div>
+            <i>En contra: {{votacionContra}}</i>
+        </div>
+
+        <div class="titulo-tarea">
+            <div class="icono-votacion-blanco"></div>
+            <i>En blanco: {{votacionBlanco}}</i>
+        </div>
+
+
+
+<canvas id="miGraficaMociones"></canvas>
+    <script>
+        var ctx = document.getElementById('miGraficaMociones').getContext('2d');
+
+        // Convertimos los datos de Django a JSON
+        var datos = {{ datosGrafica|safe }};
+
+        // Extraemos etiquetas y valores dinámicamente
+        var etiquetas = datos.map(item => item.nombre);
+        var valores = datos.map(item => item.valor);
+
+        var miGrafica = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: etiquetas,
+                datasets: [{
+                    label: 'Resultados',
+                    data: valores,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+{% endblock content %}

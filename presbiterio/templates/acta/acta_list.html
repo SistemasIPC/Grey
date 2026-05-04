@@ -1,0 +1,60 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<h2>Listado de Actas</h2>
+
+<form method="GET" action="">
+    <input type="text" name="q" placeholder="Buscar por número, fecha, título, asunto o conclusiones" value="{{ request.GET.q }}">
+    <button type="submit">Buscar</button>
+</form>
+
+<table border="0">
+    <thead>
+        <tr>
+            <th>Fecha</th>
+            <th>Título</th>
+            <th>Asunto</th>
+            <th>Conclusiones</th>
+            <th>Archivos</th>
+            <th>Confirmada</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for acta in actas %}
+        <tr>
+            <td>{{ acta.fecha }}</td>
+            <td>{{ acta.titulo }}</td>
+            <td>{{ acta.asunto }}</td>
+            <td>{{ acta.conclusiones }}</td>
+            <td>
+                {% if acta.archivos.all %}
+                    ✅
+                {% else %}
+                    ❌
+                {% endif %}
+            </td>
+            <td>
+                {% if acta.confirmada %}
+                    ✅
+                {% else %}
+                    ❌
+                {% endif %}
+            </td>
+            <td>
+                <a href="{% url 'acta_detail'  acta.id %}">Ver</a>
+                <a href="{% url 'acta_update' acta.id_organo.id  acta.id %}">Editar</a>
+                <a href="{% url 'acta_delete'  acta.id %}">Eliminar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8">No hay actas registradas.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<a href="{% url 'acta_create' organo_id %}">Nueva Acta</a>
+{% endblock content %}

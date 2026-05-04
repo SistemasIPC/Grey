@@ -1,0 +1,24 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<h2>{% if object %}Editar Acta{% else %}Nueva Acta{% endif %}</h2>
+
+<form method="POST">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Guardar </button>
+</form>
+
+<a href="{% url 'acta_list' organo_id %}">Volver</a>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        flatpickr("#id_fecha", {
+            dateFormat: "Y-m-d",
+            altInput: true,
+            altFormat: "F j, Y",
+            allowInput: true
+        });
+    });
+</script>
+{% endblock content %}

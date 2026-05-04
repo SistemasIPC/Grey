@@ -1,0 +1,17 @@
+<!-- templates/escuela/nivel/delete.html -->
+
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Eliminar Nivel</h3>
+
+<p>¿Seguro que desea eliminar "{{ nivel.nombre }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger">Eliminar</button>
+    <a href="{% url 'nivel_list' %}" class="btn btn-secondary">Cancelar</a>
+</form>
+
+{% endblock %}

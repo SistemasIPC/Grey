@@ -1,0 +1,14 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Eliminar Material</h3>
+
+<p>¿Seguro que desea eliminar "{{ obj.nombre }}"?</p>
+
+<form method="post">
+    {% csrf_token %}
+    <button class="btn btn-danger">Eliminar</button>
+</form>
+
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+<div class="barra-superior">
+    <a href="{% url 'menu_principal' %}">&#x1F860; Volver</a>
+</div>
+<h2>Listado de Órganos</h2>
+<ul>
+    {% for organo in organos %}
+    <li>
+        <!-- Al hacer clic, se va a la URL 'reporte_organo' -->
+        <a href="{% url 'reporte_postulados_organo' organo.id %}">{{ organo.descripcion }}</a>
+    </li>
+    {% endfor %}
+</ul>
+{% endblock %}

@@ -1,4 +1,4 @@
-﻿ansicon==1.89.0
+﻿﻿ansicon==1.89.0
 asgiref==3.8.1
 awsebcli==3.25
 bcrypt==4.3.0

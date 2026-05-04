@@ -1,0 +1,35 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Formulario Tema</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+        <label>Curso</label>
+        {{ form.curso }}
+        {{ form.curso.errors }}
+    </div>
+
+    <div class="mb-3">
+        <label>Nombre</label>
+        {{ form.nombre }}
+        {{ form.nombre.errors }}
+    </div>
+
+    <div class="mb-3">
+        <label>Orden</label>
+        {{ form.orden }}
+        {{ form.orden.errors }}
+    </div>
+
+    <button class="btn btn-success">Guardar</button>
+    <a href="{% url 'tema_list' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+
+
+
+<div class="barra-superior">
+    <a href="{% url 'asistentes' asamblea.id %}">&#x1F860; Volver</a>
+</div>
+
+    <div>
+        <h1> ASAMBLEA: {{asamblea|title}}</h1>
+    </div>
+    <div>
+        <h1> Asistente: {{asistente.id_miembro.nombre|title}}  - {{ asistente.id_miembro.id_tipo.descripcion }}</h1>
+    </div>
+
+
+
+<div class="cuerpo-tarjeta">
+    <form method="POST" action="">
+    {% csrf_token %}
+        <label for="id_miembro">Miembro:</label>
+            <select name="id_miembro" required>
+                {% for miembro in miembros_disponibles %}
+                    <option value="{{ miembro.id }}"> {{ miembro.nombre }} {{miembro.apellido}} - {{ miembro.id_tipo.descripcion }}</option>
+                {% endfor %}
+            </select>
+
+            {{ form.id_estado.label_tag }} {{ form.id_estado }}
+            {{ form.observacion.label_tag }} {{ form.observacion }}
+
+
+    <input class='boton' type="submit" value="enviar">
+</form>
+</div>
+
+
+{% endblock content %}

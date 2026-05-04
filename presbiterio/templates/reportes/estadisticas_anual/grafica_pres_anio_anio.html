@@ -1,0 +1,127 @@
+{% extends "presbiterio/principal.html" %}
+
+{% block content %}
+
+<h3>Comportamiento del Presbiterio ({{anio_inicio}} -{{anio_actual}})</h3>
+
+<!-- 🔘 Selector -->
+<div class="mb-3">
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset" data-index="0" checked>
+        Miembros Inicio
+    </label>
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset" data-index="1" checked>
+        Miembros Final
+    </label>
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset" data-index="2" checked>
+        Ganados
+    </label>
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset" data-index="3" checked>
+        Perdidos
+    </label>
+
+    <button id="toggleAll" class="btn btn-sm btn-secondary ms-3">
+        Mostrar / Ocultar todo
+    </button>
+
+</div>
+
+<!-- 📊 Gráfica -->
+<canvas id="grafica" height="100"></canvas>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+
+const ctx = document.getElementById('grafica');
+
+const chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ anios|safe }},
+        datasets: [
+            {
+                label: 'Miembros Inicio',
+                data: {{ inicio|safe }},
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Miembros Final',
+                data: {{ final|safe }},
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Ganados',
+                data: {{ ganados|safe }},
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Perdidos',
+                data: {{ perdidos|safe }},
+                borderWidth: 2,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+
+// 🔘 Toggle individual
+document.querySelectorAll(".toggle-dataset").forEach(function(chk){
+
+    chk.addEventListener("change", function(){
+
+        const index = this.dataset.index
+
+        chart.data.datasets[index].hidden = !this.checked
+
+        chart.update()
+    })
+
+})
+
+
+// 🔄 Toggle general
+document.getElementById("toggleAll").onclick = function(){
+
+    let allHidden = chart.data.datasets.every(d => d.hidden)
+
+    chart.data.datasets.forEach(d => d.hidden = !allHidden)
+
+    document.querySelectorAll(".toggle-dataset").forEach(chk => {
+        chk.checked = allHidden
+    })
+
+    chart.update()
+}
+
+</script>
+
+{% endblock %}

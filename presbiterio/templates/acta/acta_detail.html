@@ -1,0 +1,69 @@
+{% extends 'presbiterio/principal.html' %}
+{% block content %}
+<h2> Acta {{ acta.numero }} - {{ acta.id_organo}}</h2>
+<p><strong>Fecha:</strong> {{ acta.fecha }}</p>
+<p><strong>Título:</strong> {{ acta.titulo }}</p>
+<p><strong>Asunto:</strong> {{ acta.asunto }}</p>
+<p><strong>Conclusiones:</strong> {{ acta.conclusiones }}</p>
+<p><strong>Confirmada:</strong> {{ acta.confirmada|yesno:"Sí,No" }}</p>
+
+<h3>Archivos</h3>
+<ul>
+    {% for archivo in acta.archivos.all %}
+    <li>
+        <a href="{{ archivo.archivo.url }}" target="_blank">{{ archivo.archivo.name }}</a>
+        {% if archivo.principal %}(Principal){% endif %}
+
+
+        <a href="{% url 'archivo_delete' archivo.pk %} " >Eliminar</a>
+
+    </li>
+    {% empty %}
+    <li>No hay archivos adjuntos.</li>
+    {% endfor %}
+</ul>
+<hr>
+<h3>Subir Archivo </h3>
+
+{% if archivo_principal %}
+<form method="POST" enctype="multipart/form-data" action="{% url 'archivo_subir' acta.pk %}">
+    {% csrf_token %}
+    {{ archivo_form.archivo.label_tag }} {{ archivo_form.archivo }}
+
+     <button type="submit">Subir</button>
+</form>
+<br>
+Archivo principal: {{ archivo_principal }}
+{% else %}
+<form method="POST" enctype="multipart/form-data" action="{% url 'archivo_subir' acta.pk %}">
+    {% csrf_token %}
+    {{ archivo_form.as_p }}
+    <button type="submit">Subir</button>
+</form>
+
+{% endif %}
+
+<hr>
+
+ {% if acta.confirmada %}
+
+<h3>Acta confirmada</h3>
+<form method="POST" action="{% url 'acta_desconfirmar' acta.pk %}">
+    {% csrf_token %}
+                   ✅    <button type="submit">Des Confirmar</button>
+</form>
+
+ {% else %}
+
+<h3>Confirmar Acta</h3>
+<form method="POST" action="{% url 'acta_confirmar' acta.pk %}">
+    {% csrf_token %}
+                   ❌    <button type="submit">Confirmar</button>
+</form>
+
+{% endif %}
+
+<hr>
+<a href="{% url 'acta_list'  acta.id_organo.id %}">Volver</a>
+
+{% endblock content %}

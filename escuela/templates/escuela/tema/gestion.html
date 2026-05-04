@@ -1,0 +1,142 @@
+{% extends "escuela/principal.html" %}
+{% load static %}
+
+{% block content %}
+
+<h3>Gestión de Temas</h3>
+
+<form method="get" class="row mb-3">
+
+    <div class="col-md-4">
+        <select name="nivel" class="form-control" onchange="this.form.submit()">
+            <option value="">Nivel</option>
+            {% for n in niveles %}
+                <option value="{{ n.id }}" {% if nivel_id == n.id|stringformat:"s" %}selected{% endif %}>
+                    {{ n.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <select name="curso" class="form-control" onchange="this.form.submit()">
+            <option value="">Curso</option>
+            {% for c in cursos %}
+                <option value="{{ c.id }}" {% if curso_id == c.id|stringformat:"s" %}selected{% endif %}>
+                    {{ c.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+</form>
+
+<button class="btn btn-success mb-2" onclick="nuevoTema()">
+    + Nuevo tema
+</button>
+
+<table class="table table-bordered">
+    <tbody id="sortable">
+
+        {% for t in temas %}
+        <tr data-id="{{ t.id }}">
+            <td style="cursor:move;">☰</td>
+
+            <td>
+                <input type="text"
+                       value="{{ t.nombre }}"
+                       class="form-control"
+                       onblur="guardarTema(this, {{ t.id }})">
+            </td>
+
+            <td>
+                <button class="btn btn-danger btn-sm"
+                        onclick="eliminarTema({{ t.id }})">
+                    🗑
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+<!-- Sortable -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+
+new Sortable(document.getElementById('sortable'), {
+    animation: 150,
+    onEnd: guardarOrden
+});
+
+function guardarTema(input, id) {
+
+    fetch("{% url 'tema_guardar' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            id: id,
+            nombre: input.value
+        })
+    });
+}
+
+function eliminarTema(id) {
+
+    if (!confirm("¿Eliminar tema?")) return;
+
+    fetch("{% url 'tema_eliminar' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({id: id})
+    }).then(() => location.reload());
+}
+
+function nuevoTema() {
+
+    const curso = "{{ curso_id }}";
+
+    if (!curso) {
+        alert("Seleccione un curso");
+        return;
+    }
+
+    fetch("{% url 'tema_nuevo' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({curso_id: curso})
+    }).then(() => location.reload());
+}
+
+function guardarOrden() {
+
+    let orden = [];
+
+    document.querySelectorAll("#sortable tr").forEach(el => {
+        orden.push(el.dataset.id);
+    });
+
+    fetch("{% url 'tema_orden' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({orden: orden})
+    });
+}
+
+</script>
+
+{% endblock %}

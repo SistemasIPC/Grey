@@ -1,0 +1,40 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Formulario Maestro</h3>
+
+<form method="post">
+    {% csrf_token %}
+
+    {{ form.non_field_errors }}
+
+    <div class="mb-3">
+        <label>Usuario</label>
+        {{ form.user }}
+        {{ form.user.errors }}
+    </div>
+
+    <div class="mb-3">
+        <label>Especialidad</label>
+        {{ form.especialidad }}
+        {{ form.especialidad.errors }}
+    </div>
+
+    <div class="mb-3">
+        <label>Teléfono</label>
+        {{ form.telefono }}
+        {{ form.telefono.errors }}
+    </div>
+
+    <div class="form-check mb-3">
+        {{ form.activo }}
+        <label class="form-check-label">Activo</label>
+    </div>
+
+    <button class="btn btn-success">Guardar</button>
+    <a href="{% url 'maestro_list' %}" class="btn btn-secondary">Cancelar</a>
+
+</form>
+
+{% endblock %}

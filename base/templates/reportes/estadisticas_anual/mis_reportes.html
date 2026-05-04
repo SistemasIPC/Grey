@@ -1,0 +1,57 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<h3>Mis Reportes Anuales</h3>
+
+<a href="{% url 'reporte_anual_form' %}" class="btn btn-success mb-3">
+    Nuevo Reporte
+</a>
+
+<table class="table table-bordered table-hover">
+
+    <thead class="table-info">
+        <tr>
+            <th>Año</th>
+            <th>Miembros Final</th>
+            <th>Activos</th>
+            <th>Asistencia</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+    {% for r in reportes %}
+
+        <tr>
+            <td>{{ r.anio }}</td>
+            <td>{{ r.miembros_final }}</td>
+            <td>{{ r.miembros_activos }}</td>
+            <td>{{ r.promedio_escuela }}</td>
+
+            <td>
+
+                {% if r.puede_editar %}
+                    <a href="{% url 'reporte_anual_form_editar' r.anio %}"
+                       class="btn btn-primary btn-sm">
+                        Editar
+                    </a>
+                {% else %}
+                    <span class="text-danger">Cerrado</span>
+                {% endif %}
+
+            </td>
+        </tr>
+
+    {% empty %}
+        <tr>
+            <td colspan="5">No hay reportes registrados</td>
+        </tr>
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+{% endblock %}

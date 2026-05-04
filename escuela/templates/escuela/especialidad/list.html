@@ -1,0 +1,63 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Especialidades de Maestro</h3>
+
+<a href="{% url 'especialidad_create' %}" class="btn btn-success mb-3">
+    Nueva Especialidad
+</a>
+
+<form method="get" class="row mb-3">
+    <div class="col-md-4">
+        <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Buscar...">
+    </div>
+    <div class="col-md-2">
+        <button class="btn btn-primary">Buscar</button>
+    </div>
+</form>
+
+<table class="table table-bordered">
+
+<thead>
+<tr>
+    <th>Nombre</th>
+    <th>Descripción</th>
+    <th>Acciones</th>
+</tr>
+</thead>
+
+<tbody>
+{% for e in page_obj %}
+<tr>
+    <td>{{ e.nombre }}</td>
+    <td>{{ e.descripcion }}</td>
+    <td>
+        <a href="{% url 'especialidad_edit' e.id %}" class="btn btn-primary btn-sm">Editar</a>
+        <a href="{% url 'especialidad_delete' e.id %}" class="btn btn-danger btn-sm">Eliminar</a>
+    </td>
+</tr>
+{% empty %}
+<tr>
+    <td colspan="3">No hay registros</td>
+</tr>
+{% endfor %}
+</tbody>
+
+</table>
+
+<div class="pagination">
+
+{% if page_obj.has_previous %}
+<a href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q }}{% endif %}">Anterior</a>
+{% endif %}
+
+<span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+
+{% if page_obj.has_next %}
+<a href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q }}{% endif %}">Siguiente</a>
+{% endif %}
+
+</div>
+
+{% endblock %}

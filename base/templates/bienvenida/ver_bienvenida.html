@@ -1,6 +1,4 @@
 {% extends base_template %}
-{% if user.is_authenticated %}
-{% endif %}
 
 {% load static %}
 
@@ -31,7 +29,10 @@
 
                         <div class="p-4 mt-2 rounded-3 border bg-success bg-opacity-10" align="center">
 
-                           <b> {{ bienvenida.mensaje_bienvenida|linebreaks }}</b>
+                           <b> {{ bienvenida.mensaje_bienvenida|default:""|linebreaks }}</b>
+                            <hr>
+                            <p> {{ bienvenida.informacion_general_min|default:""|linebreaks }}</p>
+                            <p> {{ bienvenida.horario_general_min|default:""|linebreaks }}</p>
 
                         </div>
                     </div>
@@ -41,7 +42,7 @@
                     <div class="mb-4">
 
                         <div class="bg-light p-3 rounded-3 border">
-                            {{ bienvenida.texto_biblico|linebreaks }}
+                            {{ bienvenida.texto_biblico|default:""|linebreaks }}
                         </div>
                     </div>
 
@@ -51,7 +52,7 @@
                         <span >
                             {% if user.is_authenticated %}
 
-                                   {{ bienvenida.numero_telefonico }}
+                                   {{ bienvenida.numero_telefonico|default:"" }}
                              {% else %}
                                <a href="tel:{{ bienvenida.numero_telefonico }}"
                                    class="btn btn-outline-success">
@@ -67,11 +68,9 @@
 
 
                     <!-- LINKS -->
-                    <div class="row">
 
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">🎥 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+
+                        <div  class="mb-3">
 
                             <a href="{{ bienvenida.link_video_bienvenida }}" target="_blank">
 
@@ -88,8 +87,9 @@
 
 
 
-                        <div class="col-md-6 mb-3">
-                            <label class="fw-bold">🎧 Playlist</label>
+                        <div class="mb-3">
+                            <label class="fw-bold">🎧 Playlist
+                            </label>
                             <a href="{{ bienvenida.link_playlist }}" target="_blank" class="d-block text-primary">
 
                              <img
@@ -102,7 +102,7 @@
                             </a>
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="mb-3">
                             <label class="fw-bold">📚 </label>
 
                             <a href="{{ bienvenida.link_devocional_youversion }}" target="_blank"  class="btn btn-info btn-lg">
@@ -112,7 +112,7 @@
 
                         </div>
 
-                        <div class="col-md-6 mb-3">
+                        <div class="mb-3">
                             <label class="fw-bold">📘 </label>
 
                             <a href="{{ bienvenida.link_libro_online }}" target="_blank" class="btn btn-info btn-lg">
@@ -120,13 +120,17 @@
                                 Un libro esperando
                             </a>
 
+                        </div>
+                    <div class="mt-4">
 
+                        <div class="p-4 mt-2 rounded-3 border bg-success bg-opacity-10" align="center">
+
+                            <hr>
+                            <p> {{ bienvenida.informacion_general|default:""|linebreaks }}</p>
+                            <p> {{ bienvenida.horario_general|default:""|linebreaks }}</p>
 
                         </div>
-
-
                     </div>
-
 
 
                 </div>

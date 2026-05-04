@@ -1,0 +1,51 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+
+
+
+<div class="barra-superior">
+    <a href="{% url 'mociones' asamblea.id %}">&#x1F860; Volver</a>
+</div>
+
+    <div>
+        <h1> ASAMBLEA: {{asamblea|title}}</h1>
+    </div>
+    <div>
+        <h1> Mocion: {{mocion.titulo}}</h1>
+    </div>
+
+
+
+<div class="cuerpo-tarjeta">
+    <form method="POST" action="">
+    {% csrf_token %}
+
+             Activar Mocion:  {{ form.encurso }}
+            {{ form.titulo.label_tag }} {{ form.titulo }}
+            {{ form.mocion.label_tag }} {{ form.mocion }}
+            {{ form.observacion.label_tag }} {{ form.observacion }}
+            {{ form.id_tipo.label_tag }} {{ form.id_tipo }}
+            {{ form.id_estado.label_tag }} {{ form.id_estado }}
+            {{ form.id_tipo_presenta.label_tag }} {{ form.id_tipo_presenta }}
+            {{ form.id_organo_presenta.label_tag }} {{ form.id_organo_presenta }}
+
+
+        <label for="id_asistente_presenta">Miembro presenta:</label>
+
+            <select name="id_asistente_presenta" >
+                 <option value=""> -------------</option>
+                {% for asistente in asistentes_relacionados %}
+                    <option value="{{ asistente.id }}"> {{ asistente.id_miembro.nombre }} {{ asistente.id_miembro.apellido }} - {{ asistente.id_miembro.id_tipo.descripcion }}</option>
+                {% endfor %}
+            </select>
+
+
+
+    <input class='boton' type="submit" value="enviar">
+</form>
+</div>
+
+
+{% endblock content %}

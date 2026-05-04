@@ -19,8 +19,8 @@ load_dotenv()
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-BASE_DIR = Path(__file__).resolve().parent.parent
-
+#BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -35,8 +35,8 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 #ALLOWED_HOSTS = ['*']
 
 #Debug
-DEBUG = True
-ALLOWED_HOSTS = ['.onrender.com']
+DEBUG = True   # en producion va False
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -48,6 +48,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'base.apps.BaseConfig',
+    'presbiterio.apps.PresbiterioConfig',
+    'escuela.apps.EscuelaConfig'
 ]
 
 #MIDDLEWARE = [
@@ -106,6 +108,27 @@ WSGI_APPLICATION = 'grey.wsgi.application'
 
 
 
+if os.getenv("DATABASE_URL"):
+    DATABASES = {
+        'default': dj_database_url.config(
+            conn_max_age=600,
+            ssl_require=True
+        )
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': os.getenv('DB_HOST'),
+            'PORT': os.getenv('DB_PORT'),
+            'OPTIONS': {'client_encoding': 'UTF8'},
+        }
+    }
+
+
 #  FuncionaBien
 #DATABASES = {
 #    'default': {
@@ -114,10 +137,10 @@ WSGI_APPLICATION = 'grey.wsgi.application'
 #        'USER': os.getenv('DB_USER'),
 #        'PASSWORD': os.getenv('DB_PASSWORD'),
 #        'HOST': os.getenv('DB_HOST'),
-#        'PORT': os.getenv('DB_PORT'),
-#        'OPTIONS': {'client_encoding': 'UTF8'},
-#    }
-#}
+#       'PORT': os.getenv('DB_PORT'),
+#       'OPTIONS': {'client_encoding': 'UTF8'},
+#   }
+#
 
 # Esto es por Render ABRIL 2026
 #DATABASES = {
@@ -129,19 +152,22 @@ WSGI_APPLICATION = 'grey.wsgi.application'
 #}
 
 
-
-DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
-        conn_max_age=600,
-        ssl_require=False
-    )
-}
+#Fuciona en abril 28 2026
+#DATABASES = {
+#   'default': dj_database_url.config(
+#       default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
+#      conn_max_age=600,
+#        ssl_require=False
+#    )
+#}
 
 if 'postgres' in DATABASES['default']['ENGINE']:
     DATABASES['default']['OPTIONS'] = {
         'client_encoding': 'UTF8'
     }
+
+
+#username: postgres
 
 #DATABASES = {
 #    'default': {
@@ -240,3 +266,12 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 DATE_INPUT_FORMATS = ['%d/%m/%Y']
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
+
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')

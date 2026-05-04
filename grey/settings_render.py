@@ -35,7 +35,7 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 #ALLOWED_HOSTS = ['*']
 
 #Debug
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = ['.onrender.com']
 
 # Application definition
@@ -130,30 +130,29 @@ WSGI_APPLICATION = 'grey.wsgi.application'
 
 
 
+#DATABASES = {
+#    'default': dj_database_url.config(
+#        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
+#        conn_max_age=600,
+#        ssl_require=False
+#    )
+#}
+
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=f"sqlite:///{os.path.join(BASE_DIR, 'db.sqlite3')}",
+        default=os.getenv('DATABASE_URL'),
         conn_max_age=600,
-        ssl_require=False
+        ssl_require=True
     )
 }
+
 
 if 'postgres' in DATABASES['default']['ENGINE']:
     DATABASES['default']['OPTIONS'] = {
         'client_encoding': 'UTF8'
     }
 
-#DATABASES = {
-#    'default': {
-#        'ENGINE': 'django.db.backends.postgresql',
-#        'NAME': 'bdgrey',
-#        'USER': 'grey',
-#        'PASSWORD': 'rootgrey+-',
-#        'HOST': 'localhost',
-#        'PORT': '5432',
-#        'OPTIONS': {'client_encoding': 'UTF8'},
-#   }
-#}
 
 #DATABASES = {
 #    'default': {
@@ -240,3 +239,7 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 
 DATE_INPUT_FORMATS = ['%d/%m/%Y']
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'

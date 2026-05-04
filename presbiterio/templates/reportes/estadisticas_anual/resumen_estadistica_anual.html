@@ -1,0 +1,109 @@
+{% extends "presbiterio/principal.html" %}
+
+{% block content %}
+
+<h3>Resumen Presbiterio - {{ anio }}</h3>
+
+
+<form method="get" class="mb-3">
+
+    <div class="row">
+
+        <div class="col-md-3">
+            <label>Año</label>
+              <input type="number" name="anio" value="{{ anio }}" class="form-control" style="width:150px; display:inline;"  max="{{ current_year }}">
+        </div>
+
+        <div class="col-md-2" style="margin-top:25px;">
+            <button class="btn btn-primary">Consultar</button>
+        </div>
+
+    </div>
+
+</form>
+
+
+<p>
+
+Total iglesias: {{ total_iglesias }}<br>
+Reportaron: {{ total_reportaron }}<br>
+No reportaron: {{ total_no_reportaron }}
+</p>
+
+<table class="table table-bordered">
+
+<tr class="table-info"><th>Indicador</th><th>Total</th></tr>
+
+<tr><td>Miembros inicio</td><td>{{ totales.miembros_inicio }}</td></tr>
+<tr><td>Ganados</td><td>{{ totales.miembros_ganados }}</td></tr>
+<tr><td>Perdidos</td><td>{{ totales.miembros_perdidos }}</td></tr>
+<tr><td>Final</td><td>{{ totales.miembros_final }}</td></tr>
+<tr><td>Activos</td><td>{{ totales.miembros_activos }}</td></tr>
+<tr><td>Escuela</td><td>{{ totales.promedio_escuela }}</td></tr>
+<tr><td>Diezmos</td><td>{{ totales.diezmos_ofrendas }}</td></tr>
+<tr><td>Aportes</td><td>{{ totales.aportes_presbiterio }}</td></tr>
+<tr><td>Otros</td><td>{{ totales.otros_gastos }}</td></tr>
+
+</table>
+
+<a href="{% url 'resumen_estadistica_anual_excel' anio %}" class="btn btn-success" onclick="return confirm('Genera una descar en Excel')">Excel</a>
+<a href="{% url 'resumen_estadistica_anual_pdf' anio %}" class="btn btn-danger" onclick="return confirm('Genera una descar en PDF')">PDF</a>
+
+
+<hr>
+<h4>Detalle por iglesias</h4>
+
+<table class="table table-bordered table-sm">
+
+<thead>
+<tr class="table-info">
+    <th>Iglesia</th>
+    <th>Inicio</th>
+    <th>Ganados</th>
+    <th>Perdidos</th>
+    <th>Final</th>
+    <th>Activos</th>
+    <th>Escuela</th>
+    <th>Diezmos</th>
+    <th>Aportes</th>
+    <th>Otros</th>
+</tr>
+</thead>
+
+<tbody>
+
+{% for r in reportes %}
+<tr>
+    <td>{{ r.iglesia.nombre }}</td>
+    <td>{{ r.miembros_inicio }}</td>
+    <td>{{ r.miembros_ganados }}</td>
+    <td>{{ r.miembros_perdidos }}</td>
+    <td>{{ r.miembros_final }}</td>
+    <td>{{ r.miembros_activos }}</td>
+    <td>{{ r.promedio_escuela }}</td>
+    <td>{{ r.diezmos_ofrendas }}</td>
+    <td>{{ r.aportes_presbiterio }}</td>
+    <td>{{ r.otros_gastos }}</td>
+</tr>
+{% endfor %}
+
+</tbody>
+
+<tfoot>
+<tr style="font-weight:bold; background:#f2f2f2;">
+    <td>TOTAL</td>
+    <td>{{ totales.miembros_inicio }}</td>
+    <td>{{ totales.miembros_ganados }}</td>
+    <td>{{ totales.miembros_perdidos }}</td>
+    <td>{{ totales.miembros_final }}</td>
+    <td>{{ totales.miembros_activos }}</td>
+    <td>{{ totales.promedio_escuela }}</td>
+    <td>{{ totales.diezmos_ofrendas }}</td>
+    <td>{{ totales.aportes_presbiterio }}</td>
+    <td>{{ totales.otros_gastos }}</td>
+</tr>
+</tfoot>
+
+</table>
+
+{% endblock %}

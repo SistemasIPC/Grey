@@ -1,0 +1,114 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Cursos del periodo: {{ periodo.nombre }}</h3>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Nivel</th>
+            <th>Curso</th>
+            <th>Grupo</th>
+            <th>Aula</th>
+            <th>&nbsp;</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for cp in cursos_periodo %}
+        <tr>
+            <td>{{ cp.curso.nivel.nombre }}</td>
+            <td>{{ cp.curso.nombre }}</td>
+            <td>{{ cp.nombre_grupo }}</td>
+            <td>{{ cp.aula }}</td>
+            <td>
+
+
+                {% if cp.cupos_disponibles > 0 and cp.activo %}
+                    <a href="{% url 'inscripcion_create' cp.id %}"
+                       class="btn btn-success btn-sm">
+                        Inscribir
+                    </a>
+                {% else %}
+                    <span class="badge bg-danger">
+                        Sin cupo
+                    </span>
+                {% endif %}
+
+                <form method="post" action="{% url 'curso_periodo_eliminar' cp.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button class="btn btn-danger btn-sm"
+                            onclick="return confirm('¿Eliminar este curso del periodo?')">
+                        Eliminar
+                    </button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="4">No hay cursos en este periodo</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+
+
+{% if puede_agregar %}
+<hr>
+
+<h5>Agregar curso al periodo</h5>
+
+<form method="post">
+    {% csrf_token %}
+
+    <div class="row">
+
+        <div class="col-md-6 mb-2">
+            <label>Curso</label>
+            {{ form.curso }}
+        </div>
+
+        <div class="col-md-6 mb-2">
+            <label>Maestro</label>
+            {{ form.maestro }}
+        </div>
+
+        <div class="col-md-3 mb-2">
+            <label>Cupo</label>
+            {{ form.cupo }}
+        </div>
+
+        <div class="col-md-3 mb-2">
+            <label>Grupo</label>
+            {{ form.nombre_grupo }}
+        </div>
+
+        <div class="col-md-3 mb-2">
+            <label>Aula</label>
+            {{ form.aula }}
+        </div>
+
+        <div class="col-md-3 mb-2">
+            <label>Día</label>
+            {{ form.dia_semana }}
+        </div>
+
+        <div class="col-md-3 mb-2">
+            <label>Hora</label>
+            {{ form.hora }}
+        </div>
+
+        <div class="col-md-3 mb-2 mt-4">
+            <label>Activo</label><br>
+            {{ form.activo }}
+        </div>
+
+    </div>
+
+    <button class="btn btn-success mt-3">Guardar</button>
+</form>
+
+{% endif %}
+
+{% endblock %}

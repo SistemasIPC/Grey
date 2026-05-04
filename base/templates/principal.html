@@ -62,13 +62,20 @@
 
 
 
+                    <li class="nav-item" ><a class="nav-link" href="{% url 'evento_list' %}">Eventos </a> </li>
+                    <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
+
+
                     {% if usuario_iglesia.superusuario %}
                     <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
                     <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
                      <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
 
                    <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
+                    <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_reportes_anuales' %}">Reportes Anuales</a> </li>
+                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grafica_iglesia_anio_anio' %}">Grafica anio anio</a> </li>
                    <li class="nav-item" >----------- </li>
+
 
 
 

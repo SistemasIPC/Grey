@@ -1,0 +1,16 @@
+{% extends "presbiterio/principal.html" %}
+
+{% block content %}
+
+<h3>{{ r.iglesia }}</h3>
+
+<ul>
+    <li>Miembros inicio: {{ r.miembros_inicio }}</li>
+    <li>Ganados: {{ r.miembros_ganados }}</li>
+    <li>Perdidos: {{ r.miembros_perdidos }}</li>
+    <li>Final: {{ r.miembros_final }}</li>
+    <li>Activos: {{ r.miembros_activos }}</li>
+    <li>Asistencia: {{ r.promedio_escuela }}</li>
+</ul>
+
+{% endblock %}

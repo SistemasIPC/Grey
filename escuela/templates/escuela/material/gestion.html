@@ -1,0 +1,199 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<h3>Gestión de Materiales</h3>
+
+<form method="get" class="row mb-3">
+
+    <div class="col-md-4">
+        <select name="curso" class="form-control" onchange="this.form.submit()">
+            <option value="">Curso</option>
+            {% for c in cursos %}
+                <option value="{{ c.id }}" {% if curso_id == c.id|stringformat:"s" %}selected{% endif %}>
+                    {{ c.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-md-4">
+        <select name="tema" class="form-control" onchange="this.form.submit()">
+            <option value="">Tema</option>
+            {% for t in temas %}
+                <option value="{{ t.id }}" {% if tema_id == t.id|stringformat:"s" %}selected{% endif %}>
+                    {{ t.nombre }}
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
+</form>
+
+<button class="btn btn-success mb-2" onclick="nuevoMaterial()">
+    + Nuevo material
+</button>
+
+<table class="table table-bordered">
+    <tbody id="sortable">
+
+        {% for m in materiales %}
+        <tr data-id="{{ m.id }}">
+            <td style="cursor:move;">☰</td>
+
+            <td>
+                <input type="text"
+                       value="{{ m.nombre }}"
+                       class="form-control"
+                       onblur="guardarMaterial(this, {{ m.id }}, 'nombre')">
+            </td>
+
+            <td>
+                <input type="text"
+                       value="{{ m.url }}"
+                       placeholder="URL"
+                       class="form-control"
+                       onblur="guardarMaterial(this, {{ m.id }}, 'url')">
+            </td>
+
+          <td>
+              <input type="file"
+                     class="form-control"
+                     onchange="subirArchivo(this, {{ m.id }})">
+
+              {% if m.archivo %}
+                  <a href="{{ m.archivo.url }}" target="_blank">Ver archivo</a>
+              {% endif %}
+          </td>
+
+
+
+            <td>
+                <textarea class="form-control"
+                          onblur="guardarMaterial(this, {{ m.id }}, 'descripcion')">{{ m.descripcion }}</textarea>
+            </td>
+
+            <td>
+                <button class="btn btn-danger btn-sm"
+                        onclick="eliminarMaterial({{ m.id }})">
+                    🗑
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+
+    </tbody>
+</table>
+
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+
+new Sortable(document.getElementById('sortable'), {
+    animation: 150,
+    onEnd: guardarOrden
+});
+
+function guardarMaterial(input, id, campo) {
+
+    let data = {
+        id: id
+    };
+
+    data[campo] = input.value;
+
+    fetch("{% url 'material_guardar' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify(data)
+    });
+}
+
+function eliminarMaterial(id) {
+
+    if (!confirm("¿Eliminar material?")) return;
+
+    fetch("{% url 'material_eliminar' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({id: id})
+    }).then(() => location.reload());
+}
+
+function nuevoMaterial() {
+
+    const tema = "{{ tema_id }}";
+
+    if (!tema) {
+        alert("Seleccione un tema");
+        return;
+    }
+
+    fetch("{% url 'material_nuevo' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({tema_id: tema})
+    }).then(() => location.reload());
+}
+
+function guardarOrden() {
+
+    let orden = [];
+
+    document.querySelectorAll("#sortable tr").forEach(el => {
+        orden.push(el.dataset.id);
+    });
+
+    fetch("{% url 'material_orden' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({orden: orden})
+    });
+}
+
+</script>
+
+<script>
+
+function subirArchivo(input, id) {
+
+    const file = input.files[0];
+
+    if (!file) return;
+
+    let formData = new FormData();
+    formData.append("id", id);
+    formData.append("archivo", file);
+
+    fetch("{% url 'material_guardar' %}", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.status === "ok") {
+            console.log("Archivo guardado");
+        } else {
+            alert("Error al subir archivo");
+        }
+    });
+
+}
+</script>
+
+{% endblock %}

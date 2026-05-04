@@ -1,0 +1,191 @@
+{% extends 'presbiterio/principal.html' %}
+
+{% block content %}
+
+<div class="barra-superior">
+    <a href="{% url 'menu_principal' %}">&#x1F860; Volver</a>
+</div>
+
+    <div>
+        <h1> ASAMBLEA: {{asamblea|title}}</h1>
+    </div>
+
+
+<h2>Postulaciones</h2>
+
+
+<table border="1" style="width: 100%;">
+    <tbody>
+    {% for fila_organos in organos_en_pares %}
+        <tr>
+            {% for organo in fila_organos %}
+            <td style="vertical-align: top; width: 50%; padding: 10px;">
+                <h3>{{ organo.descripcion }}</h3>
+
+                <!-- Buscador de miembro para postular -->
+                <input type="text" class="search-member" data-organo="{{ organo.id }}" placeholder="Buscar miembro...">
+                <div class="member-results" data-organo="{{ organo.id }}"></div>
+
+                <!-- Selección de cargo y botón de postular (se mostrarán dinámicamente) -->
+                <div class="cargo-selection" data-organo="{{ organo.id }}" style="display: none;">
+                    <label for="cargo-select-{{ organo.id }}">Selecciona Cargo:</label>
+                    <select id="cargo-select-{{ organo.id }}"></select>
+                    <button class="add-postulado" data-organo="{{ organo.id }}">Agregar Postulado</button>
+                </div>
+
+                <!-- Lista de postulados para este órgano -->
+                <h4>Postulados</h4>
+                <ul class="postulado-list" data-organo="{{ organo.id }}">
+                    <!-- Se llenará con fetch al cargar la página -->
+                </ul>
+            </td>
+            {% endfor %}
+
+            {% if fila_organos|length < 2 %}
+                <td></td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<script>
+function createDeleteButton(organoId, postuladoId) {
+    const deleteBtn = document.createElement('button');
+    deleteBtn.textContent = "Eliminar";
+    deleteBtn.addEventListener('click', function() {
+        if(!confirm("¿Seguro que deseas eliminar este postulado?")) return;
+        fetch(`/postulaciones/organo/${organoId}/postulado/${postuladoId}/eliminar/`, {
+            method: "POST",
+            headers: {
+                "X-CSRFToken": "{{ csrf_token }}"
+            }
+        })
+        .then(resp => resp.json())
+        .then(delData => {
+            if(delData.status === 'ok') {
+                const liToRemove = document.getElementById(`postulado-${postuladoId}`);
+                if(liToRemove) liToRemove.remove();
+            } else {
+                alert("No se pudo eliminar el postulado.");
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert("Error al eliminar el postulado.");
+        });
+    });
+    return deleteBtn;
+}
+
+// -------------------------------------------------------------------
+// AL CARGAR LA PÁGINA, OBTENER POSTULADOS EXISTENTES
+// -------------------------------------------------------------------
+document.addEventListener('DOMContentLoaded', function(){
+    // Para cada <ul> con la clase .postulado-list, obtenemos el organoId y hacemos fetch
+    document.querySelectorAll('.postulado-list').forEach(ul => {
+        const organoId = ul.dataset.organo;
+        fetch(`/postulaciones/organo/${organoId}/listado/`)
+        .then(response => response.json())
+        .then(data => {
+            data.forEach(post => {
+                const li = document.createElement('li');
+                li.id = `postulado-${post.id}`;
+                li.textContent = post.miembro + " - " + post.cargo + " ";
+                // Crear botón Eliminar
+                const deleteBtn = createDeleteButton(organoId, post.id);
+                li.appendChild(deleteBtn);
+                ul.appendChild(li);
+            });
+        })
+        .catch(err => console.error("Error cargando postulados:", err));
+    });
+});
+
+// -------------------------------------------------------------------
+// BÚSQUEDA DE MIEMBROS (por nombre/apellido) Y SELECCIÓN DE CARGO
+// -------------------------------------------------------------------
+document.querySelectorAll('.search-member').forEach(input => {
+    input.addEventListener('input', function(){
+        const organoId = this.dataset.organo;
+        const query = this.value;
+        if(query.length < 2) return;
+
+        fetch(`/postulaciones/organo/${organoId}/buscar-miembros/?q=${query}`)
+        .then(response => response.json())
+        .then(data => {
+            const resultsDiv = document.querySelector(`.member-results[data-organo='${organoId}']`);
+            resultsDiv.innerHTML = "";
+            data.forEach(member => {
+                const div = document.createElement('div');
+                div.textContent = member.nombre + " " + member.apellido;
+                div.style.cursor = "pointer";
+                div.dataset.memberId = member.id;
+                div.addEventListener('click', function(){
+                    const memberId = this.dataset.memberId;
+                    // Al seleccionar el miembro, buscar cargos
+                    fetch(`/postulaciones/miembro/${memberId}/cargos/`)
+                    .then(response => response.json())
+                    .then(cargos => {
+                        const cargoSelect = document.getElementById(`cargo-select-${organoId}`);
+                        cargoSelect.innerHTML = "";
+                        cargos.forEach(cargo => {
+                            const option = document.createElement('option');
+                            option.value = cargo.id;
+                            option.textContent = cargo.descripcion;
+                            cargoSelect.appendChild(option);
+                        });
+                        // Mostramos la sección de cargo
+                        const cargoDiv = document.querySelector(`.cargo-selection[data-organo='${organoId}']`);
+                        cargoDiv.style.display = 'block';
+                        cargoDiv.dataset.memberId = memberId;
+                    });
+                });
+                resultsDiv.appendChild(div);
+            });
+        });
+    });
+});
+
+// -------------------------------------------------------------------
+// AGREGAR POSTULADO
+// -------------------------------------------------------------------
+document.querySelectorAll('.add-postulado').forEach(button => {
+    button.addEventListener('click', function(){
+        const organoId = this.dataset.organo;
+        const cargoDiv = document.querySelector(`.cargo-selection[data-organo='${organoId}']`);
+        const memberId = cargoDiv.dataset.memberId;
+        const cargoId = document.getElementById(`cargo-select-${organoId}`).value;
+
+        fetch(`/postulaciones/organo/${organoId}/agregar/`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({
+                id_miembro: memberId,
+                id_cargo: cargoId
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Agregamos el postulado a la lista
+            const postuladoList = document.querySelector(`.postulado-list[data-organo='${organoId}']`);
+            const li = document.createElement('li');
+            li.id = `postulado-${data.id}`;
+            li.textContent = data.miembro + " - " + data.cargo + " ";
+            // Crear botón Eliminar
+            const deleteBtn = createDeleteButton(organoId, data.id);
+            li.appendChild(deleteBtn);
+            postuladoList.appendChild(li);
+
+            // Limpiamos la búsqueda
+            document.querySelector(`.search-member[data-organo='${organoId}']`).value = "";
+            document.querySelector(`.member-results[data-organo='${organoId}']`).innerHTML = "";
+            cargoDiv.style.display = 'none';
+        });
+    });
+});
+</script>
+{% endblock %}
