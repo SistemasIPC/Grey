@@ -43,6 +43,11 @@ ALLOWED_HOSTS = [
     "grey-1-ljus.onrender.com",
 ]
 
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+
 CSRF_TRUSTED_ORIGINS = [
     "https://nexuscumberland.org",
     "https://www.nexuscumberland.org",
