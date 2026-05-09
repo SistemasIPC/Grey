@@ -660,7 +660,13 @@ class EventoProgramadoForm(forms.ModelForm):
 
         widgets = {
             "evento": forms.Select(attrs={"class": "form-control"}),
-            "fecha": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "fecha": forms.DateInput(
+                format="%Y-%m-%d",
+                attrs={
+                    "class": "form-control",
+                    "type": "date"
+                }
+            ),
             "hora": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
             "capacidad": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),

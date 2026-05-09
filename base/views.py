@@ -1726,7 +1726,6 @@ class ConsolidacionCreateView(VistaProtegida,CreateView):
     def form_valid(self, form):
 
         obj = form.save(commit=False)
-        print(form.errors)
         obj.usuario = self.request.user
         obj.en_seguimiento = 'P'
 
@@ -3367,9 +3366,6 @@ def auto_inscripcion_evento(request, token):
         "fecha"
     ).first()
 
-    print("*****EVENTO*****")
-    print(evento)
-    print("*****EVENTO*****")
     rangos = RangoEdad.objects.filter(
         iglesia=iglesia
     ).order_by("orden")
