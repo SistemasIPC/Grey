@@ -9,6 +9,25 @@
         <small>{{ evento.fecha }}</small>
     </h3>
 
+        <!-- 🔥 INDICADORES -->
+    <table class="table table-striped mb-4">
+
+        <tr>
+
+            <th class="table-success">
+                Líder
+            </th>
+
+            <th class="table-primary">
+                Activo
+            </th>
+
+        </tr>
+
+    </table>
+
+
+
     {% regroup inscripciones by rango_edad as grupos %}
 
     {% for grupo in grupos %}
