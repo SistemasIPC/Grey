@@ -83,7 +83,7 @@
                             <li class="nav-item" ><a class="nav-link" href="{% url 'categoria_lider_list' %}">Categor&iacute;a l&iacute;der </a> </li>
 
                             <li class="nav-item" ><a class="nav-link" href="{% url 'buscar_ocupaciones'  %}">Buscar ocupaciones </a> </li>
-                            <li class="nav-item" ><a class="nav-link" href="{% url 'registro_publico_miembro' usuario_iglesia.id_iglesia.token_registro  %}">Registro puiblico </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'registro_publico_miembro' request.session.token_registro %}">Registro puiblico </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'auto_inscripcion_evento' request.session.token_registro %}">auto_inscripcion_eventos </a> </li>
 
 
