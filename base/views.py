@@ -701,7 +701,7 @@ class MiembroListView(VistaProtegida,LoginRequiredMixin, ListView):
     model = Miembro
     template_name = 'miembros/miembro_list.html'
     context_object_name = 'miembros'
-    paginate_by = 3
+    paginate_by = 20
 
     def get_queryset(self):
 

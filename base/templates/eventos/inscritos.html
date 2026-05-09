@@ -29,13 +29,20 @@
                 </thead>
                 <tbody>
                     {% for i in grupo.list %}
-                    <tr class="
-                        {% if i.red_nombre %}
-                            table-success
-                        {% else %}
-                            table-light
-                        {% endif %}
-                    ">
+                    <tr
+
+                    {% if i.miembro.lider %}
+
+                        class="table-success"
+
+                    {% elif i.miembro.activo %}
+
+                        class="table-primary"
+
+                    {% endif %}
+
+
+                    >
                         <td>
                             {% if i.miembro %}
                                 {{ i.miembro.nombre }} {{ i.miembro.apellido }}
