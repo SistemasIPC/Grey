@@ -30,7 +30,6 @@ from escuela.views import LoginEscuelaView
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
     path('nexus-control-pcc/', admin.site.urls),
     # LOGIN IGLESIA
     path('login/', LoginIglesiaView.as_view(), name='login_iglesia'),
