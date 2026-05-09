@@ -11,6 +11,7 @@
             <th>Usuario</th>
             <th>Iglesia</th>
             <th>Superusuario</th>
+            <th>Rol consolidador</th>
             <th>Acciones</th>
         </tr>
         </thead>
@@ -30,6 +31,15 @@
                 {% endif %}
 
             </td>
+
+            <td class="text-center">
+                <input type="checkbox"
+                       class="toggle-consolidador"
+                       data-id="{{ usuario.id }}"
+                       {% if usuario.rol_consolidador %}checked{% endif %}>
+            </td>
+
+
             <td>
 
                 {% if not usuario.superusuario and usuario.num_ministerios == 0 %}
@@ -74,4 +84,71 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+
+
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    document.querySelectorAll(".toggle-consolidador")
+    .forEach(function (checkbox) {
+
+        checkbox.addEventListener("change", function () {
+
+            const usuarioId = this.dataset.id;
+            const nuevoEstado = this.checked;
+
+            let mensaje = nuevoEstado
+                ? "¿Deseas activar el rol consolidador?"
+                : "¿Deseas quitar el rol consolidador?";
+
+            if (!confirm(mensaje)) {
+
+                this.checked = !nuevoEstado;
+                return;
+            }
+
+            fetch(`/usuario_iglesia/${usuarioId}/toggle_consolidador/`, {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+
+                body: JSON.stringify({
+                    rol_consolidador: nuevoEstado
+                })
+
+            })
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                if (!data.success) {
+
+                    alert("Error al actualizar.");
+
+                    checkbox.checked = !nuevoEstado;
+                }
+            })
+
+            .catch(error => {
+
+                alert("Error de conexión.");
+
+                checkbox.checked = !nuevoEstado;
+            });
+
+        });
+
+    });
+
+});
+</script>
+
+
+
 {% endblock content %}

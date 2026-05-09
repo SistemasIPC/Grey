@@ -71,7 +71,7 @@
 
 
                         <div  class="mb-3">
-
+                            {% if bienvenida.link_video_bienvenida %}
                             <a href="{{ bienvenida.link_video_bienvenida }}" target="_blank">
 
                             <img
@@ -80,7 +80,7 @@
                                 style="max-width:300px"
                             >
                             </a>
-
+                            {% endif %}
 
 
                         </div>
@@ -88,6 +88,7 @@
 
 
                         <div class="mb-3">
+                            {% if bienvenida.link_playlist %}
                             <label class="fw-bold">🎧 Playlist
                             </label>
                             <a href="{{ bienvenida.link_playlist }}" target="_blank" class="d-block text-primary">
@@ -97,29 +98,28 @@
                                 class="img-fluid rounded shadow"
                                 style="max-width:300px"
                             >
-
-
                             </a>
+                            {% endif %}
                         </div>
 
                         <div class="mb-3">
                             <label class="fw-bold">📚 </label>
-
+                            {% if bienvenida.link_devocional_youversion %}
                             <a href="{{ bienvenida.link_devocional_youversion }}" target="_blank"  class="btn btn-info btn-lg">
                                 Lectura esperando
                             </a>
-
+                            {% endif %}
 
                         </div>
 
                         <div class="mb-3">
                             <label class="fw-bold">📘 </label>
-
+                            {% if bienvenida.link_libro_online %}
                             <a href="{{ bienvenida.link_libro_online }}" target="_blank" class="btn btn-info btn-lg">
 
                                 Un libro esperando
                             </a>
-
+                            {% endif %}
                         </div>
                     <div class="mt-4">
 

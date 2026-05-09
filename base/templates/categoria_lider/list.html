@@ -1,0 +1,79 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<div class="container">
+
+    <div class="d-flex justify-content-between mb-3">
+
+        <h3>
+            Categorías de Líder
+        </h3>
+
+        <a href="{% url 'categoria_lider_create' %}"
+           class="btn btn-primary">
+
+            Nuevo
+
+        </a>
+
+    </div>
+
+    <table class="table table-bordered">
+
+        <thead>
+
+            <tr>
+                <th>Código</th>
+                <th>Descripción</th>
+                <th width="180">Acciones</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for c in categorias %}
+
+                <tr>
+
+                    <td>{{ c.codigo }}</td>
+
+                    <td>{{ c.descripcion }}</td>
+
+                    <td>
+
+                        <a href="{% url 'categoria_lider_update' c.id %}"
+                           class="btn btn-sm btn-warning">
+
+                            Editar
+
+                        </a>
+
+                        <a href="{% url 'categoria_lider_delete' c.id %}"
+                           class="btn btn-sm btn-danger">
+
+                            Eliminar
+
+                        </a>
+
+                    </td>
+
+                </tr>
+
+            {% empty %}
+
+                <tr>
+                    <td colspan="3">
+                        No existen categorías.
+                    </td>
+                </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<h3>Grupos en Casa</h3>
+
+<a href="{% url 'grupo_casa_create' %}"
+   class="btn btn-primary mb-3">
+    Nuevo grupo
+</a>
+
+<form method="get" class="mb-3 ">
+
+    <input type="text"
+           name="buscar"
+           value="{{ buscar }}"
+           class="form-control"
+           placeholder="Buscar grupo">
+ <input class="btn btn-success" type="submit" value="buscar">
+</form>
+
+<table class="table table-bordered">
+
+    <thead>
+        <tr class="table-dark">
+            <th>Código</th>
+            <th>Descripción</th>
+            <th>Barrio</th>
+            <th>Líder</th>
+            <th>Día</th>
+            <th>Hora</th>
+            <th></th>
+        </tr>
+    </thead>
+
+    <tbody>
+
+        {% for g in grupos %}
+
+        <tr>
+            <td>{{ g.codigo }}</td>
+            <td>{{ g.descripcion }}</td>
+            <td>{{ g.id_barrio }}</td>
+            <td>{{ g.id_usuario.first_name }} {{ g.id_usuario.last_name }}</td>
+            <td>{{ g.get_dia_semana_display }}</td>
+            <td>{{ g.hora }}</td>
+
+            <td>
+        <span class="badge bg-success">
+            {{ g.id_estado.descripcion }}
+        </span>
+                <a href="{% url 'grupo_casa_update' g.id %}"
+                   class="btn btn-warning btn-sm">
+                    Editar
+                </a>
+
+                <a href="{% url 'grupo_casa_delete' g.id %}"
+                   class="btn btn-danger btn-sm">
+                    Eliminar
+                </a>
+
+            </td>
+        </tr>
+
+        {% empty %}
+
+        <tr>
+            <td colspan="7">
+                Sin registros
+            </td>
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+<!-- PAGINADOR -->
+
+<nav>
+
+    <ul class="pagination">
+
+        {% if grupos.has_previous %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ grupos.previous_page_number }}">
+                    Anterior
+                </a>
+            </li>
+        {% endif %}
+
+        <li class="page-item active">
+            <span class="page-link">
+                {{ grupos.number }}
+            </span>
+        </li>
+
+        {% if grupos.has_next %}
+            <li class="page-item">
+                <a class="page-link"
+                   href="?page={{ grupos.next_page_number }}">
+                    Siguiente
+                </a>
+            </li>
+        {% endif %}
+
+    </ul>
+
+</nav>
+
+{% endblock %}

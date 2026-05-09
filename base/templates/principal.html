@@ -45,7 +45,7 @@
 </head>
 <body>
     <header class="bg-primary text-white text-center py-4">
-        <h1>{{iglesia}}</h1>
+        <h1>{{request.session.iglesia_nombre}}</h1>
         <p>Cuidando de buena manera</p>
     </header>
 
@@ -62,51 +62,72 @@
 
 
 
-                    <li class="nav-item" ><a class="nav-link" href="{% url 'evento_list' %}">Eventos </a> </li>
-                    <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
 
 
-                    {% if usuario_iglesia.superusuario %}
-                    <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
-                     <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
-
-                   <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_reportes_anuales' %}">Reportes Anuales</a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grafica_iglesia_anio_anio' %}">Grafica anio anio</a> </li>
-                   <li class="nav-item" >----------- </li>
+                    {% if request.session.iglesa_superusuario %}
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
 
 
 
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
+                             <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'grupo_casa_list' %}">Grupos en casa </a> </li>
+                           <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_list' %}">Eventos </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
+
+                           <!-- <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_reportes_anuales' %}">Reportes Anuales</a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'grafica_iglesia_anio_anio' %}">Grafica anio anio</a> </li> -->
+                           <li class="nav-item" >----------- </li>
+
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'categoria_lider_list' %}">Categor&iacute;a l&iacute;der </a> </li>
+
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'buscar_ocupaciones'  %}">Buscar ocupaciones </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'registro_publico_miembro' usuario_iglesia.id_iglesia.token_registro  %}">Registro puiblico </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'auto_inscripcion_evento' request.session.token_registro %}">auto_inscripcion_eventos </a> </li>
 
 
                     {% else %}
 
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
-                     <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
-                     <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
-                    <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
-                   <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_grupos_casa' %}">Mis grupos</a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_redes' %}">Mis redes</a> </li>
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
+                             <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
+                             <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
+                            <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
+                           <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_grupos_casa' %}">Mis grupos</a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_redes' %}">Mis redes</a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
 
 
-                    {% if codigo_min == "CN" %}
-                        <li class="nav-item" ><a  class="nav-link" href="{% url 'consolidacion_list' %}">Consolidacion</a> </li>
-                    {% endif %}
-                    <li class="nav-item" >
-                    <a href="{% url 'consolidacion_pendiente' %}" class="nav-link"> Seguimiento consolidación
-
-                            <span class="badge bg-danger">
-                                {{ pendientes_por_consolidacion }}
-                            </span>
 
 
-                    </a>
-                    </li>
+                            {% if request.session.rol_consolidador %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'consolidacion_list' %}">Consolidacion</a> </li>
+                            {% endif %}
 
-                    <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Consultar grupos en Casa</a> </li>
+                            <li class="nav-item" >
+                            <a href="{% url 'consolidacion_pendiente' %}" class="nav-link"> Seguimiento consolidación
+
+                                    {% if not request.session.pendientes_por_consolidacion %}
+                                        <span class="badge bg-danger">
+                                            0
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-danger">
+                                            {{ request.session.pendientes_por_consolidacion }}
+                                        </span>
+
+                                    {% endif %}
+
+                            </a>
+                            </li>
+
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Consultar grupos en Casa</a> </li>
+
+
+
+
 
                     {% endif %}
 
@@ -120,11 +141,11 @@
                 <ul class="navbar-nav">
 
                         <li class="nav-item">
-                            <a class="nav-link" href="">Perfil ({{ user.username }})</a>
+                            <a class="nav-link" href="">Perfil ({{ request.session.username }})</a>
                         </li>
 
 
-                    {% if request.user.is_authenticated %}
+                    {% if request.session.is_authenticated %}
                             <form method="post" action="{% url 'logout' %}">
                                 {% csrf_token %}
                                 <button  class="btn btn-danger" type="submit">logout</button>

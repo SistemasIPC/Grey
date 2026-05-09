@@ -1,0 +1,74 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<div class="container">
+
+    <h3 class="mb-4">
+
+        {% if form.instance.pk %}
+            Editar
+        {% else %}
+            Nueva
+        {% endif %}
+
+        Categoría de Líder
+
+    </h3>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <div class="mb-3">
+
+            <label>
+                Código
+            </label>
+
+            {{ form.codigo }}
+
+        </div>
+                {% if form.codigo.errors %}
+                    <div class="text-danger">
+                        {% for error in form.codigo.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+
+        <div class="mb-3">
+
+            <label>
+                Descripción
+            </label>
+
+            {{ form.descripcion }}
+
+        </div>
+
+                {% if form.descripcion.errors %}
+                    <div class="text-danger">
+                        {% for error in form.descripcion.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+
+        <button class="btn btn-success">
+            Guardar
+        </button>
+
+        <a href="{% url 'categoria_lider_list' %}"
+           class="btn btn-secondary">
+
+            Volver
+
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

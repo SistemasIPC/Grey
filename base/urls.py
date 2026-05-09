@@ -175,7 +175,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 path("evento-programado/<int:pk>/edit/", views.evento_programado_update, name="evento_programado_update"),
                 path("evento-programado/<int:pk>/delete/", views.evento_programado_delete, name="evento_programado_delete"),
                 path("inscripcion/<int:evento_id>/", views.inscripcion_evento, name="inscripcion_evento"),
-                path("auto_inscripcion/<int:evento_id>/", views.auto_inscripcion_evento, name="auto_inscripcion_evento"),
+                path("auto_inscripcion/<uuid:token>/", views.auto_inscripcion_evento, name="auto_inscripcion_evento"),
                 path("checkin/<int:evento_id>/", views.checkin_evento, name="checkin_evento"),
                 path("checkin/ajax/", views.checkin_ajax, name="checkin_ajax"),
                 path('evento/<int:evento_id>/panel/', views.panel_evento, name='panel_evento'),
@@ -185,5 +185,35 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 path('evento/<int:evento_id>/dashboard-rangos/',  views.dashboard_rangos_view, name='dashboard_rangos'),
                 path('evento/<int:evento_id>/dashboard-rangos/data/', views.dashboard_rangos,  name='dashboard_rangos_data'),
 
+                path("grupo-casa/",views.grupo_casa_list, name="grupo_casa_list"),
+                path("grupo-casa/nuevo/", views.grupo_casa_create, name="grupo_casa_create"),
+                path("grupo-casa/<int:pk>/editar/", views.grupo_casa_update, name="grupo_casa_update"),
+                path("grupo-casa/<int:pk>/eliminar/", views.grupo_casa_delete, name="grupo_casa_delete" ),
+
+                path("ajax/buscar-miembros/", views.buscar_miembros_ajax, name="buscar_miembros_ajax"),
+                path("ajax/buscar-barrios/", views.buscar_barrios_ajax,  name="buscar_barrios_ajax" ),
+                path( "ajax/buscar-usuarios/",  views.buscar_usuarios_iglesia, name="buscar_usuarios_iglesia"),
+
+
+                path("categoria-lider/", views.CategoriaLiderListView.as_view(),  name="categoria_lider_list" ),
+
+                path("categoria-lider/nuevo/",  views.CategoriaLiderCreateView.as_view(),  name="categoria_lider_create" ),
+
+                path("categoria-lider/<int:pk>/editar/", views.CategoriaLiderUpdateView.as_view(),  name="categoria_lider_update" ),
+
+                path("categoria-lider/<int:pk>/eliminar/", views.CategoriaLiderDeleteView.as_view(),  name="categoria_lider_delete" ),
+
+
+                path("registro/<uuid:token>/", views.registro_publico_miembro, name="registro_publico_miembro"),
+
+                path("miembros/ocupaciones/",  views.buscar_ocupaciones,  name="buscar_ocupaciones"),
+                path("miembros/<int:miembro_id>/agendar-jitsi/", views.agendar_jitsi,  name="agendar_jitsi"),
+                path("citas/", views.lista_citas, name="lista_citas"),
+                path("citas/<int:cita_id>/atendida/", views.cita_atendida, name="cita_atendida"),
+                path( "citas/<int:cita_id>/cancelada/", views.cita_cancelada, name="cita_cancelada"),
+
+                path( "citas/<int:cita_id>/eliminar/", views.cita_eliminar, name="cita_eliminar"),
+
+                path("usuario_iglesia/<int:pk>/toggle_consolidador/", views.toggle_consolidador, name="toggle_consolidador"),
 
                ]

@@ -12,6 +12,13 @@
 
     <label for="id_nombre_rol">Nombre del Rol:</label>
     {{ form.descripcion }}
+                {% if form.descripcion.errors %}
+                    <div class="text-danger">
+                        {% for error in form.descripcion.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
 
     <button  class="btn btn-success" type="submit">Guardar</button>
 

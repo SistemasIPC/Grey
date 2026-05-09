@@ -2,66 +2,268 @@
 
 {% block content %}
 
+<div class="container">
 
+    <h2 class="mb-4">
+        Lista de Miembros de la Iglesia
+    </h2>
 
-
-
-<h2>Lista de Miembros de la Iglesia</h2>
-
-<table class="table table-striped ">
+    <!-- 🔥 INDICADORES -->
+    <table class="table table-striped mb-4">
 
         <tr>
-            <th class="table-success">L&iacute;der</th>
-            <th class="table-primary">Activo</th>
+
+            <th class="table-success">
+                Líder
+            </th>
+
+            <th class="table-primary">
+                Activo
+            </th>
+
         </tr>
 
-</table>
+    </table>
 
-<a href="{% url 'miembro-create' %}" class="btn btn-primary">Agregar Miembro</a>
+    <!-- 🔥 BOTÓN NUEVO -->
+    <div class="mb-3">
 
+        <a href="{% url 'miembro-create' %}"
+           class="btn btn-primary">
 
+            Agregar Miembro
 
+        </a>
 
-<table class="table table-hover table-striped table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>Correo</th>
-            <th>Teléfono</th>
-            <th>Acciones</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for miembro in miembros %}
-        <tr
-            {% if miembro.lider %} class="table-success" {% elif miembro.activo %} class="table-primary"  {% endif %}
+    </div>
 
+    <!-- 🔥 BUSCADOR -->
+    <form method="get" class="mb-4">
 
+        <div class="row">
 
+            <div class="col-md-4">
 
-        >
-            <td>{{ miembro.nombre }}</td>
-            <td>{{ miembro.apellido }}</td>
-            <td>{{ miembro.correo }}</td>
-            <td>{{ miembro.telefono }}</td>
-            <td>
-                <a href="{% url 'miembro-update' miembro.pk %}" class="btn btn-warning">Editar</a>
+                <input type="text"
+                       name="q"
+                       value="{{ q }}"
+                       class="form-control"
+                       placeholder="Buscar por nombre, apellido o identificación">
 
-             {% if miembro.id not in miembros_con_ministerio %}
-                    <a href="{% url 'miembro-delete' miembro.pk %}"  class="btn btn-danger" onclick="return confirm('¿Estás seguro de eliminar esta persona?')">
-                        Eliminar
-                    </a>
+            </div>
+
+            <div class="col-md-3">
+
+                <button class="btn btn-primary">
+
+                    Buscar
+
+                </button>
+
+                <a href="{% url 'miembro-list' %}"
+                   class="btn btn-secondary">
+
+                    Limpiar
+
+                </a>
+
+            </div>
+
+        </div>
+
+    </form>
+
+    <!-- 🔥 TABLA -->
+    <table class="table table-hover table-striped table-bordered">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th>Nombre</th>
+
+                <th>Apellido</th>
+
+                <th>Identificación</th>
+
+                <th>Correo</th>
+
+                <th>Teléfono</th>
+
+                <th width="220">
+                    Acciones
+                </th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for miembro in miembros %}
+
+                <tr
+
+                    {% if miembro.lider %}
+
+                        class="table-success"
+
+                    {% elif miembro.activo %}
+
+                        class="table-primary"
+
+                    {% endif %}
+
+                >
+
+                    <td>
+                        {{ miembro.nombre }}
+                    </td>
+
+                    <td>
+                        {{ miembro.apellido }}
+                    </td>
+
+                    <td>
+                        {{ miembro.identificacion }}
+                    </td>
+
+                    <td>
+                        {{ miembro.correo }}
+                    </td>
+
+                    <td>
+                        {{ miembro.telefono }}
+                    </td>
+
+                    <td>
+
+                        <a href="{% url 'miembro-update' miembro.pk %}"
+                           class="btn btn-warning btn-sm">
+
+                            Editar
+
+                        </a>
+
+                        {% if miembro.id not in miembros_con_ministerio %}
+
+                            <a href="{% url 'miembro-delete' miembro.pk %}"
+                               class="btn btn-danger btn-sm"
+                               onclick="return confirm('¿Estás seguro de eliminar esta persona?')">
+
+                                Eliminar
+
+                            </a>
+
+                        {% endif %}
+
+                    </td>
+
+                </tr>
+
+            {% empty %}
+
+                <tr>
+
+                    <td colspan="6">
+
+                        No hay miembros registrados.
+
+                    </td>
+
+                </tr>
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    <!-- 🔥 PAGINADOR -->
+    {% if is_paginated %}
+
+        <nav aria-label="Paginación">
+
+            <ul class="pagination">
+
+                <!-- Primera -->
+                {% if page_obj.has_previous %}
+
+                    <li class="page-item">
+
+                        <a class="page-link"
+                           href="?page=1&q={{ q }}">
+
+                            Primera
+
+                        </a>
+
+                    </li>
+
+                    <!-- Anterior -->
+                    <li class="page-item">
+
+                        <a class="page-link"
+                           href="?page={{ page_obj.previous_page_number }}&q={{ q }}">
+
+                            Anterior
+
+                        </a>
+
+                    </li>
+
                 {% endif %}
 
+                <!-- Actual -->
+                <li class="page-item active">
 
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="5">No hay miembros registrados en esta iglesia.</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+                    <span class="page-link">
+
+                        Página
+                        {{ page_obj.number }}
+
+                        de
+
+                        {{ page_obj.paginator.num_pages }}
+
+                    </span>
+
+                </li>
+
+                <!-- Siguiente -->
+                {% if page_obj.has_next %}
+
+                    <li class="page-item">
+
+                        <a class="page-link"
+                           href="?page={{ page_obj.next_page_number }}&q={{ q }}">
+
+                            Siguiente
+
+                        </a>
+
+                    </li>
+
+                    <!-- Última -->
+                    <li class="page-item">
+
+                        <a class="page-link"
+                           href="?page={{ page_obj.paginator.num_pages }}&q={{ q }}">
+
+                            Última
+
+                        </a>
+
+                    </li>
+
+                {% endif %}
+
+            </ul>
+
+        </nav>
+
+    {% endif %}
+
+</div>
+
 {% endblock content %}

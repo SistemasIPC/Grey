@@ -9,6 +9,12 @@ Nuevo Registro
 </a>
 
 
+<a href="{% url 'lista_citas' %}" class="btn btn-success mb-3">
+Citas consolidacion
+</a>
+
+
+
 <form method="get" class="row mb-3">
 
 <div class="col-md-2">
@@ -206,6 +212,39 @@ Enviar Saludo WS
 <span class="badge bg-success">WS</span>
 
 {% endif %}
+
+
+
+
+{% if r.miembro.correo %}
+
+    {% if r.miembro.id not in miembros_con_cita_agendada %}
+
+        <a href="{% url 'agendar_jitsi' r.miembro.id %}"
+           class="btn btn-info btn-sm">
+
+            Reunión
+
+        </a>
+
+    {% else %}
+
+        <span class="badge bg-warning text-dark">
+
+            <a href="{% url 'lista_citas' %}?q={{ r.miembro.nombre }}"
+   class="badge bg-warning text-dark text-decoration-none">
+
+    Cita pendiente
+
+</a>
+
+        </span>
+
+    {% endif %}
+
+{% endif %}
+
+
 
 </td>
 

@@ -1,0 +1,39 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<div class="container">
+
+    <h3>
+        Eliminar Categoría
+    </h3>
+
+    <div class="alert alert-danger">
+
+        ¿Desea eliminar la categoría:
+
+        <strong>
+            {{ object.descripcion }}
+        </strong>?
+
+    </div>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <button class="btn btn-danger">
+            Sí, eliminar
+        </button>
+
+        <a href="{% url 'categoria_lider_list' %}"
+           class="btn btn-secondary">
+
+            Cancelar
+
+        </a>
+
+    </form>
+
+</div>
+
+{% endblock %}

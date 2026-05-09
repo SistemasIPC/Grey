@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from datetime import time
 from datetime import timedelta
+import uuid
 # Create your models here.
 
 from presbiterio.models import Presbiterio
@@ -31,6 +32,11 @@ class Iglesia(models.Model):
     correo = models.CharField(max_length=100, null=True, blank=True)
     pastor = models.CharField(max_length=100, null=True, blank=True)
     activa = models.BooleanField(default=True)
+    token_registro = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True
+    )
     creado = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -56,6 +62,7 @@ class Usuario_iglesia(models.Model):
                                  blank=True)
     correo = models.CharField(null=True, max_length=100)
     superusuario = models.BooleanField(default=False)
+    rol_consolidador = models.BooleanField(default=False)
     creado = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -97,22 +104,45 @@ class Ministerio(models.Model):
         return self.descripcion
 
     class Meta:
+        unique_together = ('codigo', 'id_usuario')
         ordering = ['descripcion']
+
+class Categoria_lider(models.Model):
+    id_iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE,
+                                 null=False,
+                                 blank=True)
+    codigo = models.CharField(max_length=2)
+    descripcion = models.CharField(max_length=200)
+    def __str__(self):
+        return self.descripcion
+
+    class Meta:
+        unique_together = ('codigo', 'id_iglesia')
+        ordering = ['codigo']
+
+
 
 class Miembro(models.Model):
     iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
-    identificacion = models.CharField(max_length=100)
+    identificacion = models.CharField(null=True, max_length=10)
     celular = models.CharField(null=True, max_length=20)
     correo = models.CharField(null=True, max_length=100)
     telefono = models.CharField(max_length=15, blank=True, null=True)
     fecha_nacimiento = models.DateField(blank=True, null=True)
     activo = models.BooleanField(default=True)
     lider = models.BooleanField(default=False)
+    categoria_lider = models.ForeignKey(Categoria_lider, on_delete=models.CASCADE,
+                                 null=True,
+                                 blank=True)
     observacion = models.TextField(null=True,
                                        blank=True)
-    observacion = models.TextField(null=True,
+    ocupacion_actual = models.TextField(null=True,
+                                       blank=True)
+    preparacion = models.TextField(null=True,
+                                       blank=True)
+    ocupacion_interesada = models.TextField(null=True,
                                        blank=True)
     creado = models.DateTimeField(auto_now_add=True)
 
@@ -302,7 +332,7 @@ class GrupoCasa(models.Model):  # Evita guion bajo en nombres de modelos (conven
         (5, 'Sábado'),
         (6, 'Domingo'),
     ]
-    iglesia = models.ForeignKey("Iglesia", on_delete=models.CASCADE)
+    iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
     codigo = models.CharField(max_length=10, blank=True, null=True)
     descripcion = models.CharField(max_length=100, blank=True, null=True)
     id_barrio = models.ForeignKey(
@@ -313,7 +343,9 @@ class GrupoCasa(models.Model):  # Evita guion bajo en nombres de modelos (conven
     dia_semana = models.IntegerField(choices=DIAS_SEMANA)
     hora = models.TimeField()
     id_miembro = models.ForeignKey(
-        Miembro, on_delete=models.CASCADE
+        Miembro, on_delete=models.CASCADE,
+                                 null=True,
+                                 blank=True
     )
     id_usuario = models.ForeignKey(User, on_delete=models.CASCADE,
                                  null=False,
@@ -328,7 +360,7 @@ class GrupoCasa(models.Model):  # Evita guion bajo en nombres de modelos (conven
         return (
             f"{self.descripcion or 'Grupo sin nombre'} - "
             f"{self.get_dia_semana_display()} {self.hora.strftime('%H:%M')} - "
-            f"{self.id_miembro.nombre} {self.id_miembro.apellido}"
+            f"{self.id_usuario.first_name} {self.id_usuario.last_name}"
         )
 
 
@@ -591,6 +623,8 @@ class ConfiguracionIglesia(models.Model):
     link_bienvenida = models.BooleanField(default=False)
     mensaje_linkbienvenida_whatsapp = models.TextField(null=True, blank=True)
 
+    mensaje_whatsapp_cita  = models.TextField(null=True, blank=True)
+
     def __str__(self):
         return f"Configuración {self.iglesia}"
 
@@ -787,7 +821,7 @@ class AsistenciaEvento(models.Model):
 
     rango_edad = models.ForeignKey(RangoEdad, on_delete=models.SET_NULL, null=True)
 
-    es_visitante = models.BooleanField(default=False)
+    es_miembro = models.BooleanField(default=False)
 
     observaciones = models.TextField(blank=True, null=True)
 
@@ -801,3 +835,57 @@ class AsistenciaEvento(models.Model):
     def __str__(self):
         return f"{self.nombre} - {self.evento_programado}"
 
+
+
+class CitaConsolidacion(models.Model):
+    ESTADOS = [
+
+        ("A", "Agendada"),
+
+        ("T", "Atendida"),
+
+        ("C", "Cancelada"),
+
+    ]
+    iglesia = models.ForeignKey(
+        Iglesia,
+        on_delete=models.CASCADE
+    )
+
+    miembro = models.ForeignKey(
+        Miembro,
+        on_delete=models.CASCADE
+    )
+
+    usuario = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE
+    )
+
+    titulo = models.CharField(
+        max_length=200
+    )
+
+    fecha_inicio = models.DateTimeField()
+
+    fecha_fin = models.DateTimeField(blank=True, null=True)
+
+    enlace = models.URLField()
+    estado = models.CharField(
+        max_length=1,
+        choices=ESTADOS,
+        default="A"
+    )
+
+    observacion = models.TextField(
+        null=True,
+        blank=True
+    )
+
+    creado = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+
+        return self.titulo

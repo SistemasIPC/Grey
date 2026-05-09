@@ -1,0 +1,320 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<div class="container">
+
+    <h3 class="mb-4">
+        Grupo en Casa
+    </h3>
+
+    <form method="post">
+
+        {% csrf_token %}
+
+        <!-- 🔹 CAMPOS DEL FORM -->
+        <div class="row">
+
+            <div class="col-md-4 mb-3">
+                <label>Código</label>
+                {{ form.codigo }}
+            </div>
+
+                {% if form.codigo.errors %}
+                    <div class="text-danger">
+                        {% for error in form.codigo.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+
+            <div class="col-md-8 mb-3">
+                <label>Descripción</label>
+                {{ form.descripcion }}
+            </div>
+
+        </div>
+
+        <div class="row">
+
+            <div class="col-md-6 mb-3">
+                <label>Dirección</label>
+                {{ form.direccion }}
+            </div>
+
+            {% if form.direccion.errors %}
+                <div class="text-danger">
+                    {% for error in form.direccion.errors %}
+                        <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+
+            <div class="col-md-3 mb-3">
+                <label>Día</label>
+                {{ form.dia_semana }}
+            </div>
+
+            <div class="col-md-3 mb-3">
+                <label>Hora</label>
+                {{ form.hora }}
+            </div>
+
+        </div>
+
+
+
+        <!-- 🔥 BUSCADOR BARRIO -->
+        <div class="mb-4">
+
+            <label class="form-label">
+                Barrio
+            </label>
+
+<input type="text"
+       id="buscar-barrio"
+       class="form-control"
+       placeholder="Buscar barrio"
+       autocomplete="off"
+
+       value="{% if form.instance.id_barrio %}
+
+            {{ form.instance.id_barrio.descripcion }}
+
+            {% if form.instance.id_barrio.id_comuna %}
+                - {{ form.instance.id_barrio.id_comuna.id_municipio.descripcion }}
+
+                ({{ form.instance.id_barrio.id_comuna.id_municipio.id_departamento.descripcion }})
+            {% endif %}
+
+       {% endif %}">
+
+            <input type="hidden"
+                   name="id_barrio"
+                   id="id_barrio"
+                   value="{% if object %}{{ object.id_barrio.id }}{% endif %}">
+
+            <div id="resultados-barrio"
+                 class="list-group mt-2"></div>
+
+        </div>
+
+
+
+                {% if form.id_barrio.errors %}
+                    <div class="text-danger">
+                        {% for error in form.id_barrio.errors %}
+                            <small>{{ error }}</small>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+
+
+
+
+                    <!-- Estado -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">
+                            Estado
+                        </label>
+                        {{ form.id_estado }}
+                    </div>
+
+                    <!-- Líder -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">
+                            Líder Principal
+                        </label>
+                        {{ form.id_miembro }}
+                    </div>
+
+                    <!-- Usuario -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">
+                            Líder
+                        </label>
+
+                        <select
+                            name="id_usuario"
+                            id="id_id_usuario"
+                            class="form-control"
+                        >
+                            {% if form.instance.id_usuario %}
+                                <option
+                                    value="{{ form.instance.id_usuario.id }}"
+                                    selected
+                                >
+                                    {{ form.instance.id_usuario.first_name }}
+                                    {{ form.instance.id_usuario.last_name }}
+                                    ({{ form.instance.id_usuario.username }})
+                                </option>
+                            {% endif %}
+                        </select>
+
+                        <div class="text-danger small">
+                            {{ form.id_usuario.errors }}
+                        </div>
+                    </div>
+
+                    <!-- Email -->
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">
+                            Email
+                        </label>
+                        {{ form.email }}
+                    </div>
+
+            {% if form.email.errors %}
+                <div class="text-danger">
+                    {% for error in form.email.errors %}
+                        <small>{{ error }}</small>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+        <!-- 🔹 OBSERVACIÓN -->
+        <div class="mb-3">
+            <label>Observación</label>
+            {{ form.observacion }}
+        </div>
+
+        <!-- 🔹 BOTONES -->
+        <div class="mt-4">
+
+            <button type="submit"
+                    class="btn btn-success">
+
+                Guardar
+
+            </button>
+
+            <a href="{% url 'grupo_casa_list' %}"
+               class="btn btn-secondary">
+
+                Volver
+
+            </a>
+
+        </div>
+
+    </form>
+
+</div>
+
+<script>
+
+/////////////////////////////////////////////////////
+// 🔥 BUSCAR MIEMBRO
+/////////////////////////////////////////////////////
+
+
+
+/////////////////////////////////////////////////////
+// 🔥 BUSCAR BARRIO
+/////////////////////////////////////////////////////
+
+document.getElementById("buscar-barrio")
+.addEventListener("keyup", function() {
+
+    let q = this.value.trim();
+
+    let div = document.getElementById(
+        "resultados-barrio"
+    );
+
+    // 🔥 mínimo 3 caracteres
+    if(q.length < 3){
+
+        div.innerHTML = "";
+
+        return;
+    }
+
+    fetch(`/ajax/buscar-barrios/?q=${q}`)
+
+    .then(r => r.json())
+
+    .then(data => {
+
+        div.innerHTML = "";
+
+        data.forEach(item => {
+
+            div.innerHTML += `
+                <button type="button"
+                        class="list-group-item list-group-item-action"
+                        onclick="seleccionarBarrio(
+                            ${item.id},
+                            '${item.nombre}'
+                        )">
+
+                    ${item.nombre}
+
+                </button>
+            `;
+        });
+
+    });
+
+});
+
+function seleccionarBarrio(id, nombre){
+
+    document.getElementById(
+        "id_barrio"
+    ).value = id;
+
+    document.getElementById(
+        "buscar-barrio"
+    ).value = nombre;
+
+    document.getElementById(
+        "resultados-barrio"
+    ).innerHTML = "";
+}
+
+</script>
+
+
+
+<script>
+
+$(document).ready(function() {
+
+    $('#id_id_usuario').select2({
+
+        placeholder: "Buscar usuario...",
+        minimumInputLength: 3,
+
+        ajax: {
+
+            url: "{% url 'buscar_usuarios_iglesia' %}",
+
+            dataType: 'json',
+
+            delay: 300,
+
+            data: function(params) {
+                return {
+                    q: params.term
+                };
+            },
+
+            processResults: function(data) {
+
+                return {
+                    results: data.results
+                };
+            },
+
+            cache: true
+        }
+    });
+
+});
+
+</script>
+
+{% endblock %}

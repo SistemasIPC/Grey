@@ -1,0 +1,68 @@
+{% extends "principal.html" %}
+{% block content %}
+
+<div class="card">
+
+    <div class="card-body">
+
+        <h3 class="text-danger">
+            Eliminar Grupo en Casa
+        </h3>
+
+        <hr>
+
+        <p>
+            ¿Desea eliminar el grupo:
+            <strong>{{ grupo.descripcion }}</strong>?
+        </p>
+
+        <ul class="list-group mb-3">
+
+            <li class="list-group-item">
+                <strong>Código:</strong>
+                {{ grupo.codigo }}
+            </li>
+
+            <li class="list-group-item">
+                <strong>Barrio:</strong>
+                {{ grupo.id_barrio }}
+            </li>
+
+            <li class="list-group-item">
+                <strong>Líder:</strong>
+                {{ grupo.id_miembro }}
+            </li>
+
+            <li class="list-group-item">
+                <strong>Día:</strong>
+                {{ grupo.get_dia_semana_display }}
+            </li>
+
+            <li class="list-group-item">
+                <strong>Hora:</strong>
+                {{ grupo.hora }}
+            </li>
+
+        </ul>
+
+        <form method="post">
+
+            {% csrf_token %}
+
+            <button type="submit"
+                    class="btn btn-danger">
+                Sí, eliminar
+            </button>
+
+            <a href="{% url 'grupo_casa_list' %}"
+               class="btn btn-secondary">
+                Cancelar
+            </a>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}

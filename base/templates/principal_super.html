@@ -68,11 +68,11 @@
                 <ul class="navbar-nav">
 
                         <li class="nav-item">
-                            <a class="nav-link" href="">Perfil ({{ user.username }})</a>
+                            <a class="nav-link" href="">Perfil ({{ request.session.username }})</a>
                         </li>
 
 
-                    {% if request.user.is_authenticated %}
+                    {% if request.session.is_authenticated %}
                             <form method="post" action="{% url 'logout' %}">
                                 {% csrf_token %}
                                 <button  class="btn btn-danger" type="submit">logout</button>

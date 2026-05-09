@@ -1,0 +1,235 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h3 class="mb-4">
+
+        Buscar ocupaciones y habilidades
+
+    </h3>
+
+    <!-- 🔥 BUSCADOR -->
+    <form method="get"
+          class="mb-4">
+
+        <div class="row">
+
+            <div class="col-md-6">
+
+                <input type="text"
+                       name="q"
+                       value="{{ q }}"
+                       class="form-control"
+                       placeholder="Ej: electricista, abogado, diseñador...">
+
+                <small class="text-muted">
+
+                    Ejemplos:
+                    electricista,
+                    abogado,
+                    diseñador gráfico,
+                    enfermería,
+                    cocina...
+
+                </small>
+
+            </div>
+
+            <div class="col-md-2">
+
+                <button class="btn btn-primary">
+
+                    Buscar
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+    <!-- 🔥 RESULTADOS -->
+    {% if q %}
+
+        <h5 class="mb-3">
+
+            Resultados para:
+            <strong>{{ q }}</strong>
+
+        </h5>
+
+        <table class="table table-bordered table-hover">
+
+            <thead class="table-dark">
+
+                <tr>
+
+                    <th>Nombre</th>
+
+                    <th>Teléfono</th>
+
+                    <th>Correo</th>
+
+                    <th>Ocupación actual</th>
+
+                    <th>Preparación</th>
+
+                    <th>Interés</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for m in miembros %}
+
+                    <tr>
+
+                        <td>
+
+                            {{ m.nombre }}
+                            {{ m.apellido }}
+
+                        </td>
+
+                        <td>
+
+                            {{ m.celular }}
+
+                        </td>
+
+                        <td>
+
+                            {{ m.correo }}
+
+                        </td>
+
+                        <td>
+
+                            {{ m.ocupacion_actual }}
+
+                        </td>
+
+                        <td>
+
+                            {{ m.preparacion }}
+
+                        </td>
+
+                        <td>
+
+                            {{ m.ocupacion_interesada }}
+
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="6">
+
+                            No se encontraron resultados.
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+        <!-- 🔥 PAGINADOR -->
+        {% if page_obj.has_other_pages %}
+
+            <nav>
+
+                <ul class="pagination">
+
+                    <!-- anterior -->
+                    {% if page_obj.has_previous %}
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+                               href="?q={{ q }}&page=1">
+
+                                Primera
+
+                            </a>
+
+                        </li>
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+                               href="?q={{ q }}&page={{ page_obj.previous_page_number }}">
+
+                                Anterior
+
+                            </a>
+
+                        </li>
+
+                    {% endif %}
+
+                    <!-- actual -->
+                    <li class="page-item active">
+
+                        <span class="page-link">
+
+                            Página
+                            {{ page_obj.number }}
+
+                            de
+                            {{ page_obj.paginator.num_pages }}
+
+                        </span>
+
+                    </li>
+
+                    <!-- siguiente -->
+                    {% if page_obj.has_next %}
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+                               href="?q={{ q }}&page={{ page_obj.next_page_number }}">
+
+                                Siguiente
+
+                            </a>
+
+                        </li>
+
+                        <li class="page-item">
+
+                            <a class="page-link"
+                               href="?q={{ q }}&page={{ page_obj.paginator.num_pages }}">
+
+                                Última
+
+                            </a>
+
+                        </li>
+
+                    {% endif %}
+
+                </ul>
+
+            </nav>
+
+        {% endif %}
+
+    {% endif %}
+
+</div>
+
+{% endblock %}

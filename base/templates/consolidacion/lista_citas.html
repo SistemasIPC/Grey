@@ -1,0 +1,494 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<div class="container">
+
+    <h3 class="mb-4">
+
+        Gestión de citas
+
+    </h3>
+
+    <!-- 🔥 FILTROS -->
+    <form method="get"
+          class="mb-4">
+
+        <div class="row">
+
+            <!-- miembro -->
+            <div class="col-md-4">
+
+                <input type="text"
+                       name="q"
+                       value="{{ q }}"
+                       class="form-control"
+                       placeholder="Buscar miembro">
+
+            </div>
+
+            <!-- estado -->
+            <div class="col-md-3">
+
+                <select name="estado"
+                        class="form-control">
+
+                    <option value="">
+                        Todos los estados
+                    </option>
+
+                    <option value="A"
+                        {% if estado == "A" %}
+                            selected
+                        {% endif %}
+                    >
+                        Agendada
+                    </option>
+
+                    <option value="T"
+                        {% if estado == "T" %}
+                            selected
+                        {% endif %}
+                    >
+                        Atendida
+                    </option>
+
+                    <option value="C"
+                        {% if estado == "C" %}
+                            selected
+                        {% endif %}
+                    >
+                        Cancelada
+                    </option>
+
+                </select>
+
+            </div>
+
+            <!-- fecha -->
+            <div class="col-md-3">
+
+                <input type="date"
+                       name="fecha"
+                       value="{{ fecha }}"
+                       class="form-control">
+
+            </div>
+
+            <!-- botón -->
+            <div class="col-md-2">
+
+                <button class="btn btn-primary">
+
+                    Filtrar
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </form>
+
+    <!-- 🔥 TABLA -->
+    <table class="table table-bordered table-hover">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th>Miembro</th>
+
+                <th>Título</th>
+
+                <th>Fecha cita</th>
+
+                <th>Estado</th>
+
+                <th>Meet</th>
+
+                <th>Acciones</th>
+                <th> Observación</th>
+                <th>Fecha atencion</th>
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+            {% for cita in citas %}
+
+                <tr>
+
+                    <td>
+
+                        {{ cita.miembro.nombre }}
+                        {{ cita.miembro.apellido }}
+
+                    </td>
+
+                    <td>
+
+                        {{ cita.titulo }}
+
+                    </td>
+
+                    <td>
+
+                        {{ cita.fecha_inicio }}
+
+                    </td>
+
+                    <td>
+
+                        {% if cita.estado == "A" %}
+
+                            <span class="badge bg-primary">
+
+                                Agendada
+
+                            </span>
+
+                        {% elif cita.estado == "T" %}
+
+                            <span class="badge bg-success">
+
+                                Atendida
+
+                            </span>
+
+                        {% else %}
+
+                            <span class="badge bg-danger">
+
+                                Cancelada
+
+                            </span>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {% if cita.estado == "A" %}
+                            <a href="{{ cita.enlace }}"
+                               target="_blank"
+                               class="btn btn-info btn-sm">
+
+                                Entrar
+
+                            </a>
+
+
+
+
+                                {% if cita.miembro.celular %}
+
+                            <a href="https://wa.me/57{{ cita.miembro.celular }}?text={{ cita.mensaje_whatsapp|urlencode }}"
+                               target="_blank"
+                               class="btn btn-success btn-sm">
+
+                                WhatsApp
+
+                            </a>
+
+                                {% endif %}
+
+
+
+                        {% else %}
+
+                            <span class="badge bg-danger">
+
+                                ----
+
+                            </span>
+
+                        {% endif %}
+
+
+
+                    </td>
+
+                    <td>
+
+                        {% if cita.estado == "A" %}
+
+                                 <button
+                                    class="btn btn-success btn-sm"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#modalAtender{{ cita.id }}"
+                                >
+
+
+                                    Atendida
+                                </button>
+
+
+
+                            </a>
+
+                            <a href="{% url 'cita_cancelada' cita.id %}"
+                               class="btn btn-danger btn-sm">
+
+                                Cancelar
+
+                            </a>
+
+                        {% endif %}
+
+                        {% if cita.estado == "A" %}
+
+                            <form method="post"
+                                  action="{% url 'cita_eliminar' cita.id %}"
+                                  style="display:inline;">
+
+                                {% csrf_token %}
+
+                                <button
+                                    type="submit"
+                                    class="btn btn-danger btn-sm"
+                                    onclick="return confirm(
+                                        '¿Desea eliminar esta cita?'
+                                    )"
+                                >
+
+                                    Eliminar
+
+                                </button>
+
+                            </form>
+
+                        {% endif %}
+
+                    </td>
+
+                    <td>
+
+                        {% if cita.observacion %}
+
+                            <button
+                                class="btn btn-secondary btn-sm"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modalObs{{ cita.id }}"
+                            >
+
+                                Ver
+
+                            </button>
+
+                        {% endif %}
+
+                <!-- POner observaciones -->
+                    <div class="modal fade"
+                         id="modalAtender{{ cita.id }}"
+                         tabindex="-1">
+
+                        <div class="modal-dialog">
+
+                            <div class="modal-content">
+
+                                <form method="post"
+                                      action="{% url 'cita_atendida' cita.id %}">
+
+                                    {% csrf_token %}
+
+                                    <div class="modal-header">
+
+                                        <h5 class="modal-title">
+
+                                            Finalizar cita
+
+                                        </h5>
+
+                                        <button type="button"
+                                                class="btn-close"
+                                                data-bs-dismiss="modal">
+                                        </button>
+
+                                    </div>
+
+                                    <div class="modal-body">
+
+                                        <div class="mb-3">
+
+                                            <label class="form-label">
+
+                                                Observación
+
+                                            </label>
+
+                                            <textarea
+                                                name="observacion"
+                                                class="form-control"
+                                                rows="5"
+                                                placeholder="Observaciones de la reunión..."
+                                                required
+                                            >{{ cita.observacion }}</textarea>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div class="modal-footer">
+
+                                        <button type="button"
+                                                class="btn btn-secondary"
+                                                data-bs-dismiss="modal">
+
+                                            Cerrar
+
+                                        </button>
+
+                                        <button class="btn btn-success">
+
+                                            Guardar y finalizar
+
+                                        </button>
+
+                                    </div>
+
+                                </form>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <!-- VEr obserevaciones-->
+                    <div class="modal fade"
+                         id="modalObs{{ cita.id }}"
+                         tabindex="-1">
+
+                        <div class="modal-dialog">
+
+                            <div class="modal-content">
+
+                                <div class="modal-header">
+
+                                    <h5 class="modal-title">
+
+                                        Observación
+
+                                    </h5>
+
+                                </div>
+
+                                <div class="modal-body">
+
+                                    {{ cita.observacion|linebreaks }}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    </td>
+
+
+                    <td>
+
+                        {% if cita.fecha_fin %}
+
+                            {{ cita.fecha_fin }}
+
+                        {% else %}
+
+                            <span class="text-danger">
+                               ----
+                            </span>
+
+                        {% endif %}
+                    </td>
+                </tr>
+
+            {% empty %}
+
+                <tr>
+
+                    <td colspan="6">
+
+                        No hay citas.
+
+                    </td>
+
+                </tr>
+
+
+
+            {% endfor %}
+
+        </tbody>
+
+    </table>
+
+    <!-- 🔥 PAGINADOR -->
+    {% if page_obj.has_other_pages %}
+
+        <nav>
+
+            <ul class="pagination">
+
+                {% if page_obj.has_previous %}
+
+                    <li class="page-item">
+
+                        <a class="page-link"
+                           href="?page=1&q={{ q }}&estado={{ estado }}&fecha={{ fecha }}">
+
+                            Primera
+
+                        </a>
+
+                    </li>
+
+                {% endif %}
+
+                <li class="page-item active">
+
+                    <span class="page-link">
+
+                        {{ page_obj.number }}
+                        /
+                        {{ page_obj.paginator.num_pages }}
+
+                    </span>
+
+                </li>
+
+                {% if page_obj.has_next %}
+
+                    <li class="page-item">
+
+                        <a class="page-link"
+                           href="?page={{ page_obj.next_page_number }}&q={{ q }}&estado={{ estado }}&fecha={{ fecha }}">
+
+                            Siguiente
+
+                        </a>
+
+                    </li>
+
+                {% endif %}
+
+            </ul>
+
+        </nav>
+
+    {% endif %}
+
+</div>
+
+
+
+
+{% endblock %}

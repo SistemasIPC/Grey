@@ -1,16 +1,18 @@
-{% extends 'principal.html' %}
+{% extends 'principal_sin_menu.html' %}
 
 {% block content %}
 <div class="barra-superior">
 
-<a href="{% url 'miembro-list' %}">Volver </a>
+<h2>
+    Registro - {{ iglesia.nombre }}
+</h2>
 
 
 </div>
 
 
 <div class="container">
-    <h2>{% if form.instance.pk %}Editar{% else %}Agregar{% endif %} Miembro</h2>
+
     <form method="post" action="">
         {% csrf_token %}
 
@@ -96,51 +98,18 @@
         </div>
 
 
- {% if usuario_iglesia.superusuario %}
-        <div class="form-check">
-            {{ form.activo }} <label for="{{ form.activo.id_for_label }}">Activo</label>
-        </div>
-
-
-
-        <div class="form-check">
-            {{ form.lider }} <label for="{{ form.lider.id_for_label }}">L&iacute;der</label>
-        </div>
-
-            <div class="row"
-                 id="contenedor-categoria-lider">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">
-                            Categor&iacute;a l&iacute;der
-                        </label>
-                        {{ form.categoria_lider }}
-                    </div>
-                {% if form.categoria_lider.errors %}
-                    <div class="text-danger">
-                        {% for error in form.categoria_lider.errors %}
-                            <small>{{ error }}</small>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-            </div>
-{% endif %}
-
-
         <div class="form-group">
-            <label for="{{ form.ocupacion_actual.id_for_label }}">Ocuapción actual:</label>
+            <label for="{{ form.ocupacion_actual.id_for_label }}">Ocuapción actual</label>
             {{ form.ocupacion_actual }}
         </div>
         <div class="form-group">
-            <label for="{{ form.preparacion.id_for_label }}">Preparaci&oacute;n/Habilidades:</label>
+            <label for="{{ form.preparacion.id_for_label }}">Preparaci&oacute;n</label>
             {{ form.preparacion }}
         </div>
         <div class="form-group">
-            <label for="{{ form.ocupacion_interesada.id_for_label }}">Inter&eacute;s de ocuparse en:</label>
+            <label for="{{ form.ocupacion_interesada.id_for_label }}">Inter&eacute;s de ocuparse en</label>
             {{ form.ocupacion_interesada }}
         </div>
-
-
-
 
 
         <button type="submit" class="btn btn-success">Guardar</button>
@@ -158,43 +127,4 @@
     });
 </script>
 
-<script>
-
-function toggleCategoriaLider(){
-
-    let lider = document.getElementById(
-        "id_lider"
-    );
-
-    let contenedor = document.getElementById(
-        "contenedor-categoria-lider"
-    );
-
-    if(lider.checked){
-
-        contenedor.style.display = "flex";
-
-    }else{
-
-        contenedor.style.display = "none";
-
-        // 🔥 limpiar selección
-        document.getElementById(
-            "id_categoria_lider"
-        ).value = "";
-    }
-}
-
-// 🔥 ejecutar al cargar
-toggleCategoriaLider();
-
-// 🔥 escuchar cambios
-document.getElementById(
-    "id_lider"
-).addEventListener(
-    "change",
-    toggleCategoriaLider
-);
-
-</script>
 {% endblock content %}

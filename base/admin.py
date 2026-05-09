@@ -1,11 +1,12 @@
 from django.contrib import admin
-from .models import Iglesia, Usuario_iglesia,Categoria_servicio, Miembro
+from .models import Iglesia, Usuario_iglesia,Categoria_servicio, Miembro, Categoria_lider
 from .models import Ministerio, Rol_ministerio,  Miembro_ministerio,  Servicio,  ParticipanteServicio
 from .models import Pais, Departamento, Municipio, Comuna, Barrio, Estado_grupoCasa, GrupoCasa
 from .models import Bienvenida, TipoBienvenida, Red, Consolidacion, ConfiguracionIglesia
 from .models import AsistentesGrupoCasa, AsistentesRed, RolEquipoGrupo, ServicioMinisterio
 # Register your models here.
 from .models import Categoria_iglesia, Evento, EventoDia, EventoProgramado, TipoEvento, InscripcionEvento, RangoEdad, AsistenciaEvento
+from .models import CitaConsolidacion
 
 # Register your models here.
 admin.site.register(Iglesia)
@@ -41,3 +42,5 @@ admin.site.register(EventoProgramado)
 admin.site.register(InscripcionEvento)
 admin.site.register(RangoEdad)
 admin.site.register(AsistenciaEvento)
+admin.site.register(Categoria_lider)
+admin.site.register(CitaConsolidacion)

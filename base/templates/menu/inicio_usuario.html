@@ -5,8 +5,11 @@
 
 
   <p>
-     <h3> No está relacionado a una iglesia</h3>
+     <h3> Registro reallizado coorrectamente, espera que el administrador habilite el acceso</h3>
   </p>
 
-
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button  class="btn btn-danger" type="submit">Iniciar</button>
+                            </form>
 {% endblock content %}
