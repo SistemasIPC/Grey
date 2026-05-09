@@ -3367,8 +3367,9 @@ def auto_inscripcion_evento(request, token):
         "fecha"
     ).first()
 
-
-
+    print("*****EVENTO*****")
+    print(evento)
+    print("*****EVENTO*****")
     rangos = RangoEdad.objects.filter(
         iglesia=iglesia
     ).order_by("orden")
