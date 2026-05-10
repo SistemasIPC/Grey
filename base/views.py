@@ -3375,7 +3375,7 @@ def auto_inscripcion_evento(request, token):
 
     iglesia = get_object_or_404(
         Iglesia,
-        id=request.session.get("iglesia_id")
+        id=evento.evento.iglesia.id
     )
 
 
