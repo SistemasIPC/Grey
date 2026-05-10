@@ -185,6 +185,9 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 path('evento/<int:evento_id>/dashboard-rangos/',  views.dashboard_rangos_view, name='dashboard_rangos'),
                 path('evento/<int:evento_id>/dashboard-rangos/data/', views.dashboard_rangos,  name='dashboard_rangos_data'),
 
+                path("inscripcion-evento/<int:pk>/toggle-estado/", views.toggle_estado_inscripcion,name="toggle_estado_inscripcion"),
+
+
                 path("grupo-casa/",views.grupo_casa_list, name="grupo_casa_list"),
                 path("grupo-casa/nuevo/", views.grupo_casa_create, name="grupo_casa_create"),
                 path("grupo-casa/<int:pk>/editar/", views.grupo_casa_update, name="grupo_casa_update"),
@@ -215,5 +218,6 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 path( "citas/<int:cita_id>/eliminar/", views.cita_eliminar, name="cita_eliminar"),
 
                 path("usuario_iglesia/<int:pk>/toggle_consolidador/", views.toggle_consolidador, name="toggle_consolidador"),
+
 
                ]

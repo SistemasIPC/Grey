@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>La grey</title>
 
 
@@ -51,8 +52,8 @@
 
 
        <!-- Menú de navegación -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
+        <div class="container-fluid py-3">
             <a class="navbar-brand" href="{% url 'menu_principal' %}">Inicio</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
@@ -88,16 +89,24 @@
 
 
                     {% else %}
+                            {% if request.session.mis_ministerio %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
+                                <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
+                                <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
 
-                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
+                    {% endif %}
                             <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
-                             <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
-                             <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
-                            <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
-                           <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_grupos_casa' %}">Mis grupos</a> </li>
-                            <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_redes' %}">Mis redes</a> </li>
+
+                            {% if request.session.mis_grupos %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_grupos_casa' %}">Mis grupos</a> </li>
+                            {% endif %}
+
+                            {% if request.session.mis_redes %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_redes' %}">Mis redes</a> </li>
+                            {% endif %}
                             <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
-                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos programados </a> </li>
 
 
 
@@ -106,22 +115,19 @@
                                 <li class="nav-item" ><a  class="nav-link" href="{% url 'consolidacion_list' %}">Consolidacion</a> </li>
                             {% endif %}
 
-                            <li class="nav-item" >
-                            <a href="{% url 'consolidacion_pendiente' %}" class="nav-link"> Seguimiento consolidación
 
-                                    {% if not request.session.pendientes_por_consolidacion %}
-                                        <span class="badge bg-danger">
-                                            0
-                                        </span>
-                                    {% else %}
+                                    {% if request.session.pendientes_por_consolidacion %}
+
+                                          <li class="nav-item" >
+                                                <a href="{% url 'consolidacion_pendiente' %}" class="nav-link"> Seguimiento consolidación  </a>
+                                          </li>
                                         <span class="badge bg-danger">
                                             {{ request.session.pendientes_por_consolidacion }}
                                         </span>
 
                                     {% endif %}
 
-                            </a>
-                            </li>
+
 
                             <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Consultar grupos en Casa</a> </li>
 

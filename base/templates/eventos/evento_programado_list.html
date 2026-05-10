@@ -9,13 +9,17 @@
            placeholder="Buscar por evento o fecha...">
 </form>
 
+{% if request.session.iglesa_superusuario %}
+
 <a href="{% url 'evento_programado_create' %}" class="btn btn-primary mb-3">
     Nuevo Evento Programado
 </a>
+{% endif %}
+
 
 <table class="table">
     <thead>
-        <tr>
+        <tr class="table-dark">
             <th>Evento</th>
             <th>Fecha</th>
             <th>Hora</th>
@@ -44,13 +48,21 @@
                 <a href="{% url 'panel_evento' e.id %}" class="btn btn-sm btn-info">
                     Panel
                 </a>
-                <a href="{% url 'inscripcion_evento' e.id %}" class="btn btn-sm btn-info">
-                    Inscribir
-                </a>
+                    <a href="{% url 'auto_inscripcion_evento' e.token_registro %}" class="btn btn-sm btn-info">
+                        Inscribir_publica
+                    </a>
 
-                <a href="{% url 'checkin_evento' e.id %}" class="btn btn-sm btn-success">
-                    Check-in
-                </a>
+                {% if request.session.mis_ministerio or request.session.iglesa_superusuario %} <!--si es lider de ministerio-->
+                    <a href="{% url 'inscripcion_evento' e.id %}" class="btn btn-sm btn-info">
+                        Inscribir
+                    </a>
+                 {% endif %}
+
+                {% if request.session.mis_ministerio  or request.session.iglesa_superusuario %} <!--si es lider de ministerio-->
+                    <a href="{% url 'checkin_evento' e.id %}" class="btn btn-sm btn-success">
+                        Check-in
+                    </a>
+                 {% endif %}
 
                 <a href="{% url 'pantalla_publica' e.id %}" class="btn btn-sm btn-dark">
                     Pantalla

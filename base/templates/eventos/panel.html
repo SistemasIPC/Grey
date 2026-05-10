@@ -37,12 +37,12 @@
 
     <!-- 🔥 BOTONES -->
     <div class="mt-4">
-
+    {% if request.session.mis_ministerio %} <!--si es lider de ministerio-->
         <a href="{% url 'checkin_evento' evento.id %}"
            class="btn btn-success">
             Abrir Check-in
         </a>
-
+    {% endif %}
         <a href="{% url 'pantalla_publica' evento.id %}"
            target="_blank"
            class="btn btn-dark">
@@ -58,7 +58,7 @@
 
         <table class="table table-bordered table-sm" id="tabla">
             <thead>
-                <tr>
+                <tr class="table-dark">
                     <th>Nombre</th>
                     <th>Identificación</th>
                     <th>Teléfono</th>
@@ -68,8 +68,17 @@
             </thead>
             <tbody>
                 {% for r in registros %}
-                <tr>
-                    <td>{{ r.nombre }}</td>
+                <tr
+
+                    {% if r.estado == 'cancelado' %}
+                        class="table-danger"
+
+                    {% endif %}
+
+
+
+                >
+                    <td>{{ r.estado }}-- {{ r.nombre }}</td>
                     <td>{{ r.identificacion }}</td>
                     <td>{{ r.telefono }}</td>
                     <td>{{ r.rango }}</td>

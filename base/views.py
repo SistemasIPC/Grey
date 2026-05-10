@@ -58,9 +58,10 @@ from .models import Consolidacion, EquipoGrupoCasa, Evento, EventoDia, EventoPro
 from .utils import *
 from presbiterio.models import ReporteAnualIglesia, ConfiPresbiterio
 from django.core.paginator import Paginator
-from django.db.models import OuterRef, Subquery
+from django.db.models import OuterRef, Subquery,Exists
 from .models import CitaConsolidacion
 from django.conf import settings
+
 #-----------------------------------------------------------------
 #                       LOGIN
 #----------------------------------------------------------------
@@ -2879,6 +2880,24 @@ def checkin_ajax(request):
 
 
 
+
+
+        # 🔥 validar inscripcion cancelado
+        ya_cancelado = InscripcionEvento.objects.filter(
+            miembro=miembro,
+            estado="cancelado"
+        ).exists()
+
+        if ya_cancelado:
+
+            return JsonResponse({
+                "ok": False,
+                "error": "La persona ha cancelado la inscripción."
+            })
+
+
+
+
         # 🔥 validar duplicado
         ya_ingreso = AsistenciaEvento.objects.filter(
             evento_programado=evento,
@@ -2923,7 +2942,7 @@ def checkin_ajax(request):
             return JsonResponse({
                 "ok": True,
                 "nombre": asistencia.nombre,
-                "tipo": "Miembro" if asistencia.es_miembro else "Visitante",
+                "mensaje": " Check-in OK",
                 "cupos": cupos_disponibles,
                 "asistentes ": asistentes.count()
             })
@@ -3350,21 +3369,17 @@ Te esperamos.
 
 def auto_inscripcion_evento(request, token):
 
+
+
+    evento = get_object_or_404(EventoProgramado,      token_registro=token     )
+
     iglesia = get_object_or_404(
         Iglesia,
-        token_registro=token
+        id=request.session.get("iglesia_id")
     )
 
 
     form_class = InscripcionEventoForm
-
-    evento = EventoProgramado.objects.filter(
-        estado="publicado",
-        iglesia=iglesia,
-        fecha__gte=now().date()
-    ).order_by(
-        "fecha"
-    ).first()
 
     rangos = RangoEdad.objects.filter(
         iglesia=iglesia
@@ -3490,6 +3505,7 @@ def auto_inscripcion_evento(request, token):
                     telefono=data.get("telefono"),
                     celular=data.get("telefono"),
                     correo=data.get("correo")
+
                 )
 
             # =========================================
@@ -3499,7 +3515,8 @@ def auto_inscripcion_evento(request, token):
             inscripcion = InscripcionEvento.objects.create(
                 evento_programado=evento,
                 miembro=miembro,
-                rango_edad=rango
+                rango_edad=rango,
+                otra_congregacion=data.get("otra_congregacion")
             )
 
             # 🔥 envío de confirmación
@@ -3561,6 +3578,7 @@ def panel_evento(request, evento_id):
             "nombre": miembro.nombre,
             "identificacion": miembro.identificacion,
             "telefono": miembro.telefono,
+            "estado": i.estado,
             "rango": i.rango_edad.nombre if i.rango_edad else "",
             "asistio": miembro.identificacion in asistentes_ids
         })
@@ -3594,6 +3612,8 @@ def pantalla_publica(request, evento_id):
         "usuario_iglesia": usuario_iglesia
     })
 
+
+
 @login_required(login_url='/login/')
 def evento_inscritos(request, evento_id):
     usuario_iglesia = obtener_usuario_iglesia(request)
@@ -3611,26 +3631,37 @@ def evento_inscritos(request, evento_id):
         miembro=OuterRef("miembro")
     ).order_by("-fecha").values("red__nombre")[:1]
 
+
+
+
     evento = get_object_or_404(
         EventoProgramado,
         id=evento_id,
         iglesia=iglesia
     )
 
+    asistencia_subquery = AsistenciaEvento.objects.filter(
+        evento_programado=OuterRef("evento_programado"),
+        miembro=OuterRef("miembro")
+    )
+
+
     inscripciones = InscripcionEvento.objects.filter(
         evento_programado=evento
-    ).select_related("miembro", "rango_edad").order_by("rango_edad__orden").annotate(
-    red_nombre=Subquery(ultima_red)
+    ).select_related("miembro", "rango_edad").order_by("rango_edad__orden","miembro__identificacion").annotate(
+    red_nombre=Subquery(ultima_red)).annotate(
+    tiene_asistencia=Exists(asistencia_subquery)
 )
 
-    if not usuario_iglesia.superusuario:
-        redes_ids = obtener_redes_usuario(request.user)
-        if redes_ids:
-            inscripciones = inscripciones.filter(
+
+    redes_ids = obtener_redes_iglesia(request.session.get("iglesia_id"))
+
+    if redes_ids:
+        inscripciones = inscripciones.filter(
                 Q(rango_edad__red_id__in=redes_ids) |
                 Q(rango_edad__red__isnull=True)
-            )
-        else:
+        ).order_by( "rango_edad__red_id")
+    else:
             inscripciones = []
 
 
@@ -3641,6 +3672,77 @@ def evento_inscritos(request, evento_id):
         "usuario_iglesia": usuario_iglesia
     })
 
+
+
+
+
+
+@login_required(login_url='/login/')
+def toggle_estado_inscripcion(
+    request,
+    pk
+):
+
+    if not request.session.get(
+        "iglesa_superusuario"
+    ):
+
+        return JsonResponse({
+            "success": False,
+            "error": "No autorizado"
+        })
+
+    try:
+
+        inscripcion = (
+            InscripcionEvento.objects
+            .select_related(
+                "evento_programado",
+                "miembro"
+            )
+            .get(pk=pk)
+        )
+
+        tiene_asistencia = (
+            AsistenciaEvento.objects.filter(
+                evento_programado=
+                    inscripcion.evento_programado,
+
+                miembro=
+                    inscripcion.miembro
+            ).exists()
+        )
+
+        if tiene_asistencia:
+
+            return JsonResponse({
+                "success": False,
+                "error":
+                    "Tiene asistencia registrada."
+            })
+
+        if inscripcion.estado == "activo":
+
+            inscripcion.estado = "cancelado"
+
+        else:
+
+            inscripcion.estado = "activo"
+
+        inscripcion.save()
+
+        return JsonResponse({
+            "success": True
+        })
+
+    except Exception as e:
+
+        return JsonResponse({
+            "success": False,
+            "error": str(e)
+        })
+
+
 def obtener_redes_usuario(user):
     return Ministerio.objects.filter(
         id_usuario=user
@@ -3648,7 +3750,11 @@ def obtener_redes_usuario(user):
         red__isnull=True
     ).values_list("red_id", flat=True)
 
-from django.db.models import Count, Q
+
+def obtener_redes_iglesia(id_iglesia):
+    return Red.objects.filter(
+        iglesia_id=id_iglesia
+    )
 
 
 
@@ -3663,6 +3769,7 @@ def dashboard_rangos(request, evento_id):
         id=evento_id,
         iglesia=iglesia
     )
+
 
     asistentes = AsistenciaEvento.objects.filter(
         evento_programado=evento
@@ -3701,17 +3808,14 @@ def dashboard_rangos(request, evento_id):
         })
 
     return JsonResponse({
-        "data": resultados,
-        "iglesia": iglesia,
-        "usuario_iglesia": usuario_iglesia
+        "data": resultados
     })
 
 
 @login_required(login_url='/login/')
 def dashboard_rangos_view(request, evento_id):
-    usuario_iglesia = obtener_usuario_iglesia(request)
-    iglesia = usuario_iglesia.id_iglesia
 
+    iglesia = request.session.get("iglesia_id")
 
     evento = get_object_or_404(
         EventoProgramado,
@@ -3720,9 +3824,7 @@ def dashboard_rangos_view(request, evento_id):
     )
 
     return render(request, "eventos/dashboard_rangos.html", {
-        "evento": evento,
-        "iglesia": iglesia,
-        "usuario_iglesia": usuario_iglesia
+        "evento": evento
     })
 
 

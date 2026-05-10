@@ -1,7 +1,7 @@
-{% extends "principal_sin_menu.html" %}
+{% extends "principal_sin_menu_form.html" %}
 {% block content %}
 
-<h3>{{ evento.evento.tipo.nombre }}: {{ evento.evento.nombre }}</h3>
+<h2>{{ evento.evento.tipo.nombre }}: {{ evento.evento.nombre }}</h2>
 
 <!-- 🔍 BUSCAR -->
 <form method="post">
@@ -14,11 +14,12 @@
            name="identificacion"
            value="{{ identificacion }}"
            class="form-control"
-           placeholder="Identificación"
+           placeholder="Identificación..."
             pattern="[0-9]+"
+           style="font-size:2.3rem;padding:12px;"
     >
 
-    <button class="btn btn-primary mt-2">
+    <button class="btn btn-primary w-100 py-2 mt-2">
         Buscar
     </button>
 </form>
@@ -36,6 +37,7 @@
         {% csrf_token %}
         <input type="hidden" name="accion" value="inscribir">
         <input type="hidden" name="identificacion" value="{{ miembro.identificacion }}">
+          <input type="hidden" name="nombre" value="{{ miembro.nombre }}">
 
            <select name="rango_edad" class="form-control mb-2" >
                 <option value="">Seleccione rango de edad</option>
@@ -54,7 +56,7 @@
 <!-- 👥 SI ES VISITANTE -->
 {% if mostrar_form_visitante %}
     <div class="alert alert-warning">
-        No existe en miembros. Registrar visitante:
+        Por favor reg&iacute;strate:
     </div>
 
     <form method="post">
@@ -75,6 +77,24 @@
                 {% endfor %}
             </select>
 
+            <div class="form-check mb-3">
+
+                <input
+                    class="form-check-input"
+                    type="checkbox"
+                    name="otra_congregacion"
+                    id="otra_congregacion"
+                    value="1"
+                >
+
+                <label
+                    class="form-check-label"
+                    for="otra_congregacion"
+                >
+                    ¿Participas desde otra congregación?
+                </label>
+
+            </div>
         <button class="btn btn-success">
             Inscribir visitante
         </button>

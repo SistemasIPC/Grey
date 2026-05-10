@@ -10,21 +10,21 @@
     </h3>
 
         <!-- 🔥 INDICADORES -->
-    <table class="table table-striped mb-4">
+            <div class="d-flex gap-2 flex-wrap mb-3">
 
-        <tr>
+                <span class="badge bg-success">
+                    Líder
+                </span>
 
-            <th class="table-success">
-                Líder
-            </th>
+                <span class="badge bg-primary">
+                    Activo
+                </span>
 
-            <th class="table-primary">
-                Activo
-            </th>
+                <span class="badge bg-warning text-dark">
+                    Otra congregación
+                </span>
 
-        </tr>
-
-    </table>
+            </div>
 
 
 
@@ -39,18 +39,21 @@
 
             <table class="table table-bordered table-sm">
                 <thead>
-                    <tr>
+                    <tr  class="table-dark">
                         <th>Nombre</th>
                         <th>Identificación</th>
                         <th>Teléfono</th>
                         <th>Red</th>
+                        <th>Estado</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for i in grupo.list %}
                     <tr
+                    {% if i.otra_congregacion %}
+                        class="table-warning"
 
-                    {% if i.miembro.lider %}
+                    {% elif i.miembro.lider %}
 
                         class="table-success"
 
@@ -61,8 +64,11 @@
                     {% endif %}
 
 
+
+
+
                     >
-                        <td>
+                        <td> {{ i.otra_congregacion }}-
                             {% if i.miembro %}
                                 {{ i.miembro.nombre }} {{ i.miembro.apellido }}
                             {% else %}
@@ -87,6 +93,50 @@
                         <td>
                             {{ i.red_nombre|default:"-" }}
                         </td>
+
+                        <td>
+
+                            {% if i.estado == "activo" %}
+
+                                <span class="badge bg-success">
+                                    Activo
+                                </span>
+
+                            {% else %}
+
+                                <span class="badge bg-danger">
+                                    Cancelado
+                                </span>
+
+                            {% endif %}
+
+                            {% if request.session.iglesa_superusuario and not i.tiene_asistencia %}
+
+                                <button
+                                    class="btn btn-sm btn-warning toggle-estado"
+                                    data-id="{{ i.id }}"
+                                    data-estado="{{ i.estado }}"
+                                >
+
+                                    {% if i.estado == "activo" %}
+                                        Cancelar
+                                    {% else %}
+                                        Activar
+                                    {% endif %}
+
+                                </button>
+
+                            {% elif i.tiene_asistencia %}
+
+                                <span class="text-muted small">
+                                    Tiene asistencia
+                                </span>
+
+                            {% endif %}
+
+
+                        </td>
+
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -96,5 +146,79 @@
     {% endfor %}
 
 </div>
+
+
+
+<script>
+
+document.addEventListener(
+    "DOMContentLoaded",
+    function () {
+
+        document.querySelectorAll(
+            ".toggle-estado"
+        ).forEach(function(btn){
+
+            btn.addEventListener(
+                "click",
+                function(){
+
+                    const id = this.dataset.id;
+
+                    const estado = this.dataset.estado;
+
+                    const nuevoEstado =
+                        estado === "activo"
+                        ? "cancelado"
+                        : "activo";
+
+                    const mensaje =
+                        `¿Desea cambiar el estado a ${nuevoEstado}?`;
+
+                    if(!confirm(mensaje)){
+                        return;
+                    }
+
+                    fetch(
+                        `/inscripcion-evento/${id}/toggle-estado/`,
+                        {
+
+                            method: "POST",
+
+                            headers: {
+                                "X-CSRFToken":
+                                    "{{ csrf_token }}",
+
+                                "Content-Type":
+                                    "application/json"
+                            }
+
+                        }
+                    )
+
+                    .then(r => r.json())
+
+                    .then(data => {
+
+                        if(data.success){
+
+                            location.reload();
+
+                        } else {
+
+                            alert(data.error);
+                        }
+
+                    });
+
+                }
+            );
+
+        });
+
+    }
+);
+
+</script>
 
 {% endblock %}

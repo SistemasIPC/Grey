@@ -755,6 +755,11 @@ class EventoProgramado(models.Model):
     hora = models.TimeField(null=True, blank=True)
     capacidad = models.IntegerField()  # puede heredar o modificarse
     estado = models.CharField(max_length=20, choices=ESTADOS, default='borrador')
+    token_registro = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True
+    )
     class Meta:
         unique_together = ('evento', 'fecha')
 
@@ -786,6 +791,7 @@ class InscripcionEvento(models.Model):
 
     rango_edad = models.ForeignKey(RangoEdad,on_delete=models.PROTECT   )
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
+    otra_congregacion = models.BooleanField(null=True,default=False)
 
     estado = models.CharField(
         max_length=20,

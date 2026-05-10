@@ -36,6 +36,7 @@
         {% csrf_token %}
         <input type="hidden" name="accion" value="inscribir">
         <input type="hidden" name="identificacion" value="{{ miembro.identificacion }}">
+        <input type="hidden" name="nombre" value="{{ miembro.nombre }}">
 
            <select name="rango_edad" class="form-control mb-2" >
                 <option value="">Seleccione rango de edad</option>

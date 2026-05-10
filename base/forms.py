@@ -717,6 +717,9 @@ class InscripcionEventoForm(forms.Form):
     )
 
     rango_edad = forms.IntegerField(required=True)
+    
+    otra_congregacion = forms.BooleanField(  required=False  )
+
 
     # 🔥 VALIDACIONES
 
