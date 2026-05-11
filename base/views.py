@@ -3184,8 +3184,8 @@ def inscripcion_evento(request, evento_id):
 
     rangos = RangoEdad.objects.filter(
     iglesia=iglesia,
-    edad_min__lte=evento.edad_max,
-    edad_max__gte=evento.edad_min).order_by("orden")
+    edad_min__lte=evento.edad_min,
+    edad_max__gte=evento.edad_max).order_by("orden")
 
     miembro = None
     mostrar_form_visitante = False
@@ -3384,8 +3384,8 @@ def auto_inscripcion_evento(request, token):
 
     rangos = RangoEdad.objects.filter(
     iglesia=iglesia,
-    edad_min__lte=evento.edad_max,
-    edad_max__gte=evento.edad_min).order_by("orden")
+    edad_min__lte=evento.edad_min,
+    edad_max__gte=evento.edad_max).order_by("orden")
 
     miembro = None
     mostrar_form_visitante = False
