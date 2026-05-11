@@ -3387,7 +3387,9 @@ def auto_inscripcion_evento(request, token):
     edad_min__gte=evento.edad_min,
     edad_max__lte=evento.edad_max).order_by("orden")
 
-
+    print(evento.edad_min)
+    print(evento.edad_max)
+    print(rangos)
 
 
     miembro = None
