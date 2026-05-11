@@ -16,6 +16,8 @@ from django.core.exceptions import ValidationError
 from .models import Barrio,Categoria_lider
 import re
 
+
+
 class RegistroUsuarioForm(UserCreationForm):
     first_name = forms.CharField(max_length=30, required=True, help_text="Ingresa tu nombre")
     last_name = forms.CharField(max_length=30, required=True, help_text="Ingresa tu apellido")
@@ -305,7 +307,7 @@ class RolMinisterioForm(forms.ModelForm):
 class IglesiaForm(forms.ModelForm):
     class Meta:
         model = Iglesia
-        fields = ['nombre', 'descripcion', 'pastor','telefono', 'direccion', 'correo','activa']
+        fields = ['presbiterio','categoria','nombre', 'descripcion', 'pastor','telefono', 'direccion', 'correo','activa']
 
 class UsuarioIglesiaForm(forms.ModelForm):
     class Meta:

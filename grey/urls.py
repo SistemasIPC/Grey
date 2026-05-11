@@ -19,8 +19,11 @@ from django.urls import path, include
 from base.views import LoginIglesiaView
 from presbiterio.views import LoginPresbiterioView
 from escuela.views import LoginEscuelaView
+from django.contrib.auth import views as auth_views
+from .forms import *
 
-
+from django.conf import settings
+from django.conf.urls.static import static
 #urlpatterns = [
 #   path('admin/', admin.site.urls),
 #    path('', include('base.urls')),
@@ -44,4 +47,55 @@ urlpatterns = [
     path('', include('base.urls')),
     path('presbiterio/', include('presbiterio.urls')),
     path('escuela/', include('escuela.urls')),
+
+    path('password-change/',  auth_views.PasswordChangeView.as_view(
+            form_class=MiPasswordChangeForm,
+            template_name='login/password_change.html'
+        ),  name='password_change'
+    ),
+
+    path( 'password-change/done/',  auth_views.PasswordChangeDoneView.as_view(
+            template_name='login/password_change_done.html'
+        ),  name='password_change_done'
+    ),
+
+    # SOLICITAR RESET
+
+    path( 'password-reset/',  auth_views.PasswordResetView.as_view(
+            template_name=
+            'login/password_reset.html'
+        ),  name='password_reset'
+    ),
+
+    # EMAIL ENVIADO
+
+    path( 'password-reset/done/', auth_views.PasswordResetDoneView.as_view(
+            template_name=
+            'login/password_reset_done.html'
+        ), name='password_reset_done'
+    ),
+
+    # LINK RECIBIDO
+
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+            template_name=
+            'login/password_reset_confirm.html'
+        ), name='password_reset_confirm'
+    ),
+
+    # RESET COMPLETADO
+
+    path( 'reset/done/', auth_views.PasswordResetCompleteView.as_view(
+            template_name=
+            'login/password_reset_complete.html'
+        ),  name='password_reset_complete'
+    ),
+
 ]
+
+if settings.DEBUG:
+
+    urlpatterns += static(
+        settings.MEDIA_URL,
+        document_root=settings.MEDIA_ROOT
+    )

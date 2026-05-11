@@ -8,3 +8,4 @@ class LoginPresbiterioView(LoginView):
 
 class LoginEscuelaView(LoginView):
     template_name = 'login_escuela.html'
+

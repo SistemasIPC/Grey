@@ -35,23 +35,10 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 #ALLOWED_HOSTS = ['*']
 
 #Debug
-DEBUG = False   # en producion va False
-#ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS = [
-    "nexuscumberland.org",
-    "www.nexuscumberland.org",
-    "grey-1-ljus.onrender.com",
-]
+DEBUG = True   # en producion va False
+ALLOWED_HOSTS = ['*']
 
-SECURE_SSL_REDIRECT = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
-
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://nexuscumberland.org",
-    "https://www.nexuscumberland.org",
-]
+# Application definition
 
 # Application definition
 

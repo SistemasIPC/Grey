@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>La grey</title>
-
+<meta property="og:image"
+      content="{{ request.scheme }}://{{ request.get_host }}/media/iglesias/{{ request.session.iglesia_codigo }}/img/logos/general/general.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -152,6 +153,9 @@
 
 
                     {% if request.session.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'password_change' %}">  Cambiar contraseña </a>
+                        </li>
                             <form method="post" action="{% url 'logout' %}">
                                 {% csrf_token %}
                                 <button  class="btn btn-danger" type="submit">logout</button>

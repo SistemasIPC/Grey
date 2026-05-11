@@ -4,11 +4,70 @@ from django.utils import timezone
 from datetime import time
 from datetime import timedelta
 import uuid
+import random
+import string
+import os
+from django.conf import settings
+
 # Create your models here.
+
+
+def generar_codigo_iglesia():
+
+    caracteres = (
+        string.ascii_uppercase +
+        string.digits
+    )
+
+    longitud = (
+        Iglesia._meta
+        .get_field("codigo")
+        .max_length
+    )
+
+    while True:
+
+        codigo = ''.join(
+            random.choices(
+                caracteres,
+                k=longitud
+            )
+        )
+
+        if not Iglesia.objects.filter(
+            codigo=codigo
+        ).exists():
+
+            return codigo
+
+def generar_carpetas_iglesia(codigo):
+    carpetas = ["img","css"]
+    subcarpetas = ["reportes", "logos","escuela"]
+
+    ruta = os.path.join(settings.MEDIA_ROOT, "iglesias", codigo )
+    os.makedirs(ruta, exist_ok=True )
+
+    for carpeta in carpetas:
+
+        # Crear carpeta padre (img, css)
+        ruta_carpeta = os.path.join(ruta, carpeta)
+        os.makedirs(ruta_carpeta, exist_ok=True)
+
+        # Crear subcarpetas dentro de cada carpeta
+        for subcarpeta in subcarpetas:
+            os.makedirs(
+                os.path.join(ruta_carpeta, subcarpeta),
+                exist_ok=True
+            )
 
 from presbiterio.models import Presbiterio
 
 class Iglesia(models.Model):
+    codigo = models.CharField(
+        max_length=8,
+        unique=True,
+        editable=False
+    )
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(null=True,
                                    blank=True)
@@ -41,6 +100,14 @@ class Iglesia(models.Model):
 
     def __str__(self):
         return self.nombre
+
+    def save(self, *args, **kwargs):
+
+        if not self.codigo:
+            self.codigo = generar_codigo_iglesia()
+            generar_carpetas_iglesia(self.codigo)
+
+        super().save(*args, **kwargs)
 
     class Meta:
         ordering = ['nombre']

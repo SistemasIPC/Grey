@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>La grey</title>
-<meta property="og:image"
-      content="{{ request.scheme }}://{{ request.get_host }}/media/iglesias/{{ request.session.iglesia_codigo }}/img/logos/general/general.png">
+    <title>Evento</title>
+
+    <meta property="og:image"
+      content="{{ request.scheme }}://{{ request.get_host }}/media/iglesias/{{ request.session.iglesia_codigo }}/img/logos/evento/evento.png">
 
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -51,10 +52,16 @@
 
 
 
-    <div class="container">
+    <div class="container-fluid py-3">
+            <div class="row justify-content-center">
+
+                <div class="col-12 col-md-8 col-lg-5">
+
         {% block content %}
 
         {% endblock content %}
+                </div>
+            </div>
     </div>
     {% if messages %}
 <div class="mt-2">

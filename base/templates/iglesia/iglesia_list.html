@@ -3,11 +3,13 @@
 {% block content %}
 
    <h2>Lista de Iglesias</h2>
-    <a class="btn btn-primary" href="{% url 'iglesia_create' %}">Crear Nueva Iglesia</a>
+    <a class="btn btn-primary" href="{% url 'iglesia_create_temp' %}">Crear Nueva Iglesia</a>
 
     <table class="table table-hover table-striped table-bordered">
         <thead class="table-dark">
+
         <tr>
+            <th>C&oacute;digo</th>
             <th>Nombre</th>
             <th>Pastor</th>
             <th>Teléfono</th>
@@ -17,15 +19,16 @@
         </thead>
         {% for iglesia in iglesias %}
         <tr>
+            <td>{{ iglesia.codigo }}</td>
             <td>{{ iglesia.nombre }}</td>
             <td>{{ iglesia.pastor }}</td>
             <td>{{ iglesia.telefono }}</td>
             <td>{{ iglesia.correo }}</td>
             <td>
-                <a class="btn btn-warning" href="{% url 'iglesia_update' iglesia.id %}">Editar</a>
+                <a class="btn btn-warning" href="{% url 'iglesia_update_temp' iglesia.id %}">Editar</a>
 
                 {% if iglesia.num_miembros == 0 and iglesia.num_usuarios == 0 %}
-                    <a href="{% url 'iglesia_delete' iglesia.id %}" class="btn btn-danger">Eliminar</a>
+                    <a href="{% url 'iglesia_delete_temp' iglesia.id %}" class="btn btn-danger">Eliminar</a>
                 {% endif %}
             </td>
         </tr>

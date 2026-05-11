@@ -9,8 +9,8 @@
 </div>
 
 
-<div class="container">
-    <h2>{% if form.instance.pk %}Editar{% else %}Agregar{% endif %} Miembro</h2>
+<div class="container" style="max-width:500px;">
+    <h2>{% if form.instance.pk %}Editar{% else %}Agregar a membrecia{% endif %}</h2>
     <form method="post" action="">
         {% csrf_token %}
 
@@ -90,8 +90,8 @@
                         {% endfor %}
                     </div>
                 {% endif %}
-        <div class="form-group">
-            <label for="{{ form.fecha_nacimiento.id_for_label }}">Fecha de nacimiento</label>
+        <div class="form-group" style="max-width:300px;">
+            <label  for="{{ form.fecha_nacimiento.id_for_label }}">Fecha de nacimiento</label>
             {{ form.fecha_nacimiento }}
         </div>
 

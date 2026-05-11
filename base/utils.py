@@ -28,6 +28,11 @@ def cargar_sesion_usuario(request, user,usuario_iglesia=None):
                 usuario_iglesia.id
             )
 
+            request.session["iglesia_codigo"] = (
+                usuario_iglesia.id_iglesia.codigo
+            )
+
+
             request.session["iglesia_id"] = (
                 usuario_iglesia.id_iglesia.id
             )
