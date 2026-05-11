@@ -652,14 +652,18 @@ class EventoProgramadoForm(forms.ModelForm):
         model = EventoProgramado
         fields = [
             "evento",
+            "nombre",
             "fecha",
             "hora",
             "capacidad",
+            "edad_min",
+            "edad_max",
             "estado"
         ]
 
         widgets = {
             "evento": forms.Select(attrs={"class": "form-control"}),
+            "nombre": forms.TextInput(attrs={"class": "form-control"}),
             "fecha": forms.DateInput(
                 format="%Y-%m-%d",
                 attrs={
@@ -668,7 +672,9 @@ class EventoProgramadoForm(forms.ModelForm):
                 }
             ),
             "hora": forms.TimeInput(attrs={"class": "form-control", "type": "time"}),
-            "capacidad": forms.NumberInput(attrs={"class": "form-control"}),
+            "capacidad": forms.NumberInput(attrs={"class": "form-control","min": "1"}),
+            "edad_min": forms.NumberInput(attrs={"class": "form-control","min": "0"}),
+            "edad_max": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),
         }
 
@@ -677,11 +683,92 @@ class EventoProgramadoForm(forms.ModelForm):
 
         evento = cleaned_data.get("evento")
 
+        capacidad = cleaned_data.get(
+            "capacidad"
+        )
+
+        edad_min = cleaned_data.get(
+            "edad_min"
+        )
+
+        edad_max = cleaned_data.get(
+            "edad_max"
+        )
         if evento and self.iglesia:
             if evento.iglesia != self.iglesia:
                 raise forms.ValidationError("El evento no pertenece a la iglesia.")
 
+        if capacidad is None:
+            self.add_error(
+                "capacidad",
+                "Debe ingresar la capacidad."
+            )
+
+        # 🔥 edad mínima requerida
+
+        if edad_min is None:
+            self.add_error(
+                "edad_min",
+                "Debe ingresar la edad mínima."
+            )
+
+        # 🔥 edad máxima requerida
+
+        if edad_max is None:
+            self.add_error(
+                "edad_max",
+                "Debe ingresar la edad máxima."
+            )
+
+        # 🔥 validar relación edades
+
+        if (
+                edad_min is not None and
+                edad_max is not None
+        ):
+
+            if edad_min > edad_max:
+                self.add_error(
+                    "edad_min",
+                    "La edad mínima no puede ser mayor que la máxima."
+                )
+
+                self.add_error(
+                    "edad_max",
+                    "La edad máxima no puede ser menor que la mínima."
+                )
+
+
+
+
         return cleaned_data
+
+
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get("nombre")
+
+        if nombre:
+            existe = Evento.objects.filter(
+                iglesia=self.iglesia,
+                nombre__iexact=nombre.strip()
+            )
+
+            if self.instance.pk:
+                existe = existe.exclude(pk=self.instance.pk)
+
+            if existe.exists():
+                raise forms.ValidationError("Ya existe un evento con ese nombre.")
+
+            desc = nombre.strip()
+
+            # 🔥 solo letras, números y espacios
+            if not re.match(r'^[A-Za-zÁÉÍÓÚáéíóúÑñ0-9 ]+$', desc):
+                raise forms.ValidationError("El nombre solo puede contener letras y espacios.")
+
+
+
+        return nombre
 
     def clean_hora(self):
         hora = self.cleaned_data.get("hora")

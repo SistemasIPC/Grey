@@ -1,7 +1,7 @@
 {% extends "principal.html" %}
 {% block content %}
 <a  href="{% url 'evento_programado_list' %}">Volver</a>
-<h3>{{ evento.evento.tipo.nombre }}: {{ evento.evento.nombre }}</h3>
+<h3> {{ evento.evento.nombre }} {{ evento.nombre }}</h3>
 
 <!-- 🔍 BUSCAR -->
 <form method="post">

@@ -31,7 +31,7 @@
     <tbody>
         {% for e in eventos %}
         <tr>
-            <td>{{ e.evento.nombre }}</td>
+            <td><b>{{ e.nombre }}</b> ({{ e.evento.nombre }})</td>
             <td>{{ e.fecha }}</td>
             <td>{{ e.hora }}</td>
             <td>{{ e.capacidad }}</td>
@@ -48,7 +48,7 @@
                 <a href="{% url 'panel_evento' e.id %}" class="btn btn-sm btn-info">
                     Panel
                 </a>
-                    <a href="{% url 'auto_inscripcion_evento' e.token_registro %}" class="btn btn-sm btn-info">
+                    <a href="{% url 'auto_inscripcion_evento' e.token_registro %}" class="btn btn-sm btn-info" target="_blank" rel="noopener noreferrer">
                         Inscribir_publica
                     </a>
 

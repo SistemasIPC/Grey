@@ -750,9 +750,12 @@ class EventoProgramado(models.Model):
     ]
     iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
-
+    nombre = models.CharField(max_length=50)
     fecha = models.DateField()
     hora = models.TimeField(null=True, blank=True)
+    edad_min = models.IntegerField(null=True, blank=True)
+    edad_max = models.IntegerField(null=True, blank=True)
+
     capacidad = models.IntegerField()  # puede heredar o modificarse
     estado = models.CharField(max_length=20, choices=ESTADOS, default='borrador')
     token_registro = models.UUIDField(
@@ -764,15 +767,15 @@ class EventoProgramado(models.Model):
         unique_together = ('evento', 'fecha')
 
     def __str__(self):
-        return f"{self.evento.nombre} - {self.fecha}"
+        return f"{self.evento.nombre} - {self.nombre} - {self.fecha}"
 
 
 class RangoEdad(models.Model):
     iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
 
     nombre = models.CharField(max_length=50)
-    edad_min = models.IntegerField(null=True, blank=True)
-    edad_max = models.IntegerField(null=True, blank=True)
+    edad_min = models.IntegerField()
+    edad_max = models.IntegerField()
     orden = models.IntegerField(default=0)
     red = models.ForeignKey(Red, on_delete=models.SET_NULL, null=True, blank=True)
     def __str__(self):
