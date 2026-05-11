@@ -41,7 +41,7 @@
            <select name="rango_edad" class="form-control mb-2" >
                 <option value="">Seleccione rango de edad</option>
                 {% for r in rangos %}
-                    <option value="{{ r.id }}">{{ r.edad_min }} - {{ r.edad_max }} años |{{ r.nombre }}</option>
+                    <option value="{{ r.id }}">{{ r.edad_min }} - {{ r.edad_max }} años | {{ r.nombre }}</option>
                 {% endfor %}
             </select>
 
@@ -72,7 +72,7 @@
            <select name="rango_edad" class="form-control mb-2" required>
                 <option value="">Seleccione rango de edad</option>
                 {% for r in rangos %}
-                    <option value="{{ r.id }}">{{ r.edad_min }} - {{ r.edad_max }} años |{{ r.nombre }}</option>
+                    <option value="{{ r.id }}">{{ r.edad_min }} - {{ r.edad_max }} años | {{ r.nombre }}</option>
                 {% endfor %}
             </select>
 
