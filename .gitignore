@@ -9,7 +9,7 @@ __pycache__/
 
 # Django
 db.sqlite3
-/media/
+#/media/
 staticfiles/
 
 # VS Code
