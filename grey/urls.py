@@ -98,7 +98,17 @@ urlpatterns = [
 
 ]
 
-urlpatterns += static(
-    settings.MEDIA_URL,
-    document_root=settings.MEDIA_ROOT
-)
+from .views import media_debug
+
+urlpatterns += [
+    re_path(
+        r'^media/(?P<path>.*)$',
+        media_debug,
+    ),
+]
+
+#urlpatterns += static(
+#    settings.MEDIA_URL,
+#    document_root=settings.MEDIA_ROOT
+#)
+
