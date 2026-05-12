@@ -66,7 +66,7 @@ class Iglesia(models.Model):
     codigo = models.CharField(
         max_length=8,
         unique=True,
-        editable=False
+        editable=True
     )
     nombre = models.CharField(max_length=200)
     descripcion = models.TextField(null=True,
