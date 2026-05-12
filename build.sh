@@ -7,4 +7,4 @@ python manage.py migrate
 mkdir -p /var/data/media
 
 # Copiar media inicial desde GitHub hacia el Disk
-cp -r media/* /var/data/media/
+cp -rn media/. /var/data/media/ || true
