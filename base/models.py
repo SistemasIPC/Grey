@@ -591,6 +591,10 @@ class Bienvenida(models.Model):
         null=True
     )
 
+    nada = models.TextField(
+         blank=True,
+        null=True
+    )
 
 
 
