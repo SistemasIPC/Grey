@@ -1570,13 +1570,15 @@ class VerBienvenidaView(DetailView):
         context = super().get_context_data(**kwargs)
 
         if self.request.user.is_authenticated:
-            usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
+
+            usuario_iglesia = Usuario_iglesia.objects.filter(
+                id_usuario=self.request.user
+            ).first()
 
             if usuario_iglesia:
                 iglesia = usuario_iglesia.id_iglesia
                 context["usuario_iglesia"] = usuario_iglesia
                 context["iglesia"] = iglesia
-
 
         if self.request.user.is_authenticated:
             context["base_template"] = "principal.html"
