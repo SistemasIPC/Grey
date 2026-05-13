@@ -25,6 +25,7 @@
 
         </div>
 
+    {% if request.session.mis_ministerio or request.session.iglesa_superusuario %}
     <!-- 🔥 BOTÓN NUEVO -->
     <div class="mb-3">
 
@@ -36,6 +37,7 @@
         </a>
 
     </div>
+    {% endif %}
 
     <!-- 🔥 BUSCADOR -->
     <form method="get" class="mb-4">
@@ -139,7 +141,8 @@
                     <td>
 
 
-                        {% if miembro.id not in miembros_con_ministerio %}
+
+                        {% if request.session.mis_ministerio or request.session.iglesa_superusuario %}
                             <a href="{% url 'miembro-update' miembro.pk %}"
                                class="btn btn-warning btn-sm">
 
