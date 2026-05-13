@@ -591,11 +591,7 @@ class Bienvenida(models.Model):
         null=True
     )
 
-    token_registro = models.UUIDField(
-        default=uuid.uuid4,
-        editable=False,
-        null=True
-    )
+
 
 
     def __str__(self):
