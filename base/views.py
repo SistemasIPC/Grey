@@ -1571,9 +1571,11 @@ class VerBienvenidaView(DetailView):
 
         if self.request.user.is_authenticated:
             usuario_iglesia = get_object_or_404(Usuario_iglesia, id_usuario=self.request.user)
-            iglesia = usuario_iglesia.id_iglesia
-            context["usuario_iglesia"] = usuario_iglesia
-            context["iglesia"] = iglesia
+
+            if usuario_iglesia:
+                iglesia = usuario_iglesia.id_iglesia
+                context["usuario_iglesia"] = usuario_iglesia
+                context["iglesia"] = iglesia
 
 
         if self.request.user.is_authenticated:
