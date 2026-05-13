@@ -1560,7 +1560,7 @@ class VerBienvenidaView(DetailView):
 
 
         try:
-            bienvenida = Bienvenida.objects.get(token_registro=self.kwargs["token"])
+            bienvenida = Bienvenida.objects.get(token_registro=self.kwargs["pk"])
         except Bienvenida.DoesNotExist:
             bienvenida = None
 
@@ -2673,7 +2673,7 @@ def consolidacion_enviar_whatsapp(request):
 
 
 
-            url_bienvenida = reverse("ver-bienvenida",  kwargs={"token": bienvenida.token_registro})
+            url_bienvenida = reverse("ver-bienvenida", args=[bienvenida.id])
 
             url_completa = request.build_absolute_uri(url_bienvenida)
 
