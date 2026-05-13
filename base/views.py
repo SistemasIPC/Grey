@@ -1580,7 +1580,7 @@ class VerBienvenidaView(DetailView):
                 context["usuario_iglesia"] = usuario_iglesia
                 context["iglesia"] = iglesia
 
-        if self.request.user.is_authenticated:
+        if self.request.user.is_authenticated and usuario_iglesia:
             context["base_template"] = "principal.html"
         else:
             context["base_template"] = "principal_sin_menu.html"
