@@ -138,14 +138,15 @@
 
                     <td>
 
-                        <a href="{% url 'miembro-update' miembro.pk %}"
-                           class="btn btn-warning btn-sm">
-
-                            Editar
-
-                        </a>
 
                         {% if miembro.id not in miembros_con_ministerio %}
+                            <a href="{% url 'miembro-update' miembro.pk %}"
+                               class="btn btn-warning btn-sm">
+
+                                Editar
+
+                            </a>
+
 
                             <a href="{% url 'miembro-delete' miembro.pk %}"
                                class="btn btn-danger btn-sm"
