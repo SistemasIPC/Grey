@@ -595,7 +595,7 @@ class Bienvenida(models.Model):
 
 
     def __str__(self):
-        return f"Bienvenida - {self.id_tipo_bienvenida.nombre}"
+        return f"Bienvenida - {self.bienvenida.id} {self.id_tipo_bienvenida.nombre}"
 
 
 class Red(models.Model):
