@@ -14,7 +14,8 @@
                 <div class="card-header bg-primary text-white rounded-top-4">
                     <h4 class="mb-0">
                            {% if user.is_authenticated %}
-                            👋 Bienvenida - {{ bienvenida.id_tipo_bienvenida.nombre }}
+                            <!--👋 Bienvenida - {{ bienvenida.id_tipo_bienvenida.nombre }}-->
+                            👋 ¡Esta tambi&eacute;n es tu casa!
                             {% else %}
                             👋 ¡Esta tambi&eacute;n es tu casa!
                             {% endif %}
@@ -121,6 +122,17 @@
                             </a>
                             {% endif %}
                         </div>
+                    <div class="mt-4">
+
+                        <div class="p-4 mt-2 rounded-3 border bg-success bg-opacity-10" align="center">
+
+                            <hr>
+                            <p> {{ bienvenida.informacion_general_min|default:""|linebreaks }}</p>
+                            <p> {{ bienvenida.horario_general_min|default:""|linebreaks }}</p>
+
+                        </div>
+                    </div>
+
                     <div class="mt-4">
 
                         <div class="p-4 mt-2 rounded-3 border bg-success bg-opacity-10" align="center">

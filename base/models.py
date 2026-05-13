@@ -591,6 +591,12 @@ class Bienvenida(models.Model):
         null=True
     )
 
+    token_registro = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True
+    )
+
 
     def __str__(self):
         return f"Bienvenida - {self.id_tipo_bienvenida.nombre}"

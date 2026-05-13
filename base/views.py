@@ -1557,11 +1557,12 @@ class VerBienvenidaView(DetailView):
 
 
     def get_object(self):
-        tipo = get_object_or_404(TipoBienvenida, pk=self.kwargs["pk"])
 
-        bienvenida, created = Bienvenida.objects.get_or_create(
-            id_tipo_bienvenida=tipo
-        )
+
+        try:
+            bienvenida = Bienvenida.objects.get(token_registro=self.kwargs["token"])
+        except Bienvenida.DoesNotExist:
+            bienvenida = None
 
         return bienvenida
 
@@ -1580,27 +1581,29 @@ class VerBienvenidaView(DetailView):
         else:
             context["base_template"] = "principal_sin_menu.html"
 
-        # Obtener el link del video bievenidad
-        video_url = self.object.link_video_bienvenida
-        youtube_id_bienvenida = None
 
-        if video_url:
-            match = re.search(r"(?:v=|youtu\.be/)([A-Za-z0-9_-]+)", video_url)
-            if match:
-                youtube_id_bienvenida = match.group(1)
+        if  self.object:
+            # Obtener el link del video bievenidad
+            video_url = self.object.link_video_bienvenida
+            youtube_id_bienvenida = None
 
-        context["youtube_id_bienvenida"] = youtube_id_bienvenida
+            if video_url:
+                match = re.search(r"(?:v=|youtu\.be/)([A-Za-z0-9_-]+)", video_url)
+                if match:
+                    youtube_id_bienvenida = match.group(1)
 
-        # Obtener el link del video Play list
-        video_url = self.object.link_playlist
-        youtube_id_play = None
+            context["youtube_id_bienvenida"] = youtube_id_bienvenida
 
-        if video_url:
-            match = re.search(r"(?:v=|youtu\.be/)([A-Za-z0-9_-]+)", video_url)
-            if match:
-                youtube_id_play = match.group(1)
+            # Obtener el link del video Play list
+            video_url = self.object.link_playlist
+            youtube_id_play = None
 
-        context["youtube_id_play"] = youtube_id_play
+            if video_url:
+                match = re.search(r"(?:v=|youtu\.be/)([A-Za-z0-9_-]+)", video_url)
+                if match:
+                    youtube_id_play = match.group(1)
+
+            context["youtube_id_play"] = youtube_id_play
 
 
 
@@ -1619,6 +1622,7 @@ class ConsolidacionListView(VistaProtegida,ListView):
     paginate_by = 20
 
     def get_queryset(self):
+
 
         queryset = Consolidacion.objects.select_related(
             "miembro",
@@ -2650,8 +2654,10 @@ def consolidacion_enviar_whatsapp(request):
         id = request.POST.get("id")
         registro = Consolidacion.objects.get(id=id)
 
+
         if registro.whatsapp_enviado:
             return JsonResponse({"error":"Ya fue enviado"}, status=400)
+
 
 
 
@@ -2665,9 +2671,12 @@ def consolidacion_enviar_whatsapp(request):
         if config.link_bienvenida and registro.red:
             bienvenida = get_object_or_404(Bienvenida, id_tipo_bienvenida__red=registro.red)
 
-            url_bienvenida = reverse("ver-bienvenida", args=[bienvenida.id])
+
+
+            url_bienvenida = reverse("ver-bienvenida",  kwargs={"token": bienvenida.token_registro})
 
             url_completa = request.build_absolute_uri(url_bienvenida)
+
             mensaje = f"""
             {mensaje}
 
