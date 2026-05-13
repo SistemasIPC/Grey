@@ -73,7 +73,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                path('items/', item_list, name='item_list'),
                path('bienvenida/list/', ListaTipoBienvenida.as_view(), name="lista-tipos-bienvenida"),
                path('bienvenida/edit/<int:pk>/', GestionarBienvenidaUpdateView.as_view(), name='gestionar-bienvenida'),
-               path('bienvenida/<int:pk>/', VerBienvenidaView.as_view(), name='ver-bienvenida'),
+               path('bienvenida/<uuid:token>/', VerBienvenidaView.as_view(), name='ver-bienvenida'),
                path("consolidacion/", ConsolidacionListView.as_view(), name="consolidacion_list" ),
                path("consolidacion/nuevo/", ConsolidacionCreateView.as_view(), name="consolidacion_nuevo" ),
                path( "consolidacion/editar/<int:pk>/", ConsolidacionUpdateView.as_view(), name="consolidacion_editar" ),
