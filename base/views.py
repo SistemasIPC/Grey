@@ -4665,6 +4665,12 @@ def lista_citas(request):
             cita.enlace
         )
 
+        mensaje = mensaje.replace(
+            "{fecha}",
+            cita.fecha_inicio
+        )
+
+
         cita.mensaje_whatsapp = mensaje
 
 
