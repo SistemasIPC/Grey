@@ -523,8 +523,12 @@ class TipoBienvenida(models.Model):
     red = models.ForeignKey(
         "Red",
         on_delete=models.CASCADE  )
-
+    codigo = models.CharField(max_length=3)
     nombre = models.CharField(max_length=100)
+
+    class Meta:
+        unique_together = ('codigo', 'id_iglesia')
+        ordering = ['codigo']
 
     def __str__(self):
         return f"{self.nombre} - {self.id_iglesia}"
@@ -595,6 +599,7 @@ class Bienvenida(models.Model):
          blank=True,
         null=True
     )
+
 
 
 
