@@ -660,7 +660,8 @@ class EventoProgramadoForm(forms.ModelForm):
             "capacidad",
             "edad_min",
             "edad_max",
-            "estado"
+            "estado",
+            "imagen"
         ]
 
         widgets = {
@@ -678,6 +679,7 @@ class EventoProgramadoForm(forms.ModelForm):
             "edad_min": forms.NumberInput(attrs={"class": "form-control","min": "0"}),
             "edad_max": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),
+            "imagen": forms.FileInput( attrs={ "class": "form-control"}),
         }
 
     def clean(self):
@@ -739,6 +741,13 @@ class EventoProgramadoForm(forms.ModelForm):
                     "edad_max",
                     "La edad máxima no puede ser menor que la mínima."
                 )
+
+        estado = cleaned_data.get("estado")
+        imagen = cleaned_data.get("imagen")
+
+        if (estado == "publicado" and  not imagen and not self.instance.imagen ):
+            self.add_error("imagen",
+                "Debe cargar una imagen para publicar el evento."   )
 
 
 

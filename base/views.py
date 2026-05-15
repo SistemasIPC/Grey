@@ -3146,7 +3146,7 @@ def evento_programado_update(request, pk):
     )
 
     if request.method == "POST":
-        form = EventoProgramadoForm(request.POST, instance=obj, iglesia=iglesia)
+        form = EventoProgramadoForm(request.POST, request.FILES, instance=obj, iglesia=iglesia)
 
         if form.is_valid():
             form.save()
@@ -3471,7 +3471,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
                     "rangos": rangos,
                     "iglesia": iglesia,
                     "template_plantilla_eventos": template_plantilla_eventos,
-                    "imagen_fondo_evento": evento.codigo,
+                    "ruta_imagen_fondo_evento": evento.imagen,
                     "codigo_iglesia": iglesia.codigo
                 })
 
@@ -3574,7 +3574,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
         "rangos": rangos,
         "iglesia": iglesia,
         "template_plantilla_eventos": template_plantilla_eventos,
-        "imagen_fondo_evento": evento.codigo,
+        "ruta_imagen_fondo_evento": evento.imagen,
         "codigo_iglesia": iglesia.codigo
 
     })

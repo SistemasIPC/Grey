@@ -849,6 +849,31 @@ def generar_codigo_evento_programado():
             return codigo
 
 
+
+
+
+
+def ruta_imagen_evento(instance, filename):
+
+    extension = filename.split(".")[-1]
+
+    nombre_evento = (
+        instance.nombre
+        .replace(" ", "_")
+        .lower()
+    )
+
+    nombre_archivo = (
+        f"{nombre_evento}_{instance.codigo}.{extension}"
+    )
+
+    return (
+        f"iglesias/"
+        f"{instance.iglesia.codigo}/"
+        f"img/logos/evento/"
+        f"{nombre_archivo}"
+    )
+
 class EventoProgramado(models.Model):
     ESTADOS = [
         ('borrador', 'Borrador'),
@@ -876,11 +901,26 @@ class EventoProgramado(models.Model):
         editable=False,
         unique=True
     )
-
+    imagen = models.ImageField(
+        upload_to=ruta_imagen_evento,
+        null=True,
+        blank=True
+    )
     def __str__(self):
         return f"{self.evento.nombre} - {self.nombre} - {self.fecha}"
 
     def save(self, *args, **kwargs):
+
+        if self.pk:
+
+            anterior = EventoProgramado.objects.filter(pk=self.pk ).first()
+
+            if (anterior and anterior.imagen and anterior.imagen != self.imagen):
+                if os.path.isfile(anterior.imagen.path):
+                    anterior.imagen.delete(save=False)
+
+
+
 
         if not self.codigo:
             self.codigo = generar_codigo_evento_programado()
