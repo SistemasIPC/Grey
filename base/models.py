@@ -820,6 +820,35 @@ class EventoDia(models.Model):
 
 
 
+def generar_codigo_evento_programado():
+
+    caracteres = (
+        string.ascii_uppercase +
+        string.digits
+    )
+
+    longitud = (
+        Iglesia._meta
+        .get_field("codigo")
+        .max_length
+    )
+
+    while True:
+
+        codigo = ''.join(
+            random.choices(
+                caracteres,
+                k=longitud
+            )
+        )
+
+        if not Iglesia.objects.filter(
+            codigo=codigo
+        ).exists():
+
+            return codigo
+
+
 class EventoProgramado(models.Model):
     ESTADOS = [
         ('borrador', 'Borrador'),
@@ -827,6 +856,11 @@ class EventoProgramado(models.Model):
         ('cerrado', 'Cerrado'),
     ]
     iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
+    codigo = models.CharField(
+        max_length=8,
+        editable=True,
+        null=True
+    )
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=50)
     fecha = models.DateField()
@@ -841,11 +875,21 @@ class EventoProgramado(models.Model):
         editable=False,
         unique=True
     )
-    class Meta:
-        unique_together = ('evento', 'fecha')
 
     def __str__(self):
         return f"{self.evento.nombre} - {self.nombre} - {self.fecha}"
+
+    def save(self, *args, **kwargs):
+
+        if not self.codigo:
+            self.codigo = generar_codigo_evento_programado()
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        unique_together = ('evento', 'fecha')
+
+
 
 
 class RangoEdad(models.Model):
