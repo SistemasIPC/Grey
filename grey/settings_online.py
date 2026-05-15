@@ -10,6 +10,11 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+#********************************
+#     RENDER
+#*******************************
+
+
 from pathlib import Path
 import os
 import dj_database_url
@@ -28,6 +33,12 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # SECURITY WARNING: keep the secret key used in production secret!
 #SECRET_KEY = 'django-insecure-0)5sn5g6zh0u_g4te%h8j=-!$hqn6foso#)hcw0&kq%1gtel03'
 SECRET_KEY = os.getenv('SECRET_KEY')
+
+
+#*************  Inactividad
+SESSION_COOKIE_AGE = 600 #10 minutos
+SESSION_SAVE_EVERY_REQUEST = True
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = True
@@ -103,6 +114,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'base.context_processors.plantilla_iglesia',
             ],
         },
     },

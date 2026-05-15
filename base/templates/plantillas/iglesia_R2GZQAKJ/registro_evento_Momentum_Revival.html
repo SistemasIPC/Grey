@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Evento</title>
+
+    <!--<meta property="og:image"  content="{{ request.scheme }}://{{ request.get_host }}/media/iglesias/{{ request.session.iglesia_codigo }}/img/logos/evento/evento.png">-->
+
+    <meta property="og:image" content="https://nexuscumberland.org/media/iglesias/R2GZQAKJ/img/logos/evento/formulario-12.jpg.jpeg">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Abel&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Abel&display=swap" rel="stylesheet">
+
+        <!-- Calendario -->
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+ <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+    <!-- En la cabecera (Head) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+    <!-- Al final del Body -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+
+     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- CSS de Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<!-- JS de Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+
+
+
+<style>
+    body {
+        background-image: url('/media/iglesias/R2GZQAKJ/img/logos/evento/formulario-12.jpg.jpeg');
+        background-size: cover;
+        background-position: center;
+        background-repeat: no-repeat;
+        min-height: 100vh;
+    }
+
+    .formulario {
+        background: rgba(255,255,255,0.9);
+        padding: 30px;
+        border-radius: 10px;
+        width: 400px;
+        margin: auto;
+        margin-top: 50px;
+    }
+</style>
+
+
+
+</head>
+<body>
+
+
+
+
+    <div class="container-fluid py-3">
+            <div class="row justify-content-center">
+
+                <div class="col-12 col-md-8 col-lg-5">
+
+        {% block content %}
+
+        {% endblock content %}
+                </div>
+            </div>
+    </div>
+    {% if messages %}
+<div class="mt-2">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+</body>
+</html>

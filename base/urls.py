@@ -175,7 +175,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 path("evento-programado/<int:pk>/edit/", views.evento_programado_update, name="evento_programado_update"),
                 path("evento-programado/<int:pk>/delete/", views.evento_programado_delete, name="evento_programado_delete"),
                 path("inscripcion/<int:evento_id>/", views.inscripcion_evento, name="inscripcion_evento"),
-                path("auto_inscripcion/<uuid:token>/", views.auto_inscripcion_evento, name="auto_inscripcion_evento"),
+                path("auto_inscripcion/<uuid:token_reg_evento>/", views.auto_inscripcion_evento, name="auto_inscripcion_evento"),
                 path("checkin/<int:evento_id>/", views.checkin_evento, name="checkin_evento"),
                 path("checkin/ajax/", views.checkin_ajax, name="checkin_ajax"),
                 path('evento/<int:evento_id>/panel/', views.panel_evento, name='panel_evento'),
@@ -207,7 +207,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 path("categoria-lider/<int:pk>/eliminar/", views.CategoriaLiderDeleteView.as_view(),  name="categoria_lider_delete" ),
 
 
-                path("registro/<uuid:token>/", views.registro_publico_miembro, name="registro_publico_miembro"),
+                path("registro/<uuid:token_reg_pub_m>/", views.registro_publico_miembro, name="registro_publico_miembro"),
 
                 path("miembros/ocupaciones/",  views.buscar_ocupaciones,  name="buscar_ocupaciones"),
                 path("miembros/<int:miembro_id>/agendar-jitsi/", views.agendar_jitsi,  name="agendar_jitsi"),

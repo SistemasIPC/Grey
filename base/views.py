@@ -3382,11 +3382,11 @@ Te esperamos.
         email.send()
 
 
-def auto_inscripcion_evento(request, token):
+def auto_inscripcion_evento(request, token_reg_evento):
 
 
 
-    evento = get_object_or_404(EventoProgramado,      token_registro=token     )
+    evento = get_object_or_404(EventoProgramado,      token_registro=token_reg_evento     )
 
     iglesia = get_object_or_404(
         Iglesia,
@@ -3456,7 +3456,13 @@ def auto_inscripcion_evento(request, token):
 
             if not form.is_valid():
                 messages.error(request, form.errors)
-                return render(request, "eventos/auto_inscripcion.html", {
+
+                plantilla = (
+                    f"plantillas/iglesia_{iglesia.codigo}/"
+                    f"inscripcion_evento_{evento.evento.nombre}_{evento.nombre}.html"
+                )
+
+                return render(request, plantilla, {
                     "evento": evento,
                     "miembro": None,
                     "mostrar_form_visitante": True,
@@ -3543,13 +3549,27 @@ def auto_inscripcion_evento(request, token):
             messages.success(request, "Inscripción realizada correctamente.")
             return redirect(request.path)
 
+
+
+
+
+
+
+    template_plantilla_eventos= (
+        f"plantillas/iglesia_{iglesia.codigo}/"
+        f"registro_evento_{evento.evento.nombre}_{evento.nombre}.html"
+    )
+
+
+
     return render(request, "eventos/auto_inscripcion.html", {
         "evento": evento,
         "miembro": miembro,
         "mostrar_form_visitante": mostrar_form_visitante,
         "identificacion": identificacion,
         "rangos": rangos,
-        "iglesia": iglesia
+        "iglesia": iglesia,
+        "template_plantilla_eventos": template_plantilla_eventos
 
     })
 
@@ -4289,11 +4309,11 @@ class CategoriaLiderDeleteView(
 
 #************************************
 #      Reistro publico
-def registro_publico_miembro(request, token):
+def registro_publico_miembro(request, token_reg_pub_m):
 
     iglesia = get_object_or_404(
         Iglesia,
-        token_registro=token
+        token_registro=token_reg_pub_m
     )
 
     form = RegistroPublicoMiembroForm(
@@ -4338,12 +4358,18 @@ def registro_publico_miembro(request, token):
 
                 return redirect(request.path)
 
+    template_plantilla_registro = (
+        f"plantillas/iglesia_{iglesia.codigo}/"
+        f"registro_publico_datos_membrecia.html"
+    )
+
     return render(
         request,
         "miembros/registro_publico.html",
         {
             "form": form,
-            "iglesia": iglesia
+            "iglesia": iglesia,
+            "template_plantilla_registro": template_plantilla_registro,
         }
     )
 
@@ -4497,7 +4523,8 @@ def agendar_jitsi(
 
         enlace = generar_enlace_jitsi(
             iglesia.id,
-            miembro.id
+            miembro.id,
+            miembro.nombre
         )
 
         cita = CitaConsolidacion.objects.create(
@@ -4578,7 +4605,12 @@ def lista_citas(request):
 
     config = get_object_or_404(ConfiguracionIglesia, iglesia=iglesia)
 
+    dias = { 0: "Lunes",  1: "Martes",  2: "Miércoles",  3: "Jueves",
+        4: "Viernes",  5: "Sábado",  6: "Domingo",   }
 
+    meses = {  1: "enero", 2: "febrero", 3: "marzo", 4: "abril",
+        5: "mayo",  6: "junio", 7: "julio", 8: "agosto",
+        9: "septiembre", 10: "octubre",  11: "noviembre", 12: "diciembre",  }
 
 
 
@@ -4656,6 +4688,7 @@ def lista_citas(request):
     for cita in page_obj:
         mensaje = config.mensaje_whatsapp_cita or ""
 
+
         mensaje = mensaje.replace(
             "{nombre}",
             cita.miembro.nombre
@@ -4666,9 +4699,20 @@ def lista_citas(request):
             cita.enlace
         )
 
+        fecha = cita.fecha_inicio
+
+        dia_semana = dias[fecha.weekday()]
+        mes = meses[fecha.month]
+
+        fecha_formateada = (
+            f"{dia_semana} "
+            f"{fecha.day} de {mes} de {fecha.year} "
+            f"{fecha.strftime('%I:%M %p')}"
+        )
+
         mensaje = mensaje.replace(
             "{fecha}",
-            cita.fecha_inicio
+            fecha_formateada
         )
 
 
