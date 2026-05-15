@@ -3457,18 +3457,22 @@ def auto_inscripcion_evento(request, token_reg_evento):
             if not form.is_valid():
                 messages.error(request, form.errors)
 
-                plantilla = (
+                template_plantilla_eventos = (
                     f"plantillas/iglesia_{iglesia.codigo}/"
-                    f"inscripcion_evento_{evento.evento.nombre}_{evento.nombre}.html"
+                    f"registro_evento.html"
                 )
 
-                return render(request, plantilla, {
+
+                return render(request, "eventos/auto_inscripcion.html", {
                     "evento": evento,
                     "miembro": None,
                     "mostrar_form_visitante": True,
                     "identificacion": request.POST.get("identificacion"),
                     "rangos": rangos,
-                    "iglesia": iglesia
+                    "iglesia": iglesia,
+                    "template_plantilla_eventos": template_plantilla_eventos,
+                    "imagen_fondo_evento": evento.codigo,
+                    "codigo_iglesia": iglesia.codigo
                 })
 
             data = form.cleaned_data
@@ -3557,7 +3561,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
 
     template_plantilla_eventos= (
         f"plantillas/iglesia_{iglesia.codigo}/"
-        f"registro_evento_{evento.evento.nombre}_{evento.nombre}.html"
+        f"registro_evento.html"
     )
 
 
@@ -3569,7 +3573,9 @@ def auto_inscripcion_evento(request, token_reg_evento):
         "identificacion": identificacion,
         "rangos": rangos,
         "iglesia": iglesia,
-        "template_plantilla_eventos": template_plantilla_eventos
+        "template_plantilla_eventos": template_plantilla_eventos,
+        "imagen_fondo_evento": evento.codigo,
+        "codigo_iglesia": iglesia.codigo
 
     })
 
