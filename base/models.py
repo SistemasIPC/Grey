@@ -858,8 +858,9 @@ class EventoProgramado(models.Model):
     iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
     codigo = models.CharField(
         max_length=8,
-        editable=True,
-        null=True
+        unique=True,
+        editable=False
+
     )
     evento = models.ForeignKey(Evento, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=50)

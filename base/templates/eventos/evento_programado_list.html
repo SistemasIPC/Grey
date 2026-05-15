@@ -31,7 +31,7 @@
     <tbody>
         {% for e in eventos %}
         <tr>
-            <td><b>{{ e.nombre }}</b> ({{ e.evento.nombre }})</td>
+            <td>{{ e.evento.nombre }} <b>{{ e.nombre }}</b> ({{ e.codigo }})</td>
             <td>{{ e.fecha }}</td>
             <td>{{ e.hora }}</td>
             <td>{{ e.capacidad }}</td>
