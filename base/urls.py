@@ -16,7 +16,7 @@ from .views import GrupoCasaActivosListView
 from .views import item_list
 from .views import ListaTipoBienvenida, GestionarBienvenidaUpdateView, VerBienvenidaView
 from .views import ConsolidacionListView, ConsolidacionCreateView,  ConsolidacionUpdateView, cambiar_seguimiento
-from .views import PendientesConsolidacionView, Iglesia_off
+from .views import PendientesConsolidacionView, Iglesia_off, ImagenRegistroMiembroUpdateView,Menu_Configuracion_Iglesia
 
 # path('login/',LoginIglesiaView.as_view(),name='login'),
 urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_iglesia'),
@@ -219,5 +219,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
 
                 path("usuario_iglesia/<int:pk>/toggle_consolidador/", views.toggle_consolidador, name="toggle_consolidador"),
 
-
+                path("configuracion/", Menu_Configuracion_Iglesia.as_view(), name="configuracion_iglesias"),
+                path("configuracion/imagen-registro/", ImagenRegistroMiembroUpdateView.as_view(), name="imagen_registro_miembro"),
                ]
+

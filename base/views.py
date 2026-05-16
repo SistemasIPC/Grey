@@ -46,7 +46,7 @@ from .models import GrupoCasa, Barrio, Comuna
 from .models import Consolidacion, Red, ConfiguracionIglesia, AsistentesRed, AsistentesGrupoCasa
 from .models import EquipoGrupoCasa, RolEquipoGrupo, ServicioMinisterio
 from .forms import ConsolidacionForm, ServicioForm, ReporteAnualForm,EventoForm,EventoProgramadoForm,InscripcionEventoForm
-from .forms import GrupoCasaForm,CategoriaLiderForm,RegistroPublicoMiembroForm
+from .forms import GrupoCasaForm,CategoriaLiderForm,RegistroPublicoMiembroForm, ImagenRegistroMiembroForm
 
 from django.core.mail import send_mail
 from django.core.mail import EmailMessage
@@ -706,66 +706,40 @@ class MiembroListView(VistaProtegida,LoginRequiredMixin, ListView):
 
     def get_queryset(self):
 
-        usuario_iglesia = get_object_or_404(
-            Usuario_iglesia,
-            id_usuario=self.request.user
-        )
 
-        queryset = Miembro.objects.filter(
-            iglesia=usuario_iglesia.id_iglesia
-        )
+        iglesia = self.request.session.get("iglesia_id")
 
-        q = self.request.GET.get("q")
+        queryset = Miembro.objects.filter(iglesia=iglesia)
 
+        q = self.request.GET.get("q", "").strip()
+
+        # 🔍 filtro búsqueda
         if q:
-
             queryset = queryset.filter(
-
                 Q(nombre__icontains=q) |
-
-                Q(apellido__icontains=q) |
-
+                Q(apellido__icontains=q ) |
                 Q(identificacion__icontains=q)
-
             )
 
-        return queryset.order_by(
-            "nombre",
-            "apellido"
-        )
+        return queryset.order_by("nombre", "apellido" )
 
     def get_context_data(self, **kwargs):
 
         context = super().get_context_data(**kwargs)
 
-        usuario_iglesia = get_object_or_404(
-            Usuario_iglesia,
-            id_usuario=self.request.user
-        )
 
-        iglesia = usuario_iglesia.id_iglesia
-
+        iglesia = self.request.session.get("iglesia_id")
         context['iglesia'] = iglesia
 
-        context['usuario_iglesia'] = usuario_iglesia
+        context["q"] = self.request.GET.get("q", "" )
 
-        context["q"] = self.request.GET.get(
-            "q",
-            ""
+        # 🔥 solo miembros ministerio de esta iglesia
+        miembros_con_ministerio = set( Miembro_ministerio.objects.filter(
+                id_miembro__iglesia=iglesia
+            ).values_list('id_miembro', flat=True )
         )
 
-        miembros_con_ministerio = set(
-
-            Miembro_ministerio.objects.values_list(
-                'id_miembro',
-                flat=True
-            )
-
-        )
-
-        context[
-            'miembros_con_ministerio'
-        ] = miembros_con_ministerio
+        context['miembros_con_ministerio'] = miembros_con_ministerio
 
         return context
 
@@ -4369,6 +4343,10 @@ def registro_publico_miembro(request, token_reg_pub_m):
         f"registro_publico_datos_membrecia.html"
     )
 
+
+    config = get_object_or_404(ConfiguracionIglesia, iglesia=iglesia.id)
+
+
     return render(
         request,
         "miembros/registro_publico.html",
@@ -4376,6 +4354,7 @@ def registro_publico_miembro(request, token_reg_pub_m):
             "form": form,
             "iglesia": iglesia,
             "template_plantilla_registro": template_plantilla_registro,
+            "ruta_imagen_registro_miembro": config.imagen_registro_miembro
         }
     )
 
@@ -4852,4 +4831,39 @@ def toggle_consolidador(request, pk):
 
 #************************************************
 #                       Iglesias
+
+class ImagenRegistroMiembroUpdateView(UpdateView):
+
+    model = ConfiguracionIglesia
+
+    form_class = ImagenRegistroMiembroForm
+
+    template_name = (
+        "configuracion/imagen_registro_miembro.html"
+    )
+
+    success_url = reverse_lazy(
+        "imagen_registro_miembro"
+    )
+
+    def get_object(self):
+
+        usuario_iglesia = Usuario_iglesia.objects.get(
+            id_usuario=self.request.user
+        )
+
+        configuracion, created = (
+            ConfiguracionIglesia.objects.get_or_create(
+                iglesia=usuario_iglesia.id_iglesia
+            )
+        )
+
+        return configuracion
+
+
+
+class Menu_Configuracion_Iglesia(VistaProtegida,LoginRequiredMixin,ListView):
+    model = Servicio
+    template_name = 'configuracion/configuracion_iglesia.html'
+
 

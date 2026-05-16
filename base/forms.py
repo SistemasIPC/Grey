@@ -13,7 +13,7 @@ from .models import Evento, TipoEvento
 from django import forms
 from .models import EventoProgramado, Evento
 from django.core.exceptions import ValidationError
-from .models import Barrio,Categoria_lider
+from .models import Barrio,Categoria_lider, ConfiguracionIglesia
 import re
 
 
@@ -1289,3 +1289,38 @@ class RegistroPublicoMiembroForm(forms.ModelForm):
             cleaned_data["categoria_lider"] = None
 
         return cleaned_data
+
+#*********************************************
+#     Configuracion
+
+class ImagenRegistroMiembroForm(forms.ModelForm):
+
+    class Meta:
+
+        model = ConfiguracionIglesia
+
+        fields = [
+            "imagen_registro_miembro"
+        ]
+
+        widgets = {
+            "imagen_registro_miembro": forms.FileInput(
+                attrs={
+                    "class": "form-control"
+                }
+            )
+        }
+
+    def clean_imagen_registro_miembro(self):
+
+        imagen = self.cleaned_data.get(
+            "imagen_registro_miembro"
+        )
+
+        if not imagen and not self.instance.imagen_registro_miembro:
+
+            raise forms.ValidationError(
+                "Debe seleccionar una imagen."
+            )
+
+        return imagen

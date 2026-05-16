@@ -78,6 +78,9 @@
     <!-- 🔥 TABLA -->
     <table class="table table-hover table-striped table-bordered">
 
+
+
+
         <thead class="table-dark">
 
             <tr>
@@ -102,7 +105,7 @@
 
         <tbody>
 
-            {% for miembro in miembros %}
+            {% for miembro in page_obj  %}
 
                 <tr
 
@@ -180,6 +183,29 @@
             {% endfor %}
 
         </tbody>
+
+        <tr>
+
+            <td colspan="6">
+
+                <div class="mb-3">
+
+                    Total miembros:
+                    <strong>
+
+                        {{ page_obj.paginator.count }}
+
+                    </strong>
+
+                </div>
+
+
+
+            </td>
+        </tr>
+
+
+
 
     </table>
 

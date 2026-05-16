@@ -677,6 +677,18 @@ class Consolidacion(models.Model):
         return "verde"
 
 
+def ruta_imagen_registro_miembro(instance, filename):
+
+    extension = filename.split(".")[-1]
+
+
+    return (
+        f"iglesias/"
+        f"{instance.iglesia.codigo}/"
+        f"img/logos/general/"
+        f"general_imagen_registro_miembro.{extension}"
+    )
+
 class ConfiguracionIglesia(models.Model):
 
     iglesia = models.OneToOneField(
@@ -703,8 +715,33 @@ class ConfiguracionIglesia(models.Model):
 
     mensaje_whatsapp_cita  = models.TextField(null=True, blank=True)
 
+    imagen_registro_miembro = models.ImageField(
+        upload_to=ruta_imagen_registro_miembro,
+        null=True,
+        blank=True
+    )
+
     def __str__(self):
         return f"Configuración {self.iglesia}"
+
+
+    def save(self, *args, **kwargs):
+
+        if self.pk:
+
+            anterior = ConfiguracionIglesia.objects.filter(
+                pk=self.pk
+            ).first()
+
+            if (
+                anterior and
+                anterior.imagen_registro_miembro and
+                anterior.imagen_registro_miembro != self.imagen_registro_miembro
+            ):
+
+                anterior.imagen_registro_miembro.delete(save=False)
+
+        super().save(*args, **kwargs)
 
 
 class AsistentesRed(models.Model):

@@ -1,0 +1,35 @@
+{% extends "principal.html" %}
+
+{% block content %}
+
+<a href="{% url 'configuracion_iglesias' %}">Volver </a>
+
+<h3>Imagen registro p&uacute;blico miembro</h3>
+
+<form method="post" enctype="multipart/form-data">
+
+    {% csrf_token %}
+
+    {% if form.instance.imagen_registro_miembro %}
+
+        <div class="mb-3">
+
+            <img
+                src="{{ form.instance.imagen_registro_miembro.url }}"
+                class="img-fluid rounded shadow"
+                style="max-width:300px"
+            >
+
+        </div>
+
+    {% endif %}
+
+    {{ form.as_p }}
+
+    <button class="btn btn-success">
+        Guardar
+    </button>
+
+</form>
+
+{% endblock %}
