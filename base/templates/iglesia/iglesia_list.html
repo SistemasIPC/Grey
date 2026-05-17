@@ -14,6 +14,7 @@
             <th>Pastor</th>
             <th>Teléfono</th>
             <th>Correo</th>
+            <th>Link Registro</th>
             <th>Acciones</th>
         </tr>
         </thead>
@@ -25,7 +26,39 @@
             <td>{{ iglesia.telefono }}</td>
             <td>{{ iglesia.correo }}</td>
             <td>
-                <a class="btn btn-warning" href="{% url 'iglesia_update_temp' iglesia.id %}">Editar</a>
+
+
+
+<div class="input-group mb-2">
+<div class="input-group mb-2">
+
+    <input
+        type="text"
+        id="linkRegistro{{ iglesia.id }}"
+        class="form-control"
+        readonly
+        value="{{ request.scheme }}://{{ request.get_host }}{% url 'registro_iglesia_token' iglesia.token_registro %}"
+    >
+
+    <button
+        class="btn btn-outline-secondary"
+        type="button"
+        id="btnCopiar{{ iglesia.id }}"
+        onclick="copiarLinkRegistro('{{ iglesia.id }}')"
+    >
+
+        <i class="bi bi-copy"></i>
+
+    </button>
+
+</div>
+
+</div>
+
+
+            </td>
+            <td>
+
 
                 {% if iglesia.num_miembros == 0 and iglesia.num_usuarios == 0 %}
                     <a href="{% url 'iglesia_delete_temp' iglesia.id %}" class="btn btn-danger">Eliminar</a>
@@ -38,4 +71,39 @@
             </tr>
         {% endfor %}
     </table>
+
+
+
+
+
+<script>
+
+function copiarLinkRegistro(id) {
+
+    const input = document.getElementById(
+        "linkRegistro" + id
+    );
+
+    navigator.clipboard.writeText(
+        input.value
+    );
+
+    const boton = document.getElementById(
+        "btnCopiar" + id
+    );
+
+    boton.innerHTML =
+        '<i class="bi bi-check-lg text-success"></i>';
+
+    setTimeout(() => {
+
+        boton.innerHTML =
+            '<i class="bi bi-copy"></i>';
+
+    }, 2000);
+
+}
+
+</script>
+
 {% endblock content %}

@@ -47,7 +47,7 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 #Debug
 DEBUG = False   # en producion va False
-
+#ALLOWED_HOSTS = ['*']
 ALLOWED_HOSTS = [
     "nexuscumberland.org",
     "www.nexuscumberland.org",

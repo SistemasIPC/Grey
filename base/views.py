@@ -121,6 +121,57 @@ class PaginaRegistro(FormView):
 
 
 
+class PaginaRegistroIglesia(FormView):
+    template_name = 'login/registro_iglesia.html'
+    form_class = RegistroUsuarioForm
+    redirect_authenticated_user = True #una vez que esté autenticado se puede redireccionar
+    success_url = reverse_lazy('inicio-usuario') #Una vez se registrado se redireccion a esta session
+
+    def dispatch(self, request, *args, **kwargs):
+
+        self.iglesia = get_object_or_404(
+            Iglesia,
+            token_registro=kwargs["token"],
+            activa=True
+        )
+
+        return super().dispatch(
+            request,
+            *args,
+            **kwargs
+        )
+    def form_valid(self, form):
+
+        usuario = form.save() # Guarda lo que está en el formulario
+        if usuario is not None: # que si efectivamente se creó un usuario
+            Usuario_iglesia.objects.create(
+                id_iglesia=self.iglesia,
+                id_usuario=usuario,
+                correo=usuario.email
+            )
+
+            login(self.request,usuario)
+        else:
+            print("⚠ Error: No se pudo crear el usuario")
+            return super(PaginaRegistroIglesia, self ).form_valid(form)
+
+
+        return super(PaginaRegistroIglesia, self).form_valid(form)
+
+    def get(self,*args,**kwargs): # Para que deje entrar al registro sy ya esta registros si no que vaya a las tareas
+
+        if self.request.user.is_authenticated:
+            return redirect('menu_principal')
+        return super(PaginaRegistroIglesia,self).get(*args,**kwargs)
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+
+        context["iglesia"] = self.iglesia
+
+        return context
+
 #-----------------------------------------------------------------
 #                       Pagina para proteger entrada desde los links
 #----------------------------------------------------------------
@@ -1361,12 +1412,55 @@ class UsuarioIglesiaListView(VistaProtegida,LoginRequiredMixin, ListView):
     template_name = 'usuario_iglesia/usuario_iglesia_list.html'
     context_object_name = 'usuarios_iglesia'
 
+    paginate_by = 20
+
     def get_queryset(self):
+
+        busqueda = self.request.GET.get("q","")
+
         # Obtener solo los usuarios de la iglesia del usuario logueado
         if self.request.user.is_superuser:
-            return Usuario_iglesia.objects.filter().order_by('id_iglesia').annotate(num_ministerios=Count('id_usuario__ministerio'))
+            queryset = Usuario_iglesia.objects.filter().order_by('id_iglesia').annotate(num_ministerios=Count('id_usuario__ministerio'))
         else:
-            return reverse_lazy('menu_principal')
+            if self.request.session.get('iglesa_superusuario'):
+                queryset = Usuario_iglesia.objects.filter(id_iglesia=self.request.session.get("iglesia_id")).order_by('id_iglesia').annotate(
+                    num_ministerios=Count('id_usuario__ministerio'))
+            else:
+                return Usuario_iglesia.objects.none()  #  return reverse_lazy('menu_principal')
+        if busqueda:
+            queryset = queryset.filter(
+
+                Q(
+                    id_usuario__username__icontains=busqueda
+                ) |
+
+                Q(
+                    correo__icontains=busqueda
+                ) |
+
+                Q(
+                    id_iglesia__nombre__icontains=busqueda
+                )
+
+            )
+
+        return queryset.order_by(
+            'id_iglesia__nombre',
+            'id_usuario__username'
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        context["plantilla_super_iglesias"] = "principal_super.html"
+
+        if not self.request.user.is_superuser:
+            context["plantilla_super_iglesias"] = "principal.html"
+
+
+        context["q"] = self.request.GET.get("q", ""   )
+
+        return context
 
 
 
@@ -1418,6 +1512,75 @@ class UsuarioIglesiaDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
 def item_list(request):
     return render(request, 'item_list.html')
 
+#************************************************************
+#                  Usuarios masivos a iglesias
+#**************************************
+class UsuarioIglesiaMasivoView(VistaProtegida,LoginRequiredMixin,FormView):
+
+    template_name = ('usuario_iglesia/usuario_iglesia_form.html' )
+
+    success_url = reverse_lazy('usuario_iglesia_list' )
+
+    form_class = UsuarioIglesiaForm
+
+    def get_form(self, form_class=None):
+
+        form = super().get_form(form_class)
+        usuarios_asignados = (Usuario_iglesia.objects.values_list('id_usuario', flat=True ) )
+        form.fields['id_iglesia'].queryset = Iglesia.objects.filter(activa=True )
+        self.usuarios = User.objects.exclude(id__in=usuarios_asignados )
+
+        busqueda = self.request.GET.get("q", "" )
+
+        if busqueda:
+            self.usuarios = self.usuarios.filter(
+                Q(username__icontains=busqueda) |
+                Q(first_name__icontains=busqueda) |
+                Q(last_name__icontains=busqueda) |
+                Q(email__icontains=busqueda)   )
+
+        paginator = Paginator(self.usuarios.order_by("username"), 20  )
+        page_number = self.request.GET.get('page' )
+        self.page_obj = paginator.get_page(page_number )
+
+        return form
+
+    def post(self, request, *args, **kwargs):
+
+        iglesia_id = request.POST.get("id_iglesia")
+
+        usuarios = request.POST.getlist("usuarios")
+
+        if not iglesia_id:
+            messages.error( request,"Debe seleccionar una iglesia." )
+            return self.get(request,*args,  **kwargs  )
+
+        if not usuarios:
+            messages.error(request,"Debe seleccionar al menos un usuario."   )
+            return self.get(request,*args, **kwargs )
+
+        iglesia = Iglesia.objects.get(pk=iglesia_id )
+
+        for usuario_id in usuarios:
+            usuario = User.objects.get(pk=usuario_id )
+
+            Usuario_iglesia.objects.create(
+                id_iglesia=iglesia,
+                id_usuario=usuario,
+                correo=usuario.email
+            )
+
+        messages.success(request,"Usuarios asociados correctamente." )
+
+        return redirect( self.success_url )
+
+    def get_context_data(self, **kwargs):
+
+        context = super().get_context_data(**kwargs)
+        context["page_obj"] = self.page_obj
+        context["q"] = self.request.GET.get("q","")
+        context["ahora_menos_2_anos"] = (now() - timedelta(days=730) )  #doas ños 730
+        return context
 
 
     # -----------------------------------------------------------------
@@ -3431,11 +3594,12 @@ def auto_inscripcion_evento(request, token_reg_evento):
             if not form.is_valid():
                 messages.error(request, form.errors)
 
+                print(1111111)
                 template_plantilla_eventos = (
                     f"plantillas/iglesia_{iglesia.codigo}/"
                     f"registro_evento.html"
                 )
-
+                print(2222222)
 
                 return render(request, "eventos/auto_inscripcion.html", {
                     "evento": evento,
@@ -3448,7 +3612,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
                     "ruta_imagen_fondo_evento": evento.imagen,
                     "codigo_iglesia": iglesia.codigo
                 })
-
+            print(33333333)
             data = form.cleaned_data
             identificacion = data["identificacion"]
 
@@ -3456,7 +3620,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
                 identificacion=identificacion,
                 iglesia=iglesia
             ).first()
-
+            print(44444444444444444)
             # 🔥 validar duplicado
             if miembro:
                 existe = InscripcionEvento.objects.filter(

@@ -1,9 +1,37 @@
-{% extends 'principal_super.html' %}
+{% extends plantilla_super_iglesias %}
 
 {% block content %}
-    <a class="btn btn-secundary" href="{% url 'usuario_iglesia_list' %}">Volver</a>
-    <h2>Usuarios en la Iglesia</h2>
-    <a class="btn btn-primary" href="{% url 'usuario_iglesia_create' %}">Agregar Usuario</a>
+
+    <h2>Usuarios en la iglesia</h2>
+
+     {% if  user.is_superuser  %}
+             <a class="btn btn-primary" href="{% url 'usuario_iglesia_asociar' %}">Asociar usuario</a>
+  <br>  <br>
+     {% endif %}
+
+
+            <form method="get" class="mb-3">
+
+                <div class="input-group">
+
+                    <input
+                        type="text"
+                        name="q"
+                        class="form-control"
+                        placeholder="Buscar usuario o iglesia"
+                        value="{{ q }}"
+                    >
+
+                    <button class="btn btn-primary">
+
+                        Buscar
+
+                    </button>
+
+                </div>
+
+            </form>
+
 
     <table class="table table-hover table-striped table-bordered">
         <thead class="table-dark">
@@ -23,11 +51,13 @@
                 {% if usuario.superusuario %}
                     Superusuario
                 {% else %}
+                    {% if  user.is_superuser  %} <!--super usuario del sistema-->
                     <button class="toggle-superusuario btn btn-sm btn-warning"
                             data-id="{{ usuario.id }}"
                             data-estado="{{ usuario.superusuario }}">
                         Cambiar
                     </button>
+                    {% endif %}
                 {% endif %}
 
             </td>
@@ -42,9 +72,14 @@
 
             <td>
 
-                {% if not usuario.superusuario and usuario.num_ministerios == 0 %}
-                    <a class="btn btn-danger" href="{% url 'usuario_iglesia_delete' usuario.id %}">Eliminar</a>
+                {% if user.is_superuser %}
+
+                    {% if not usuario.superusuario and usuario.num_ministerios == 0 %}
+                        <a class="btn btn-danger" href="{% url 'usuario_iglesia_delete' usuario.id %}">Eliminar</a>
+                    {% endif %}
                 {% endif %}
+
+
             </td>
         </tr>
         {% empty %}
@@ -53,6 +88,82 @@
             </tr>
         {% endfor %}
     </table>
+
+<nav>
+
+    <ul class="pagination">
+
+        {% if page_obj.has_previous %}
+
+            <li class="page-item">
+
+                <a
+                    class="page-link"
+                    href="?q={{ q }}&page=1"
+                >
+                    Primero
+                </a>
+
+            </li>
+
+            <li class="page-item">
+
+                <a
+                    class="page-link"
+                    href="?q={{ q }}&page={{ page_obj.previous_page_number }}"
+                >
+                    Anterior
+                </a>
+
+            </li>
+
+        {% endif %}
+
+
+        <li class="page-item active">
+
+            <span class="page-link">
+
+                Página {{ page_obj.number }}
+                de
+                {{ page_obj.paginator.num_pages }}
+
+            </span>
+
+        </li>
+
+
+        {% if page_obj.has_next %}
+
+            <li class="page-item">
+
+                <a
+                    class="page-link"
+                    href="?q={{ q }}&page={{ page_obj.next_page_number }}"
+                >
+                    Siguiente
+                </a>
+
+            </li>
+
+            <li class="page-item">
+
+                <a
+                    class="page-link"
+                    href="?q={{ q }}&page={{ page_obj.paginator.num_pages }}"
+                >
+                    Último
+                </a>
+
+            </li>
+
+        {% endif %}
+
+    </ul>
+
+</nav>
+
+
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {

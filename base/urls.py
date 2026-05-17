@@ -1,7 +1,7 @@
 from django.urls import path
 from . import views
 from django.contrib.auth.views import LogoutView
-from .views import LoginIglesiaView, PaginaRegistro, Menu_principal, Sin_iglesia, Menu_super
+from .views import LoginIglesiaView, PaginaRegistro, Menu_principal, Sin_iglesia, Menu_super, PaginaRegistroIglesia
 from .views import ListaServicio, DetalleServicio, EditarServicio, CrearServicio, EliminarServicios
 from .views import Programar_ministerio
 from .views import MiembroListView, MiembroCreateView, MiembroUpdateView, MiembroDeleteView, MiembroDetailView
@@ -17,9 +17,10 @@ from .views import item_list
 from .views import ListaTipoBienvenida, GestionarBienvenidaUpdateView, VerBienvenidaView
 from .views import ConsolidacionListView, ConsolidacionCreateView,  ConsolidacionUpdateView, cambiar_seguimiento
 from .views import PendientesConsolidacionView, Iglesia_off, ImagenRegistroMiembroUpdateView,Menu_Configuracion_Iglesia
-
+from .views import UsuarioIglesiaMasivoView
 # path('login/',LoginIglesiaView.as_view(),name='login'),
 urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_iglesia'),
+               path('registro/<uuid:token>/',PaginaRegistroIglesia.as_view(),name='registro_iglesia_token'),
                path('logout/', LogoutView.as_view(next_page='login_iglesia'), name='logout'),
                path('',Menu_principal.as_view(),name='menu_principal'),
                path('inicio-usuario', Sin_iglesia.as_view(), name='inicio-usuario'),
@@ -65,6 +66,8 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                path('iglesias/eliminar/<int:pk>/', IglesiaDeleteView.as_view(), name='iglesia_delete_temp'),
                path('usuarios-iglesia/', UsuarioIglesiaListView.as_view(), name='usuario_iglesia_list'),
                path('usuarios-iglesia/nuevo/', UsuarioIglesiaCreateView.as_view(), name='usuario_iglesia_create'),
+               path('usuarios-iglesia/asociar/', UsuarioIglesiaMasivoView.as_view(), name='usuario_iglesia_asociar'),
+
                path('usuarios-iglesia/editar/<int:pk>/', UsuarioIglesiaUpdateView.as_view(), name='usuario_iglesia_update'),
                path('usuarios-iglesia/eliminar/<int:pk>/', UsuarioIglesiaDeleteView.as_view(),  name='usuario_iglesia_delete'),
                path('usuario_iglesia/<int:pk>/actualizar_superusuario/', actualizar_superusuario,  name='actualizar_superusuario'),
@@ -219,6 +222,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
 
                 path("usuario_iglesia/<int:pk>/toggle_consolidador/", views.toggle_consolidador, name="toggle_consolidador"),
 
+                #****  Configuracion
                 path("configuracion/", Menu_Configuracion_Iglesia.as_view(), name="configuracion_iglesias"),
                 path("configuracion/imagen-registro/", ImagenRegistroMiembroUpdateView.as_view(), name="imagen_registro_miembro"),
                ]

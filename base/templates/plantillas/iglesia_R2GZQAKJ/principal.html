@@ -95,6 +95,7 @@
                             <li class="nav-item" ><a class="nav-link" href="{% url 'registro_publico_miembro' request.session.token_registro %}"  target="_blank" rel="noopener noreferrer">Registro puiblico </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'auto_inscripcion_evento' request.session.token_registro %}">Inscripci&oacute;n Evento </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'configuracion_iglesias' %}">Configuraciones </a> </li>
+                    <li class="nav-item" ><a class="nav-link" href="{% url 'usuario_iglesia_list' %}">Usuarios e Iglesia </a></li>
 
                     {% else %}
                             {% if request.session.mis_ministerio %}

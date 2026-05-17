@@ -2,28 +2,28 @@
 
 {% block content %}
 <div class="barra-superior">
-    <h1>Registrarse </h1>
+    <h1>Registrarse en  {{ iglesia.nombre }} </h1>
 </div>
 
 <div class="cuerpo-tarjeta">
     <form method="POST">
     {% csrf_token %}
 
-    <label>{{form.first_name.label}}</label>
+    <div>{{form.first_name.label}}</div>
         {{form.first_name}}
 
-    <label>{{form.last_name.label}}</label>
+    <div>{{form.last_name.label}}</div>
         {{form.last_name}}
-    <label>{{form.email.label}}</label>
+    <div>{{form.email.label}}</div>
         {{form.email}}
 
-    <label>{{form.username.label}}</label>
+    <div>{{form.username.label}}</div>
         {{form.username}}
 
-    <label>{{form.password1.label}}</label>
+    <div>{{form.password1.label}}</div>
         {{form.password1}}
 
-    <label>{{form.password2.label}}</label>
+    <div>{{form.password2.label}}</div>
         {{form.password2}}
     <input style="margin-top: 10px" class='boton' type="submit" value="Registrar">
 </form>

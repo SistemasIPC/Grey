@@ -309,15 +309,35 @@ class IglesiaForm(forms.ModelForm):
         model = Iglesia
         fields = ['presbiterio','categoria','nombre', 'descripcion', 'pastor','telefono', 'direccion', 'correo','activa']
 
-class UsuarioIglesiaForm(forms.ModelForm):
-    class Meta:
-        model = Usuario_iglesia
-        fields = ['id_usuario', 'id_iglesia', 'superusuario','rol_consolidador']
+#class UsuarioIglesiaForm(forms.ModelForm):
+#   class Meta:
+#      model = Usuario_iglesia
+#        fields = ['id_usuario', 'id_iglesia', 'superusuario','rol_consolidador']
+#
+#    def __init__(self, *args, **kwargs):
+#        super().__init__(*args, **kwargs)
+#        self.fields['id_usuario'].required = True  # Asegura que sea obligatorio
+#        self.fields['id_iglesia'].required = True  # Asegura que sea obligatorio
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['id_usuario'].required = True  # Asegura que sea obligatorio
-        self.fields['id_iglesia'].required = True  # Asegura que sea obligatorio
+
+class UsuarioIglesiaForm(forms.Form):
+
+    id_iglesia = forms.ModelChoiceField(
+
+        queryset=Iglesia.objects.none(),
+
+        widget=forms.Select(
+            attrs={
+                "class": "form-control"
+            }
+        ),
+
+        label="Iglesia"
+    )
+
+
+
+
 
 
 class UsuarioIglesiaUpdateForm(forms.ModelForm):

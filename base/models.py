@@ -9,6 +9,9 @@ import string
 import os
 from django.conf import settings
 
+from django.utils.timezone import now
+from presbiterio.models import Presbiterio
+
 # Create your models here.
 
 
@@ -60,7 +63,6 @@ def generar_carpetas_iglesia(codigo):
                 exist_ok=True
             )
 
-from presbiterio.models import Presbiterio
 
 class Iglesia(models.Model):
     codigo = models.CharField(
@@ -147,7 +149,46 @@ class Usuario_iglesia(models.Model):
 
     class Meta:
         ordering = ['id_iglesia']
+    @property
+    def tiempo_inactividad(self):
 
+        ultimo_login = self.id_usuario.last_login
+
+        if not ultimo_login:
+            return "Nunca ha ingresado"
+
+        diferencia = now() - ultimo_login
+
+        dias = diferencia.days
+
+        if dias >= 730:
+
+            anos = dias // 365
+
+            return f"{anos} año(s)"
+
+        elif dias >= 30:
+
+            meses = dias // 30
+
+            return f"{meses} mes(es)"
+
+        else:
+
+            return f"{dias} día(s)"
+
+
+    @property
+    def puede_eliminar(self):
+
+        ultimo_login = self.id_usuario.last_login
+
+        if not ultimo_login:
+            return True
+
+        diferencia = now() - ultimo_login
+
+        return diferencia.days >= 730
 
 
 class Ministerio(models.Model):
