@@ -51,6 +51,8 @@
                 <th>Nombre</th>
                 <th>Correo</th>
                 <th>Inactividad</th>
+                <th>&nbsp;</th>
+
 
 
             </tr>
@@ -88,28 +90,40 @@
                     </td>
 
 
+                    <td>
 
-            <td>  ´{{usuario.last_login}}
+                        {% if usuario.last_login %}
 
-                {% if not usuario.last_login %}
+                            {{ usuario.last_login|timesince }}
 
-                    <input
-                        type="checkbox"
-                        name="usuarios_eliminar"
-                        value="{{ usuario.id }}"
-                    >
+                        {% else %}
 
-                {% elif usuario.last_login < ahora_menos_2_anos %}
+                            Nunca
 
-                    <input
-                        type="checkbox"
-                        name="usuarios_eliminar"
-                        value="{{ usuario.id }}"
-                    >
+                        {% endif %}
 
-                {% endif %}
+                    </td>
 
-            </td>
+                    <td>
+
+                        {% if not usuario.last_login or usuario.last_login < ahora_menos_2_anos %}
+
+                            <a
+                                href="{% url 'usuario_eliminar_inactivo' usuario.id %}"
+                                class="btn btn-danger btn-sm"
+                                onclick="return confirm(
+                                    '¿Eliminar usuario {{ usuario.username }}?'
+                                )"
+                            >
+
+                                Eliminar
+
+                            </a>
+
+                        {% endif %}
+
+                    </td>
+
 
                 </tr>
             {% endif %}

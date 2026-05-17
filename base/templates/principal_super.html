@@ -95,6 +95,19 @@
         {% endblock content %}
     </div>
 
+
+    {% if messages %}
+<div class="mt-2">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+
     <footer class="bg-dark text-white text-center py-3 mt-4">
         <p>&copy; 2025 La Grey - Todos los derechos reservados</p>
     </footer>

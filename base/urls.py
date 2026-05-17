@@ -67,6 +67,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                path('usuarios-iglesia/', UsuarioIglesiaListView.as_view(), name='usuario_iglesia_list'),
                path('usuarios-iglesia/nuevo/', UsuarioIglesiaCreateView.as_view(), name='usuario_iglesia_create'),
                path('usuarios-iglesia/asociar/', UsuarioIglesiaMasivoView.as_view(), name='usuario_iglesia_asociar'),
+               path('usuario/eliminar/<int:pk>/',views.usuario_eliminar_inactivo, name='usuario_eliminar_inactivo'),
 
                path('usuarios-iglesia/editar/<int:pk>/', UsuarioIglesiaUpdateView.as_view(), name='usuario_iglesia_update'),
                path('usuarios-iglesia/eliminar/<int:pk>/', UsuarioIglesiaDeleteView.as_view(),  name='usuario_iglesia_delete'),

@@ -1579,8 +1579,64 @@ class UsuarioIglesiaMasivoView(VistaProtegida,LoginRequiredMixin,FormView):
         context = super().get_context_data(**kwargs)
         context["page_obj"] = self.page_obj
         context["q"] = self.request.GET.get("q","")
-        context["ahora_menos_2_anos"] = (now() - timedelta(days=730) )  #doas ños 730
+        context["ahora_menos_2_anos"] = (now() - timedelta(days=730) )  #dos años 730
         return context
+
+
+@login_required(login_url='/login/')
+def usuario_eliminar_inactivo(request, pk):
+
+    usuario = get_object_or_404(
+        User,
+        pk=pk
+    )
+
+    if usuario.is_superuser:
+        messages.error(
+            request,
+            "No puede eliminar superusuarios."
+        )
+
+        return redirect(
+            'usuario_iglesia_asociar'
+        )
+
+    puede_eliminar = False
+
+    if not usuario.last_login:
+
+        puede_eliminar = True
+
+    else:
+
+        diferencia = (
+                now() - usuario.last_login
+        ).days
+
+        if diferencia >= 730:
+            puede_eliminar = True
+
+    if not puede_eliminar:
+        messages.error(
+            request,
+            "El usuario aún no cumple el tiempo de inactividad."
+        )
+
+        return redirect(
+            'usuario_iglesia_asociar'
+        )
+
+    usuario.delete()
+
+    messages.success(
+        request,
+        "Usuario eliminado correctamente."
+    )
+
+    return redirect(
+        'usuario_iglesia_asociar'
+    )
+
 
 
     # -----------------------------------------------------------------
