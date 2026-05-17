@@ -3631,13 +3631,13 @@ def auto_inscripcion_evento(request, token_reg_evento):
                 if existe:
                     messages.error(request, "Ya está inscrito.")
                     return redirect(request.path)
-
+            print(5555555555)
             # 🔥 validar rango
             rango = RangoEdad.objects.filter(
                 id=data["rango_edad"],
                 iglesia=iglesia
             ).first()
-
+            print(666666666)
             if not rango:
                 messages.error(request, "Debe seleccionar un rango válido.")
                 return redirect(request.path)
@@ -3648,12 +3648,12 @@ def auto_inscripcion_evento(request, token_reg_evento):
             #if rango.red_id and rango.red_id not in redes_ids:
             #    messages.error(request, "No tiene permiso para este rango.")
             #    return redirect(request.path)
-
+            print(7777777777)
             # 🔥 validar cupo
             inscritos = InscripcionEvento.objects.filter(
                 evento_programado=evento
             ).count()
-
+            print(8888888888)
             if inscritos >= evento.capacidad:
                 messages.error(request, "Evento lleno.")
                 return redirect(request.path)
@@ -3661,7 +3661,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
             # =========================================
             # 👤 CREAR / USAR MIEMBRO
             # =========================================
-
+            print(99999999999)
             if not miembro:
                 miembro = Miembro.objects.create(
                     iglesia=iglesia,
@@ -3673,7 +3673,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
                     correo=data.get("correo")
 
                 )
-
+            print(10101010101010)
             # =========================================
             # 📝 CREAR INSCRIPCIÓN
             # =========================================
@@ -3684,17 +3684,14 @@ def auto_inscripcion_evento(request, token_reg_evento):
                 rango_edad=rango,
                 otra_congregacion=data.get("otra_congregacion")
             )
-
+            print(121212121212)
             # 🔥 envío de confirmación
             enviar_confirmacion_evento(inscripcion)
-
+            print(131313131313)
             messages.success(request, "Inscripción realizada correctamente.")
             return redirect(request.path)
 
-
-
-
-
+    print(141414141441)
 
 
     template_plantilla_eventos= (
@@ -3702,6 +3699,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
         f"registro_evento.html"
     )
 
+    print(1515151515)
 
 
     return render(request, "eventos/auto_inscripcion.html", {
