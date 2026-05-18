@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">  <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>La grey</title>
+
+    <meta property="og:type" content="website">
+<meta property="og:title" content="Nexus Cumberland">
+<meta property="og:description" content="Sistema Nexus Cumberland">
+<meta property="og:image"   content="https://nexuscumberland.org/media/{{request.session.ruta_imagen_banner_iglesia}}">
+    <!-- <meta property="og:image"   content="{{ request.scheme }}://{{ request.get_host }}/media/iglesias/{{ request.session.iglesia_codigo }}/img/logos/general/general.png">-->
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Abel&family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap" rel="stylesheet">
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Abel&display=swap" rel="stylesheet">
+
+        <!-- Calendario -->
+ <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+ <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+
+    <!-- En la cabecera (Head) -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/css/select2.min.css" rel="stylesheet" />
+
+    <!-- Al final del Body -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.0.13/dist/js/select2.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+
+
+
+
+     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- CSS de Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<!-- JS de Leaflet -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+</head>
+<body>
+
+
+<style>
+
+.header-principal {
+     background-image: url('/media/{{request.session.ruta_imagen_banner_iglesia}}');
+
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    min-height: 250px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding: 20px;
+    overflow: hidden;
+}
+
+
+.header-principal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.45);
+}
+
+
+.header-principal h1,
+.header-principal p {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+}
+
+
+.header-principal h1 {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+
+.header-principal p {
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+
+
+/* =========================
+   TABLET
+========================= */
+@media (max-width: 992px) {
+    .header-principal {
+        min-height: 220px;
+    }
+    .header-principal h1 {
+        font-size: 2.3rem;
+    }
+}
+
+
+/* =========================
+   CELULAR
+========================= */
+
+@media (max-width: 576px) {
+    .header-principal {
+        min-height: 180px;
+        padding: 15px;
+    }
+
+    .header-principal h1 {
+        font-size: 1.7rem;
+    }
+
+    .header-principal p {
+        font-size: 1rem;
+    }
+}
+
+</style>
+
+
+
+
+
+
+    <header class="header-principal text-gray text-center py-4">
+        <h1>{{request.session.iglesia_nombre}}</h1>
+        <p>Cuidando de buena manera</p>
+    </header>
+
+
+       <!-- Menú de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark py-3">
+        <div class="container-fluid py-3">
+            <a class="navbar-brand" href="{% url 'menu_principal' %}">Inicio</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+
+
+
+
+
+
+                    {% if request.session.iglesa_superusuario %}
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
+
+
+
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
+                             <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'grupo_casa_list' %}">Grupos en casa </a> </li>
+                           <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_list' %}">Eventos </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
+
+                           <!-- <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_reportes_anuales' %}">Reportes Anuales</a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'grafica_iglesia_anio_anio' %}">Grafica anio anio</a> </li> -->
+                           <li class="nav-item" >----------- </li>
+
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'categoria_lider_list' %}">Categor&iacute;a l&iacute;der </a> </li>
+
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'buscar_ocupaciones'  %}">Buscar ocupaciones </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'registro_publico_miembro' request.session.token_registro %}"  target="_blank" rel="noopener noreferrer">Registro puiblico </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'configuracion_iglesias' %}">Configuraciones </a> </li>
+                    <li class="nav-item" ><a class="nav-link" href="{% url 'usuario_iglesia_list' %}">Usuarios e Iglesia </a></li>
+
+                    {% else %}
+                            {% if request.session.mis_ministerio %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
+                                <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
+                                <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
+
+                    {% endif %}
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
+
+                            {% if request.session.mis_grupos %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_grupos_casa' %}">Mis grupos</a> </li>
+                            {% endif %}
+
+                            {% if request.session.mis_redes %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_redes' %}">Mis redes</a> </li>
+                            {% endif %}
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos programados </a> </li>
+
+
+
+
+                            {% if request.session.rol_consolidador %}
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'consolidacion_list' %}">Consolidacion</a> </li>
+                            {% endif %}
+
+
+                                    {% if request.session.pendientes_por_consolidacion %}
+
+                                          <li class="nav-item" >
+                                                <a href="{% url 'consolidacion_pendiente' %}" class="nav-link"> Seguimiento consolidación  </a>
+                                          </li>
+                                        <span class="badge bg-danger">
+                                            {{ request.session.pendientes_por_consolidacion }}
+                                        </span>
+
+                                    {% endif %}
+
+
+
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Consultar grupos en Casa</a> </li>
+
+
+
+
+
+                    {% endif %}
+
+
+
+
+
+
+                </ul>
+
+                <ul class="navbar-nav">
+
+                        <li class="nav-item">
+                            <a class="nav-link" href="">Perfil ({{ request.session.username }})</a>
+                        </li>
+
+
+                    {% if request.session.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'password_change' %}">  Cambiar contraseña </a>
+                        </li>
+                            <form method="post" action="{% url 'logout' %}">
+                                {% csrf_token %}
+                                <button  class="btn btn-danger" type="submit">logout</button>
+                            </form>
+                        {% else %}
+                             <a href="{% url 'login' %}">Ingresar </a>
+                        {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <div class="container">
+        {% block content %}
+
+        {% endblock content %}
+    </div>
+
+    {% if messages %}
+<div class="mt-2">
+    {% for message in messages %}
+        <div class="alert alert-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+    <footer class="bg-dark text-white text-center py-3 mt-4">
+        <p>&copy; 2025 La Grey - Todos los derechos reservados</p>
+    </footer>
+</body>
+</html>
