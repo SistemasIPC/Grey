@@ -17,7 +17,7 @@ from .views import item_list
 from .views import ListaTipoBienvenida, GestionarBienvenidaUpdateView, VerBienvenidaView
 from .views import ConsolidacionListView, ConsolidacionCreateView,  ConsolidacionUpdateView, cambiar_seguimiento
 from .views import PendientesConsolidacionView, Iglesia_off, ImagenRegistroMiembroUpdateView,Menu_Configuracion_Iglesia
-from .views import UsuarioIglesiaMasivoView
+from .views import UsuarioIglesiaMasivoView, ImagenBannerIglesiaUpdateView
 # path('login/',LoginIglesiaView.as_view(),name='login'),
 urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_iglesia'),
                path('registro/<uuid:token>/',PaginaRegistroIglesia.as_view(),name='registro_iglesia_token'),
@@ -68,6 +68,14 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                path('usuarios-iglesia/nuevo/', UsuarioIglesiaCreateView.as_view(), name='usuario_iglesia_create'),
                path('usuarios-iglesia/asociar/', UsuarioIglesiaMasivoView.as_view(), name='usuario_iglesia_asociar'),
                path('usuario/eliminar/<int:pk>/',views.usuario_eliminar_inactivo, name='usuario_eliminar_inactivo'),
+
+
+
+               path('media-iglesia/<str:codigo>/', views.explorar_media_iglesia, name='explorar_media_iglesia'),
+               path('media-iglesia/<str:codigo>/<path:subruta>/', views.explorar_media_iglesia, name='explorar_media_iglesia_subruta'),
+               path('plantilla-iglesia/<str:codigo>/', views.explorar_templates_iglesia, name='explorar_templates_iglesia'),
+
+
 
                path('usuarios-iglesia/editar/<int:pk>/', UsuarioIglesiaUpdateView.as_view(), name='usuario_iglesia_update'),
                path('usuarios-iglesia/eliminar/<int:pk>/', UsuarioIglesiaDeleteView.as_view(),  name='usuario_iglesia_delete'),
@@ -211,7 +219,7 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 path("categoria-lider/<int:pk>/eliminar/", views.CategoriaLiderDeleteView.as_view(),  name="categoria_lider_delete" ),
 
 
-                path("registro/<uuid:token_reg_pub_m>/", views.registro_publico_miembro, name="registro_publico_miembro"),
+                path("registro_publico/<uuid:token_reg_pub_m>/", views.registro_publico_miembro, name="registro_publico_miembro"),
 
                 path("miembros/ocupaciones/",  views.buscar_ocupaciones,  name="buscar_ocupaciones"),
                 path("miembros/<int:miembro_id>/agendar-jitsi/", views.agendar_jitsi,  name="agendar_jitsi"),
@@ -226,5 +234,6 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                 #****  Configuracion
                 path("configuracion/", Menu_Configuracion_Iglesia.as_view(), name="configuracion_iglesias"),
                 path("configuracion/imagen-registro/", ImagenRegistroMiembroUpdateView.as_view(), name="imagen_registro_miembro"),
+                path("configuracion/imagen-banner/", ImagenBannerIglesiaUpdateView.as_view(), name="imagen_banner_iglesia"),
                ]
 

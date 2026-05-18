@@ -1344,3 +1344,36 @@ class ImagenRegistroMiembroForm(forms.ModelForm):
             )
 
         return imagen
+
+
+class ImagenBannerIglesiaForm(forms.ModelForm):
+
+    class Meta:
+
+        model = ConfiguracionIglesia
+
+        fields = [
+            "imagen_banner_iglesia"
+        ]
+
+        widgets = {
+            "imagen_banner_iglesia": forms.FileInput(
+                attrs={
+                    "class": "form-control"
+                }
+            )
+        }
+
+    def clean_imagen_banner_iglesia(self):
+
+        imagen = self.cleaned_data.get(
+            "imagen_banner_iglesia"
+        )
+
+        if not imagen and not self.instance.imagen_banner_iglesia:
+
+            raise forms.ValidationError(
+                "Debe seleccionar una imagen."
+            )
+
+        return imagen

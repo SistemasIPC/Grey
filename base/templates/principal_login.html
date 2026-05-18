@@ -38,7 +38,98 @@
 
 </head>
 <body>
-    <header class="bg-primary text-white text-center py-4">
+<style>
+
+.header-principal {
+     background-image: url('/media/header.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    min-height: 250px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    padding: 20px;
+    overflow: hidden;
+}
+
+
+.header-principal::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.45);
+}
+
+
+.header-principal h1,
+.header-principal p {
+    position: relative;
+    z-index: 2;
+    margin: 0;
+}
+
+
+.header-principal h1 {
+    font-size: 3rem;
+    font-weight: bold;
+}
+
+
+.header-principal p {
+    font-size: 1.2rem;
+    margin-top: 10px;
+}
+
+
+
+/* =========================
+   TABLET
+========================= */
+@media (max-width: 992px) {
+    .header-principal {
+        min-height: 220px;
+    }
+    .header-principal h1 {
+        font-size: 2.3rem;
+    }
+}
+
+
+/* =========================
+   CELULAR
+========================= */
+
+@media (max-width: 576px) {
+    .header-principal {
+        min-height: 180px;
+        padding: 15px;
+    }
+
+    .header-principal h1 {
+        font-size: 1.7rem;
+    }
+
+    .header-principal p {
+        font-size: 1rem;
+    }
+}
+
+</style>
+
+
+
+
+
+
+    <header class="header-principal text-gray text-center py-4">
         <h1>Bienvenido a la Grey</h1>
         <p>Cuidando de buena manera</p>
     </header>

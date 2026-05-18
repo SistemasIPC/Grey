@@ -1,0 +1,68 @@
+<h3>
+    Media iglesia {{ codigo }}
+</h3>
+
+
+<h4>
+    Carpetas
+</h4>
+
+<ul>
+
+    {% for carpeta in carpetas %}
+
+        <li>
+
+            📁
+
+            <a href="{% url 'explorar_media_iglesia_subruta' codigo carpeta.ruta %}">
+
+                {{ carpeta.nombre }}
+
+            </a>
+
+        </li>
+
+    {% empty %}
+
+        <li>
+            Sin carpetas
+        </li>
+
+    {% endfor %}
+
+</ul>
+
+
+<h4>
+    Archivos
+</h4>
+
+<ul>
+
+    {% for archivo in archivos %}
+
+        <li>
+
+            📄
+
+            <a
+                href="/media/iglesias/{{ codigo }}/{{ archivo.ruta }}"
+                target="_blank"
+            >
+
+                {{ archivo.nombre }}
+
+            </a>
+
+        </li>
+
+    {% empty %}
+
+        <li>
+            Sin archivos
+        </li>
+
+    {% endfor %}
+
+</ul>

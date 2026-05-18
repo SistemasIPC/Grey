@@ -63,6 +63,19 @@
                 {% if iglesia.num_miembros == 0 and iglesia.num_usuarios == 0 %}
                     <a href="{% url 'iglesia_delete_temp' iglesia.id %}" class="btn btn-danger">Eliminar</a>
                 {% endif %}
+
+
+                <a class="btn btn-sm btn-warning"  href="{% url 'explorar_media_iglesia' iglesia.codigo %}"  target="_blank"  >
+                    Media
+                </a>
+
+                <a class="btn btn-sm btn-primary"  href="{% url 'explorar_templates_iglesia' iglesia.codigo %}" target="_blank"  >
+                    Plantillas
+                </a>
+
+
+
+
             </td>
         </tr>
         {% empty %}

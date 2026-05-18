@@ -1,0 +1,27 @@
+<h3>
+    {{ ruta }}
+</h3>
+
+<h4>Carpetas</h4>
+
+<ul>
+
+    {% for carpeta in carpetas %}
+
+        <li>{{ carpeta }}</li>
+
+    {% endfor %}
+
+</ul>
+
+<h4>Archivos</h4>
+
+<ul>
+
+    {% for archivo in archivos %}
+
+        <li>{{ archivo }}</li>
+
+    {% endfor %}
+
+</ul>

@@ -1,7 +1,7 @@
 # utils.py (o donde ya lo tengas)
 
 from django.shortcuts import get_object_or_404
-from .models import Usuario_iglesia, GrupoCasa, Ministerio
+from .models import Usuario_iglesia, GrupoCasa, Ministerio,ConfiguracionIglesia
 
 
 
@@ -59,6 +59,16 @@ def cargar_sesion_usuario(request, user,usuario_iglesia=None):
             request.session["token_registro"] = str(
                 usuario_iglesia.id_iglesia.token_registro
             )
+
+            request.session["token_registro"] = str(
+                usuario_iglesia.id_iglesia.token_registro
+            )
+
+            config  = ConfiguracionIglesia.objects.filter(iglesia=usuario_iglesia.id_iglesia ).first()
+            if config:
+                request.session["ruta_imagen_banner_iglesia"] =  str(config.imagen_banner_iglesia)
+
+
 
             existe = GrupoCasa.objects.filter(id_usuario=request.user ).exists()
             if existe:

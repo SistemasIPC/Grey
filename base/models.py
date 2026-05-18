@@ -7,6 +7,7 @@ import uuid
 import random
 import string
 import os
+import shutil
 from django.conf import settings
 
 from django.utils.timezone import now
@@ -63,6 +64,21 @@ def generar_carpetas_iglesia(codigo):
                 exist_ok=True
             )
 
+    # ==========================================
+    # CREAR PLANTILLA DE LA IGLESIA
+    # ==========================================
+
+    ruta_templates = os.path.join(settings.BASE_DIR,"base","templates", "plantillas" )
+
+    plantilla_general = os.path.join(ruta_templates, "plantilla_general"  )
+
+    nueva_plantilla = os.path.join( ruta_templates, f"iglesia_{codigo}" )
+
+    # Solo copiar si no existe
+
+    if not os.path.exists( nueva_plantilla ):
+        shutil.copytree(plantilla_general,nueva_plantilla)
+
 
 class Iglesia(models.Model):
     codigo = models.CharField(
@@ -111,6 +127,34 @@ class Iglesia(models.Model):
 
         super().save(*args, **kwargs)
 
+    def delete(self, *args, **kwargs):
+
+        codigo = self.codigo
+
+        # =====================================
+        # ELIMINAR MEDIA
+        # =====================================
+
+        ruta_media = os.path.join(settings.MEDIA_ROOT,"iglesias", codigo )
+
+        if os.path.exists(ruta_media):
+            shutil.rmtree(ruta_media, ignore_errors=True )
+
+        # =====================================
+        # ELIMINAR TEMPLATES
+        # =====================================
+        ruta_templates = os.path.join(settings.BASE_DIR,
+            "base",
+            "templates",
+            "plantillas",
+            f"iglesia_{codigo}"
+        )
+
+        if os.path.exists(ruta_templates ):
+            shutil.rmtree(ruta_templates,ignore_errors=True )
+
+        super().delete(*args,**kwargs)
+
     class Meta:
         ordering = ['nombre']
 
@@ -125,7 +169,7 @@ class Categoria_iglesia(models.Model):
 class Usuario_iglesia(models.Model):
     id_iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE,
                                  null=False,
-                                 blank=True)
+                                 blank=True,  related_name="usuarios_iglesia")
     id_usuario = models.ForeignKey(User, on_delete=models.CASCADE,
                                  null=False,
                                  blank=True)
@@ -730,6 +774,20 @@ def ruta_imagen_registro_miembro(instance, filename):
         f"general_imagen_registro_miembro.{extension}"
     )
 
+
+def ruta_imagen_banner_iglesia(instance, filename):
+
+    extension = filename.split(".")[-1]
+
+
+    return (
+        f"iglesias/"
+        f"{instance.iglesia.codigo}/"
+        f"img/banner/"
+        f"general_imagen_banner.{extension}"
+    )
+
+
 class ConfiguracionIglesia(models.Model):
 
     iglesia = models.OneToOneField(
@@ -761,6 +819,14 @@ class ConfiguracionIglesia(models.Model):
         null=True,
         blank=True
     )
+
+    imagen_banner_iglesia = models.ImageField(
+        upload_to=ruta_imagen_banner_iglesia,
+        null=True,
+        blank=True
+    )
+
+
 
     def __str__(self):
         return f"Configuración {self.iglesia}"

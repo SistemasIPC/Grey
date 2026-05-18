@@ -72,10 +72,17 @@
 
             <td>
 
+
+
                 {% if user.is_superuser %}
 
                     {% if not usuario.superusuario and usuario.num_ministerios == 0 %}
                         <a class="btn btn-danger" href="{% url 'usuario_iglesia_delete' usuario.id %}">Eliminar</a>
+
+                    {% else %}
+                            {% if usuario.superusuario and usuario.total_usuarios_iglesia == 1 %}
+                                 <a class="btn btn-danger" href="{% url 'usuario_iglesia_delete' usuario.id %}">Eliminar</a>
+                            {% endif %}
                     {% endif %}
                 {% endif %}
 

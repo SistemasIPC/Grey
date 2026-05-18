@@ -30,7 +30,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 import json
-
+from django.http import Http404
 from .models import Miembro_ministerio, Rol_ministerio, User
 from .models import TipoBienvenida, Bienvenida, Categoria_lider
 from django.db.models import Count
@@ -40,7 +40,7 @@ from django.utils import timezone
 
 # Create your views here.
 from collections import defaultdict
-
+import os
 import re
 from .models import GrupoCasa, Barrio, Comuna
 from .models import Consolidacion, Red, ConfiguracionIglesia, AsistentesRed, AsistentesGrupoCasa
@@ -61,6 +61,7 @@ from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery,Exists
 from .models import CitaConsolidacion
 from django.conf import settings
+from .forms import ImagenBannerIglesiaForm
 
 #-----------------------------------------------------------------
 #                       LOGIN
@@ -168,6 +169,12 @@ class PaginaRegistroIglesia(FormView):
 
         context = super().get_context_data(**kwargs)
 
+        ruta_imagen_banner_iglesia = ""
+        config = ConfiguracionIglesia.objects.filter(iglesia=self.iglesia).first()
+        if config:
+            ruta_imagen_banner_iglesia = str(config.imagen_banner_iglesia)
+
+        context["ruta_imagen_banner_iglesia"] = ruta_imagen_banner_iglesia
         context["iglesia"] = self.iglesia
 
         return context
@@ -1378,7 +1385,7 @@ class IglesiaListView(VistaProtegida,LoginRequiredMixin, ListView):
         # Filtra iglesias activas
         return Iglesia.objects.annotate(
             num_miembros=Count('miembro'),
-            num_usuarios=Count('usuario_iglesia')
+            num_usuarios=Count('usuarios_iglesia')
         )
 
 # 🔹 Crear Iglesia
@@ -1402,6 +1409,170 @@ class IglesiaDeleteView(VistaProtegida,LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('iglesia_list')
 
 
+@login_required(login_url='/login/')
+def explorar_media_iglesia(request, codigo):
+
+    ruta = os.path.join(
+        settings.MEDIA_ROOT,
+        "iglesias",
+        codigo
+    )
+
+    carpetas = []
+    archivos = []
+
+    if os.path.exists(ruta):
+
+        for item in os.listdir(ruta):
+
+            ruta_item = os.path.join(
+                ruta,
+                item
+            )
+
+            if os.path.isdir(ruta_item):
+
+                carpetas.append(item)
+
+            else:
+
+                archivos.append(item)
+
+    return render(
+
+        request,
+
+        "iglesia/explorar_media.html",
+
+        {
+            "codigo": codigo,
+            "carpetas": carpetas,
+            "archivos": archivos,
+            "ruta": ruta
+        }
+    )
+
+@login_required(login_url='/login/')
+def explorar_media_iglesia(
+    request,
+    codigo,
+    subruta=""
+):
+
+    ruta_base = os.path.join(
+        settings.MEDIA_ROOT,
+        "iglesias",
+        codigo
+    )
+
+    ruta_actual = os.path.join(
+        ruta_base,
+        subruta
+    )
+
+    if not os.path.exists(
+        ruta_actual
+    ):
+        raise Http404()
+
+    carpetas = []
+    archivos = []
+
+    for item in os.listdir(
+        ruta_actual
+    ):
+
+        ruta_item = os.path.join(
+            ruta_actual,
+            item
+        )
+
+        ruta_relativa = os.path.join(
+            subruta,
+            item
+        ).replace("\\", "/")
+
+        if os.path.isdir(
+            ruta_item
+        ):
+
+            carpetas.append({
+                "nombre": item,
+                "ruta": ruta_relativa
+            })
+
+        else:
+
+            archivos.append({
+                "nombre": item,
+                "ruta": ruta_relativa
+            })
+
+    return render(
+
+        request,
+
+        "iglesia/explorar_media.html",
+
+        {
+            "codigo": codigo,
+            "subruta": subruta,
+            "carpetas": carpetas,
+            "archivos": archivos
+        }
+    )
+
+
+@login_required(login_url='/login/')
+def explorar_templates_iglesia(request, codigo):
+
+    ruta = os.path.join(
+
+        settings.BASE_DIR,
+
+        "base",
+
+        "templates",
+
+        "plantillas",
+
+        f"iglesia_{codigo}"
+    )
+
+    carpetas = []
+    archivos = []
+
+    if os.path.exists(ruta):
+
+        for item in os.listdir(ruta):
+
+            ruta_item = os.path.join(
+                ruta,
+                item
+            )
+
+            if os.path.isdir(ruta_item):
+
+                carpetas.append(item)
+
+            else:
+
+                archivos.append(item)
+
+    return render(
+
+        request,
+
+        "iglesia/explorar_templates.html",
+
+        {
+            "codigo": codigo,
+            "carpetas": carpetas,
+            "archivos": archivos,
+            "ruta": ruta
+        }
+    )
+
     # -----------------------------------------------------------------
     #                       Gesstionar Iglesias USUARIOS
     # ----------------------------------------------------------------
@@ -1420,11 +1591,17 @@ class UsuarioIglesiaListView(VistaProtegida,LoginRequiredMixin, ListView):
 
         # Obtener solo los usuarios de la iglesia del usuario logueado
         if self.request.user.is_superuser:
-            queryset = Usuario_iglesia.objects.filter().order_by('id_iglesia').annotate(num_ministerios=Count('id_usuario__ministerio'))
+            queryset = Usuario_iglesia.objects.filter().order_by('id_iglesia').annotate(num_ministerios=Count('id_usuario__ministerio'),  total_usuarios_iglesia=Count(
+            'id_iglesia__usuarios_iglesia',
+            distinct=True
+        ))
         else:
             if self.request.session.get('iglesa_superusuario'):
                 queryset = Usuario_iglesia.objects.filter(id_iglesia=self.request.session.get("iglesia_id")).order_by('id_iglesia').annotate(
-                    num_ministerios=Count('id_usuario__ministerio'))
+                    num_ministerios=Count('id_usuario__ministerio'), total_usuarios_iglesia=Count(
+            'id_iglesia__usuarios_iglesia',
+            distinct=True
+        ))
             else:
                 return Usuario_iglesia.objects.none()  #  return reverse_lazy('menu_principal')
         if busqueda:
@@ -1451,6 +1628,9 @@ class UsuarioIglesiaListView(VistaProtegida,LoginRequiredMixin, ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+
+
+        context["plantilla_super_iglesias"] = "principal_super.html"
 
         context["plantilla_super_iglesias"] = "principal_super.html"
 
@@ -4510,6 +4690,8 @@ class CategoriaLiderDeleteView(
 #      Reistro publico
 def registro_publico_miembro(request, token_reg_pub_m):
 
+
+
     iglesia = get_object_or_404(
         Iglesia,
         token_registro=token_reg_pub_m
@@ -5051,7 +5233,14 @@ def toggle_consolidador(request, pk):
 #************************************************
 #                       Iglesias
 
-class ImagenRegistroMiembroUpdateView(UpdateView):
+
+class Menu_Configuracion_Iglesia(VistaProtegida,LoginRequiredMixin,ListView):
+    model = Servicio
+    template_name = 'configuracion/configuracion_iglesia.html'
+
+
+
+class ImagenRegistroMiembroUpdateView(VistaProtegida,UpdateView):
 
     model = ConfiguracionIglesia
 
@@ -5081,8 +5270,33 @@ class ImagenRegistroMiembroUpdateView(UpdateView):
 
 
 
-class Menu_Configuracion_Iglesia(VistaProtegida,LoginRequiredMixin,ListView):
-    model = Servicio
-    template_name = 'configuracion/configuracion_iglesia.html'
+
+class ImagenBannerIglesiaUpdateView(VistaProtegida,UpdateView):
+
+    model = ConfiguracionIglesia
+
+    form_class = ImagenBannerIglesiaForm
+
+    template_name = (
+        "configuracion/imagen_banner_iglesia.html"
+    )
+
+    success_url = reverse_lazy(
+        "imagen_banner_iglesia"
+    )
+
+    def get_object(self):
+
+        usuario_iglesia = Usuario_iglesia.objects.get(
+            id_usuario=self.request.user
+        )
+
+        configuracion, created = (
+            ConfiguracionIglesia.objects.get_or_create(
+                iglesia=usuario_iglesia.id_iglesia
+            )
+        )
+
+        return configuracion
 
 
