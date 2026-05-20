@@ -149,7 +149,7 @@
 
                     {% if user.is_authenticated %}
 
-                      {% if usuario_iglesia.superusuario %}
+                      {% if usuario_iglesia.superusuario and bienvenida.id_tipo_bienvenida.id %}
                           <a href="{% url 'gestionar-bienvenida' bienvenida.id_tipo_bienvenida.id %}"
                             class="btn btn-primary">
 

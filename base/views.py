@@ -1907,9 +1907,9 @@ class GestionarBienvenidaUpdateView(VistaProtegida,LoginRequiredMixin, UpdateVie
     def get_object(self):
         tipo = get_object_or_404(TipoBienvenida, pk=self.kwargs["pk"])
 
-        bienvenida, created = Bienvenida.objects.get_or_create(
+        bienvenida = Bienvenida.objects.filter(
             id_tipo_bienvenida=tipo
-        )
+        ).first()
 
         return bienvenida
 
@@ -1950,17 +1950,22 @@ class VerBienvenidaView(DetailView):
             ).first()
 
             if usuario_iglesia:
+
                 iglesia = usuario_iglesia.id_iglesia
                 context["usuario_iglesia"] = usuario_iglesia
                 context["iglesia"] = iglesia
 
+
         if self.request.user.is_authenticated and usuario_iglesia:
             context["base_template"] = "principal.html"
+
         else:
             context["base_template"] = "principal_sin_menu.html"
 
 
+
         if  self.object:
+
             # Obtener el link del video bievenidad
             video_url = self.object.link_video_bienvenida
             youtube_id_bienvenida = None
