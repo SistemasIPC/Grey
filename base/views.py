@@ -4041,7 +4041,7 @@ def inscripcion_evento(request, evento_id):
             # 🔥 envío de confirmación
             enviar_confirmacion_evento(inscripcion)
 
-            messages.success(request, "Inscripción realizada correctamente.")
+            messages.success(request, evento.msg_registro_exitoso)
             return redirect(request.path)
 
     return render(request, "eventos/inscripcion.html", {
@@ -4255,7 +4255,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
             # 🔥 envío de confirmación
             enviar_confirmacion_evento(inscripcion)
 
-            messages.success(request, "Inscripción realizada correctamente.")
+            messages.success(request, evento.msg_registro_exitoso)
             return redirect(request.path)
 
 

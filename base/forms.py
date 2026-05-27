@@ -945,6 +945,7 @@ class EventoProgramadoForm(forms.ModelForm):
             "edad_min",
             "edad_max",
             "estado",
+            "msg_registro_exitoso",
             "imagen"
         ]
 
@@ -963,6 +964,7 @@ class EventoProgramadoForm(forms.ModelForm):
             "edad_min": forms.NumberInput(attrs={"class": "form-control","min": "0"}),
             "edad_max": forms.NumberInput(attrs={"class": "form-control"}),
             "estado": forms.Select(attrs={"class": "form-control"}),
+            "msg_registro_exitoso": forms.Textarea(attrs={"class": "form-control"}),
             "imagen": forms.FileInput( attrs={ "class": "form-control"}),
         }
 
@@ -982,6 +984,7 @@ class EventoProgramadoForm(forms.ModelForm):
         edad_max = cleaned_data.get(
             "edad_max"
         )
+        msg_registro_exitoso = cleaned_data.get("msg_registro_exitoso")
         if evento and self.iglesia:
             if evento.iglesia != self.iglesia:
                 raise forms.ValidationError("El evento no pertenece a la iglesia.")
@@ -1035,6 +1038,11 @@ class EventoProgramadoForm(forms.ModelForm):
 
 
 
+        if not msg_registro_exitoso:
+            self.add_error(
+                "msg_registro_exitoso",
+                "Debe registrar el mensaje cuando el registro sea exitoso"
+            )
 
         return cleaned_data
 

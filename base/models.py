@@ -1183,6 +1183,7 @@ class EventoProgramado(models.Model):
         editable=False,
         unique=True
     )
+    msg_registro_exitoso = models.TextField(blank=True, default='Registro exitoso', verbose_name="Mensaje registro exitoso")
     imagen = models.ImageField(
         upload_to=ruta_imagen_evento,
         null=True,
