@@ -4395,7 +4395,7 @@ def evento_inscritos(request, evento_id):
 
     inscripciones = InscripcionEvento.objects.filter(
         evento_programado=evento
-    ).select_related("miembro", "rango_edad").order_by("rango_edad__orden","miembro__identificacion").annotate(
+    ).select_related("miembro", "rango_edad").order_by("rango_edad__orden","id").annotate(
     red_nombre=Subquery(ultima_red)).annotate(
     tiene_asistencia=Exists(asistencia_subquery)
 )
