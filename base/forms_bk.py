@@ -15,7 +15,7 @@ from .models import EventoProgramado, Evento
 from django.core.exceptions import ValidationError
 from .models import Barrio,Categoria_lider, ConfiguracionIglesia
 import re
-from django.utils.timezone import now
+
 
 
 class RegistroUsuarioForm(UserCreationForm):
@@ -413,363 +413,99 @@ class BienvenidaUpdateForm(forms.ModelForm):
 
 
 
-
-
 class ConsolidacionForm(forms.ModelForm):
 
-    # 🔥 DATOS PERSONA
-    identificacion = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Identificación"
-        })
-    )
-
-    nombre = forms.CharField(
-        required=True,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Nombre"
-        })
-    )
-
-    apellido = forms.CharField(
-        required=True,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Apellido"
-        })
-    )
-
-    celular = forms.CharField(
-        required=True,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Celular"
-        })
-    )
-
-    telefono = forms.CharField(
-        required=False,
-        widget=forms.TextInput(attrs={
-            "class": "form-control",
-            "placeholder": "Teléfono"
-        })
-    )
-
-    correo = forms.EmailField(
-        required=False,
-        widget=forms.EmailInput(attrs={
-            "class": "form-control",
-            "placeholder": "Correo"
-        })
-    )
-
     class Meta:
-
         model = Consolidacion
 
         fields = [
-
+            "miembro",
             "categoria_servicio",
-
             "fecha_ingreso",
-
             "red",
-
             "grupo_casa",
-
             "nombre_invito",
-
             "observacion",
-
         ]
 
         widgets = {
+            "en_seguimiento": forms.Select(attrs={
+                "class": "form-control"
+            }),
+            "miembro": forms.Select(attrs={
+                "class": "form-control select2-miembro",
+                "data-url": "/ajax/buscar-miembro/"
+            }),
 
             "nombre_invito": forms.Select(attrs={
-
                 "class": "form-control select2-invito",
-
                 "data-url": "/ajax/buscar-miembro/"
-
             }),
 
             "grupo_casa": forms.Select(attrs={
-
                 "class": "form-control select2-grupo",
-
                 "data-url": "/ajax/buscar-grupo/"
-
             }),
 
-            "fecha_ingreso": forms.DateInput(
-
-                format="%Y-%m-%d",
-
-                attrs={
-
-                    "type": "date",
-
-                    "class": "form-control"
-
-                }
-
-            ),
-
-            "categoria_servicio": forms.Select(attrs={
+            "fecha_ingreso": forms.DateInput( format="%Y-%m-%d", attrs={
+                "type": "date",
                 "class": "form-control"
             }),
-
-            "red": forms.Select(attrs={
-                "class": "form-control"
-            }),
-
-            "observacion": forms.Textarea(attrs={
-                "class": "form-control",
-                "rows": 3
-            }),
-
         }
 
-    def __init__(self, *args, **kwargs):
-
+    def __init__(self,  *args, **kwargs):
         iglesia = kwargs.pop("iglesia")
-
         super().__init__(*args, **kwargs)
 
-        # 🔥 QUERYSETS VACÍOS
-        self.fields[
-            "nombre_invito"
-        ].queryset = Miembro.objects.none()
-
-        self.fields[
-            "grupo_casa"
-        ].queryset = GrupoCasa.objects.none()
-
-        # 🔥 FILTRAR POR IGLESIA
-        self.fields[
-            "red"
-        ].queryset = Red.objects.filter(
-            iglesia_id=iglesia
-        )
-
-        self.fields[
-            "categoria_servicio"
-        ].queryset = Categoria_servicio.objects.filter(
-            id_iglesia_id=iglesia
-        )
-        # 🔥 FORMATO FECHA
-        self.fields[
-            "fecha_ingreso"
-        ].input_formats = ["%Y-%m-%d"]
-        # 🔥 FECHA ACTUAL SOLO NUEVO
-        if not self.instance.pk:
-            self.fields[
-                "fecha_ingreso"
-            ].initial = now().date()
 
 
+        self.fields["miembro"].queryset = Miembro.objects.none()
+        self.fields["nombre_invito"].queryset = Miembro.objects.none()
+        self.fields["grupo_casa"].queryset = GrupoCasa.objects.none()
 
-        # 🔥 SELECT2 INVITÓ
-        invito_id = (
-            self.data.get("nombre_invito")
-            or
-            self.initial.get("nombre_invito")
-        )
+        # Listas filtradas por iglesia
+        self.fields["red"].queryset = Red.objects.filter(iglesia_id=iglesia)
+        self.fields["categoria_servicio"].queryset = Categoria_servicio.objects.filter(id_iglesia_id=iglesia)
+       # 🔹 SOLUCIÓN: cuando llega POST cargar el registro seleccionado
 
+        miembro_id = self.data.get("miembro") or self.initial.get("miembro")
+        if miembro_id:
+            self.fields["miembro"].queryset = Miembro.objects.filter(
+                    id=miembro_id,
+                    iglesia_id=iglesia
+                )
+
+
+        invito_id = self.data.get("nombre_invito") or self.initial.get("nombre_invito")
         if invito_id:
-
-            self.fields[
-                "nombre_invito"
-            ].queryset = Miembro.objects.filter(
-
-                id=invito_id,
-
-                iglesia_id=iglesia
-
+            self.fields["nombre_invito"].queryset = Miembro.objects.filter(
+                  id=invito_id,
+                 iglesia_id=iglesia
             )
 
-        # 🔥 SELECT2 GRUPO
-        grupo_id = (
-            self.data.get("grupo_casa")
-            or
-            self.initial.get("grupo_casa")
-        )
-
+        grupo_id = self.data.get("grupo_casa") or self.initial.get("grupo_casa")
         if grupo_id:
-
-            self.fields[
-                "grupo_casa"
-            ].queryset = GrupoCasa.objects.filter(
-
-                id=grupo_id,
-
-                iglesia_id=iglesia
-
-            )
-
-        # 🔥 EDICIÓN
+            self.fields["grupo_casa"].queryset = GrupoCasa.objects.filter(
+                    id=grupo_id,
+                    iglesia_id=iglesia
+                )
+        # 🔹 Cuando se edita un registro
         elif self.instance.pk:
 
+            if self.instance.miembro:
+                self.fields["miembro"].queryset = Miembro.objects.filter(
+                    id=self.instance.miembro.id
+                )
 
             if self.instance.nombre_invito:
-
-                self.fields[
-                    "nombre_invito"
-                ].queryset = Miembro.objects.filter(
-
+                self.fields["nombre_invito"].queryset = Miembro.objects.filter(
                     id=self.instance.nombre_invito.id
-
                 )
 
             if self.instance.grupo_casa:
-
-                self.fields[
-                    "grupo_casa"
-                ].queryset = GrupoCasa.objects.filter(
-
+                self.fields["grupo_casa"].queryset = GrupoCasa.objects.filter(
                     id=self.instance.grupo_casa.id
-
                 )
-
-
-        ################################################
-        # 🔥 CARGAR DATOS PERSONALES EN UPDATE
-        ################################################
-
-        if (
-            self.instance.pk
-            and
-            self.instance.miembro
-        ):
-
-            miembro = self.instance.miembro
-
-            self.fields[
-                "identificacion"
-            ].initial = miembro.identificacion
-
-            self.fields[
-                "nombre"
-            ].initial = miembro.nombre
-
-            self.fields[
-                "apellido"
-            ].initial = miembro.apellido
-
-            self.fields[
-                "celular"
-            ].initial = miembro.celular
-
-            self.fields[
-                "telefono"
-            ].initial = miembro.telefono
-
-            self.fields[
-                "correo"
-            ].initial = miembro.correo
-
-
-    ###################################################
-    # 🔥 VALIDACIONES
-    ###################################################
-
-    def clean_identificacion(self):
-
-        identificacion = self.cleaned_data.get(
-            "identificacion"
-        )
-
-        if identificacion:
-
-            if not re.match(
-                r"^[0-9]+$",
-                identificacion
-            ):
-
-                raise forms.ValidationError(
-                    "La identificación solo puede contener números."
-                )
-
-        return identificacion
-
-    def clean_nombre(self):
-
-        nombre = self.cleaned_data.get(
-            "nombre"
-        )
-
-        if nombre:
-
-            if not re.match(
-                r"^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$",
-                nombre
-            ):
-
-                raise forms.ValidationError(
-                    "El nombre solo puede contener letras."
-                )
-
-        return nombre
-
-    def clean_apellido(self):
-
-        apellido = self.cleaned_data.get(
-            "apellido"
-        )
-
-        if apellido:
-
-            if not re.match(
-                r"^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$",
-                apellido
-            ):
-
-                raise forms.ValidationError(
-                    "El apellido solo puede contener letras."
-                )
-
-        return apellido
-
-    def clean_celular(self):
-
-        celular = self.cleaned_data.get(
-            "celular"
-        )
-
-        if celular:
-
-            if not re.match(
-                r"^\+?[0-9]{7,15}$",
-                celular
-            ):
-
-                raise forms.ValidationError(
-                    "Ingrese un celular válido."
-                )
-
-        return celular
-
-    def clean_telefono(self):
-
-        telefono = self.cleaned_data.get(
-            "telefono"
-        )
-
-        if telefono:
-
-            if not re.match(
-                r"^\+?[0-9]{7,15}$",
-                telefono
-            ):
-
-                raise forms.ValidationError(
-                    "Ingrese un teléfono válido."
-                )
-
-        return telefono
 
 
 #==================================

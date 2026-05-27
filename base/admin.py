@@ -6,7 +6,7 @@ from .models import Bienvenida, TipoBienvenida, Red, Consolidacion, Configuracio
 from .models import AsistentesGrupoCasa, AsistentesRed, RolEquipoGrupo, ServicioMinisterio
 # Register your models here.
 from .models import Categoria_iglesia, Evento, EventoDia, EventoProgramado, TipoEvento, InscripcionEvento, RangoEdad, AsistenciaEvento
-from .models import CitaConsolidacion
+from .models import CitaConsolidacion, MiembroConsolidacion,AsistentesGrupoCasaConsolidacion, AsistentesRedConsolidacion
 
 # Register your models here.
 admin.site.register(Iglesia)
@@ -44,3 +44,6 @@ admin.site.register(RangoEdad)
 admin.site.register(AsistenciaEvento)
 admin.site.register(Categoria_lider)
 admin.site.register(CitaConsolidacion)
+admin.site.register(MiembroConsolidacion)
+admin.site.register(AsistentesGrupoCasaConsolidacion)
+admin.site.register(AsistentesRedConsolidacion)

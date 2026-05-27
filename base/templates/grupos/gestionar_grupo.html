@@ -179,7 +179,7 @@ Eliminar
 
 <tr>
 
-<td>{{ a.miembro.nombre }}</td>
+<td>{{ a.miembro.nombre }} {{ a.miembro.apellido }}</td>
 <td>{{ a.miembro.telefono }}</td>
 <td>{{ a.miembro.email }}</td>
 <td>{{ a.miembro.fecha_nacimiento }}</td>
@@ -195,7 +195,7 @@ class="table-danger"
 
 
 
-<select name="estado" class="form-control cambiar-estado-asistente" data-id="{{ a.id }}" data-observaciones="{{ a.observaciones|default:'' }}">
+<select name="estado" class="form-control cambiar-estado-asistente" data-id="{{ a.id }}" data-observaciones="{{ a.observaciones|default:'' }}" data-consolidacion="0">
 
 <option value="C" {% if a.estado == "C" %}selected{% endif %}>Consolidación</option>
 <option value="S" {% if a.estado == "S" %}selected{% endif %}>Seguimiento</option>
@@ -255,6 +255,94 @@ Eliminar
 </tr>
 
 {% endfor %}
+
+
+
+
+
+{% for a in asistentesConsolidacion %}
+
+<tr>
+
+<td>{{ a.miembro.nombre }} {{ a.miembro.apellido }}</td>
+<td>{{ a.miembro.telefono }}</td>
+<td>{{ a.miembro.email }}</td>
+<td>{{ a.miembro.fecha_nacimiento }}</td>
+
+<td
+{% if a.estado == "A" %}
+class="table-success"
+{% elif a.estado == "U" %}
+class="table-danger"
+{% endif %}
+>
+
+
+
+
+<select name="estado" class="form-control cambiar-estado-asistente" data-id="{{ a.id }}" data-observaciones="{{ a.observaciones|default:'' }}" data-consolidacion="1">
+
+<option value="C" {% if a.estado == "C" %}selected{% endif %}>Consolidación</option>
+<option value="S" {% if a.estado == "S" %}selected{% endif %}>Seguimiento</option>
+
+</select>
+
+
+
+</td>
+
+
+<td>
+
+
+<select name="equipo" class="form-control cambiar-encargado-asistente" data-id="{{ a.id }}">
+
+<option value="">---</option>
+
+{% for e in equipo %}
+
+<option value="{{ e.id }}"
+{% if a.equipo and a.equipo.id == e.id %}selected{% endif %}>
+
+{{ e.miembro.nombre }} ({{ e.rol.descripcion }})
+
+</option>
+
+{% endfor %}
+
+</select>
+
+
+
+</td>
+
+
+
+
+<td>
+
+{% if a.estado != "C" %}
+
+<a href="{% url 'eliminar_asistente_grupo' a.id %}"
+onclick="return confirm('¿Eliminar asistente?')"
+class="btn btn-danger btn-sm">
+
+Eliminar
+
+</a>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+
+
+
+
 
 </table>
 
@@ -426,9 +514,12 @@ $(".cambiar-encargado-asistente").change(function(){
 
 let asistente_id = null;
 let estado_nuevo = null;
+let if_consolidacion = null;
 
 $(".cambiar-estado-asistente").change(function(){
 
+
+    if_consolidacion = $(this).data("consolidacion");
     asistente_id = $(this).data("id");
     estado_nuevo = $(this).val();
 
@@ -460,6 +551,7 @@ $("#guardarEstadoAsistente").click(function(){
             id: asistente_id,
             estado: estado_nuevo,
             observaciones: observaciones,
+            if_consolidacion:if_consolidacion,
             csrfmiddlewaretoken: "{{ csrf_token }}"
 
         },

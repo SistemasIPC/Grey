@@ -1,7 +1,7 @@
 # utils.py (o donde ya lo tengas)
 
 from django.shortcuts import get_object_or_404
-from .models import Usuario_iglesia, GrupoCasa, Ministerio,ConfiguracionIglesia
+from .models import Usuario_iglesia, GrupoCasa, Ministerio,ConfiguracionIglesia,Consolidacion
 
 
 
@@ -68,15 +68,22 @@ def cargar_sesion_usuario(request, user,usuario_iglesia=None):
             if config:
                 request.session["ruta_imagen_banner_iglesia"] =  str(config.imagen_banner_iglesia)
 
-
-
+            request.session["pendientes_por_consolidacion"] =0
             existe = GrupoCasa.objects.filter(id_usuario=request.user ).exists()
             if existe:
+                grupos = GrupoCasa.objects.filter(id_usuario=user).values_list("id", flat=True)
+                pendientes_grupo = Consolidacion.objects.filter(en_seguimiento="P", grupo_casa__in=grupos).count()
+                request.session["pendientes_por_consolidacion"] +=pendientes_grupo
                 request.session["mis_grupos"] = True
 
             existe = Ministerio.objects.filter(id_usuario=request.user, red__isnull=False).exists()
             if existe:
+                redes = Ministerio.objects.filter(id_usuario=user,red__isnull=False ).values_list("red", flat=True)
+                pendientes_red = Consolidacion.objects.filter(en_seguimiento="P",red__in=redes).count()
+                request.session["pendientes_por_consolidacion"] += pendientes_red
                 request.session["mis_redes"] = True
+
+
 
             existe = Ministerio.objects.filter(id_usuario=request.user).exists()
             if existe:

@@ -43,7 +43,7 @@ from collections import defaultdict
 import os
 import re
 from .models import GrupoCasa, Barrio, Comuna
-from .models import Consolidacion, Red, ConfiguracionIglesia, AsistentesRed, AsistentesGrupoCasa
+from .models import Consolidacion, Red, ConfiguracionIglesia, AsistentesRed, AsistentesGrupoCasa,AsistentesRedConsolidacion, AsistentesGrupoCasaConsolidacion
 from .models import EquipoGrupoCasa, RolEquipoGrupo, ServicioMinisterio
 from .forms import ConsolidacionForm, ServicioForm, ReporteAnualForm,EventoForm,EventoProgramadoForm,InscripcionEventoForm
 from .forms import GrupoCasaForm,CategoriaLiderForm,RegistroPublicoMiembroForm, ImagenRegistroMiembroForm
@@ -59,7 +59,7 @@ from .utils import *
 from presbiterio.models import ReporteAnualIglesia, ConfiPresbiterio
 from django.core.paginator import Paginator
 from django.db.models import OuterRef, Subquery,Exists
-from .models import CitaConsolidacion
+from .models import CitaConsolidacion, MiembroConsolidacion
 from django.conf import settings
 from .forms import ImagenBannerIglesiaForm
 
@@ -2113,15 +2113,106 @@ class ConsolidacionCreateView(VistaProtegida,CreateView):
 
     def form_valid(self, form):
 
-        obj = form.save(commit=False)
+        usuario_iglesia = get_object_or_404(
+            Usuario_iglesia,
+            id_usuario=self.request.user
+        )
+
+        iglesia = usuario_iglesia.id_iglesia
+
+        identificacion = form.cleaned_data.get(
+            "identificacion"
+        )
+
+        # 🔥 SI TIENE IDENTIFICACIÓN
+        if identificacion:
+
+            miembro = MiembroConsolidacion.objects.filter(
+
+                iglesia=iglesia,
+
+                identificacion=identificacion
+
+            ).first()
+
+            # 🔥 SI NO EXISTE → CREAR
+            if not miembro:
+
+                miembro = MiembroConsolidacion.objects.create(
+
+                    iglesia=iglesia,
+
+                    identificacion=identificacion,
+
+                    nombre=form.cleaned_data.get(
+                        "nombre"
+                    ),
+
+                    apellido=form.cleaned_data.get(
+                        "apellido"
+                    ),
+
+                    celular=form.cleaned_data.get(
+                        "celular"
+                    ),
+
+                    telefono=form.cleaned_data.get(
+                        "telefono"
+                    ),
+
+                    correo=form.cleaned_data.get(
+                        "correo"
+                    )
+
+                )
+
+        # 🔥 SI NO TIENE IDENTIFICACIÓN
+        else:
+
+
+
+            miembro = MiembroConsolidacion.objects.create(
+
+                iglesia=iglesia,
+
+                nombre=form.cleaned_data.get(
+                    "nombre"
+                ),
+
+                apellido=form.cleaned_data.get(
+                    "apellido"
+                ),
+
+                celular=form.cleaned_data.get(
+                    "celular"
+                ),
+
+                telefono=form.cleaned_data.get(
+                    "telefono"
+                ),
+
+                correo=form.cleaned_data.get(
+                    "correo"
+                )
+
+            )
+
+        # 🔥 GUARDAR CONSOLIDACIÓN
+        obj = form.save(
+            commit=False
+        )
+
         obj.usuario = self.request.user
+
         obj.en_seguimiento = 'P'
+
+        obj.miembro = miembro
 
         obj.save()
 
-
-        return super().form_valid(form)
-
+        return redirect(
+            self.success_url
+        )
 
 
 class ConsolidacionUpdateView(VistaProtegida,UpdateView):
@@ -2139,6 +2230,59 @@ class ConsolidacionUpdateView(VistaProtegida,UpdateView):
         kwargs["iglesia"] = iglesia
 
         return kwargs
+
+    #################################################
+    # 🔥 VALID FORM
+    #################################################
+
+    def form_valid(self, form):
+
+        obj = form.save(
+            commit=False
+        )
+
+        miembro = obj.miembro
+
+        #################################################
+        # 🔥 ACTUALIZAR DATOS
+        #################################################
+
+        miembro.identificacion = form.cleaned_data.get(
+            "identificacion"
+        )
+
+        miembro.nombre = form.cleaned_data.get(
+            "nombre"
+        )
+
+        miembro.apellido = form.cleaned_data.get(
+            "apellido"
+        )
+
+        miembro.celular = form.cleaned_data.get(
+            "celular"
+        )
+
+        miembro.telefono = form.cleaned_data.get(
+            "telefono"
+        )
+
+        miembro.correo = form.cleaned_data.get(
+            "correo"
+        )
+
+        miembro.save()
+
+        #################################################
+        # 🔥 GUARDAR CONSOLIDACIÓN
+        #################################################
+
+        obj.save()
+
+        return redirect(
+            self.success_url
+        )
+
 
 
 @login_required(login_url='/login/')
@@ -2173,21 +2317,128 @@ def consolidacion_cambiar_ajax(request):
             id=request.POST.get("id")
         )
 
-        registro.en_seguimiento = request.POST.get("estado")
+        nuevo_estado = request.POST.get(
+            "estado"
+        )
 
-        comentario = request.POST.get("comentario")
+        comentario = request.POST.get(
+            "comentario"
+        )
 
-        if registro.observacion:
-            registro.observacion += "\n" + comentario
-        else:
-            registro.observacion = comentario
+        #################################################
+        # 🔥 ACTUALIZAR ESTADO
+        #################################################
+
+        registro.en_seguimiento = nuevo_estado
+
+        #################################################
+        # 🔥 OBSERVACIÓN
+        #################################################
+
+        if comentario:
+
+            if registro.observacion:
+
+                registro.observacion += (
+                    "\n" + comentario
+                )
+
+            else:
+
+                registro.observacion = comentario
+
+        #################################################
+        # 🔥 PASAR A MIEMBRO
+        #################################################
+
+        if nuevo_estado == "T":
+            miembro = actualizar_miembro_desde_consolidacion(registro )
+
+            if registro.red:
+                existe = AsistentesRedConsolidacion.objects.filter(consolidacion=registro).first()
+                if existe:
+                    reg_con = AsistentesRedConsolidacion.objects.get(consolidacion=registro)
+                    reg_con.delete()
+
+            if registro.grupo_casa:
+
+                existe = AsistentesGrupoCasaConsolidacion.objects.filter(consolidacion=registro).first()
+                if existe:
+                    reg_con = AsistentesGrupoCasaConsolidacion.objects.get(consolidacion=registro)
+                    reg_con.delete()
+
+        #################################################
+        # 🔥 GUARDAR
+        #################################################
 
         registro.save()
 
         return JsonResponse({
+
+            "ok": True,
+
             "mensaje": "Estado actualizado correctamente"
+
         })
 
+    return JsonResponse({
+
+        "ok": False,
+
+        "mensaje": "Método no permitido"
+
+    })
+
+
+
+
+def actualizar_miembro_desde_consolidacion(registro):
+    mc = registro.miembro
+    existe = None
+
+    # 🔥 VALIDAR IDENTIFICACIÓN
+    if mc.identificacion:
+        existe = Miembro.objects.filter(
+
+            iglesia=mc.iglesia,
+
+            identificacion=mc.identificacion
+
+        ).first()
+
+    #################################################
+    # 🔥 SI YA EXISTE
+    #################################################
+
+    if existe:
+
+        return existe
+
+    #################################################
+    # 🔥 CREAR MIEMBRO
+    #################################################
+
+    miembro = Miembro.objects.create(
+
+        iglesia=mc.iglesia,
+
+        nombre=mc.nombre,
+
+        apellido=mc.apellido,
+
+        identificacion=mc.identificacion,
+
+        celular=mc.celular,
+
+        telefono=mc.telefono,
+
+        correo=mc.correo,
+
+        activo=True
+
+    )
+
+    return miembro
 
 #Buscar afiliado_
 @login_required(login_url='/login/')
@@ -2366,6 +2617,7 @@ class PendientesConsolidacionView(VistaProtegida,TemplateView):
             red__in=redes
         ).order_by("fecha_ingreso")
 
+
         # pendientes por grupo en casa
         pendientes_grupo = Consolidacion.objects.filter(
             en_seguimiento="P",
@@ -2397,7 +2649,7 @@ class PendientesConsolidacionView(VistaProtegida,TemplateView):
 
         context["pendientes_red"] = pendientes_red
         context["pendientes_grupo"] = pendientes_grupo
-        context["pendientes_por_consolidacion"] = pendientes_red.count() + pendientes_grupo.count()
+        #context["pendientes_por_consolidacion"] = pendientes_red.count() + pendientes_grupo.count()
 
 
         return context
@@ -2408,10 +2660,11 @@ def registrar_seguimiento_consolidacion(request, pk):
 
     registro = get_object_or_404(Consolidacion, pk=pk)
 
+
     # si tiene red
     if registro.red:
 
-        AsistentesRed.objects.get_or_create(
+        AsistentesRedConsolidacion.objects.get_or_create(
             miembro=registro.miembro,
             red=registro.red,
             consolidacion=registro,
@@ -2424,7 +2677,7 @@ def registrar_seguimiento_consolidacion(request, pk):
     # si tiene grupo en casa
     if registro.grupo_casa:
 
-        AsistentesGrupoCasa.objects.get_or_create(
+        AsistentesGrupoCasaConsolidacion.objects.get_or_create(
             miembro=registro.miembro,
             grupo_casa=registro.grupo_casa,
             consolidacion=registro,
@@ -2493,12 +2746,19 @@ def gestionar_grupo_casa(request, pk):
         grupo_casa=grupo
     ).select_related("miembro", "equipo")
 
+
+    asistentesConsolidacion = AsistentesGrupoCasaConsolidacion.objects.filter(
+        grupo_casa=grupo
+    ).select_related("miembro", "equipo")
+
+
     context = {
         "usuario_iglesia": usuario_iglesia,
         "iglesia": iglesia,
         "grupo": grupo,
         "equipo": equipo,
         "asistentes": asistentes,
+        "asistentesConsolidacion":asistentesConsolidacion,
         "roles": roles,
     }
 
@@ -2720,27 +2980,55 @@ def cambiar_estado_asistente_grupo_ajax(request):
         asistente_id = request.POST.get("id")
         estado = request.POST.get("estado")
         observaciones = request.POST.get("observaciones")
+        if_consolidacion = request.POST.get("if_consolidacion")
+
+        if if_consolidacion =="1":
 
 
-        asistente = AsistentesGrupoCasa.objects.get(id=asistente_id)
-        asistente.observaciones = observaciones
-        estado_anterior = asistente.estado
-        asistente.estado = estado
-        asistente.save()
+            asistente = AsistentesGrupoCasaConsolidacion.objects.get(id=asistente_id)
+            asistente.observaciones = observaciones
+            estado_anterior = asistente.estado
+            asistente.estado = estado
+            asistente.save()
+
+            # si estaba consolidado y cambia a otro estado
+            if estado_anterior == "C" and estado != "C":
+
+                registro = Consolidacion.objects.get(
+                    miembro=asistente.miembro
+                )
+                registro.en_seguimiento = "T"
+                registro.observacion = observaciones
+                registro.termina_seguimiento = "G"
+                registro.save()
+
+                miembro= actualizar_miembro_desde_consolidacion(registro)
+                # =====================================
+                # COPIAR A ASISTENTES NORMAL
+                # =====================================
+
+                AsistentesGrupoCasa.objects.create(
+                    grupo_casa=asistente.grupo_casa,
+                    fecha=asistente.fecha,
+                    miembro=miembro,
+                    observaciones=asistente.observaciones,
+                    estado=asistente.estado
+                )
+
+                # =====================================
+                # ELIMINAR CONSOLIDACIÓN
+                # =====================================
+                asistente.delete()
 
 
 
-        # si estaba consolidado y cambia a otro estado
-        if estado_anterior == "C" and estado != "C":
 
-            Consolidacion.objects.filter(
-                miembro=asistente.miembro
-            ).update(
-                en_seguimiento="T", observacion=observaciones, termina_seguimiento="G"
-            )
-
-
-
+        else:
+            asistente = AsistentesGrupoCasa.objects.get(id=asistente_id)
+            asistente.observaciones = observaciones
+            estado_anterior = asistente.estado
+            asistente.estado = estado
+            asistente.save()
 
 
         return JsonResponse({
@@ -2827,6 +3115,12 @@ def gestionar_misred(request, red_id):
         "id_ministerio"
     )
 
+    asistentesRed= AsistentesRedConsolidacion.objects.filter(
+        red=red
+    ).select_related("miembro")
+
+
+
     return render(request, "misredes/gestionar_misredes.html", {
 
         "usuario_iglesia": usuario_iglesia,
@@ -2834,6 +3128,7 @@ def gestionar_misred(request, red_id):
         "red": red,
         "ministerios": ministerios,
         "asistentes": asistentes,
+        "asistentesRed":asistentesRed,
         "encargados": encargados
 
     })
@@ -2859,31 +3154,61 @@ def cambiar_estado_asistente_red_ajax(request):
 
     if request.method == "POST":
 
-        asistente = AsistentesRed.objects.get(
-            id=request.POST.get("id")
-        )
-
-
+        asistente_id = request.POST.get("id")
         estado_nuevo = request.POST.get("estado")
-        estado_anterior = asistente.estado
-
-        consolidacion = asistente.consolidacion
         observacion = request.POST.get("observaciones")
-
-        asistente.estado = estado_nuevo
-        asistente.observacion = observacion
-
-        asistente.save()
+        if_consolidacion = request.POST.get("if_consolidacion")
 
 
-        # si estaba consolidado y cambia a otro estado
-        if estado_anterior == "C" and estado_nuevo != "C":
 
-            Consolidacion.objects.filter(
-                miembro=asistente.miembro
-            ).update(
-                en_seguimiento="T", observacion=observacion, termina_seguimiento="R"
-            )
+
+        if if_consolidacion == "1":
+
+            asistente = AsistentesRedConsolidacion.objects.get(id=asistente_id )
+            asistente.observacion = observacion
+            estado_anterior = asistente.estado
+            asistente.estado = estado_nuevo
+            asistente.save()
+
+
+
+            # si estaba consolidado y cambia a otro estado
+            if estado_anterior == "C" and estado_nuevo != "C":
+
+                registro = Consolidacion.objects.get(
+                    miembro=asistente.miembro
+                )
+                registro.en_seguimiento = "T"
+                registro.observacion = observacion
+                registro.termina_seguimiento = "G"
+                registro.save()
+
+                miembro=actualizar_miembro_desde_consolidacion(registro)
+                # =====================================
+                # COPIAR A ASISTENTES NORMAL
+                # =====================================
+
+                AsistentesRed.objects.create(
+                    red=asistente.red,
+                    fecha=asistente.fecha,
+                    miembro=miembro,
+                    observacion=asistente.observacion,
+                    estado=asistente.estado
+                )
+
+                # =====================================
+                # ELIMINAR CONSOLIDACIÓN
+                # =====================================
+                asistente.delete()
+
+
+
+        else:
+            asistente = AsistentesRed.objects.get(id=asistente_id )
+            asistente.observacion = observacion
+            estado_anterior = asistente.estado
+            asistente.estado = estado_nuevo
+            asistente.save()
 
         return JsonResponse({"ok": True})
 
@@ -4860,31 +5185,22 @@ def agendar_jitsi(
 
 
     miembro = get_object_or_404(
-        Miembro,
+        MiembroConsolidacion,
         id=miembro_id,
         iglesia=iglesia
     )
 
-    consolidacion = get_object_or_404(
-        Consolidacion.objects.exclude(
-            en_seguimiento="T"
-        ),
-        miembro=miembro
-    )
+
+    consolidacion = get_object_or_404(Consolidacion.objects.exclude(en_seguimiento="T"), miembro=miembro)
 
 
 
 
-    if not miembro.correo:
+    if not miembro.correo and not miembro.celular:
 
-        messages.error(
-            request,
-            "El miembro no tiene correo."
+        messages.error(request,"El miembro no tiene correo."
         )
-
-        return redirect(
-            "consolidacion_list"
-        )
+        return redirect( "consolidacion_list" )
 
     if request.method == "POST":
 
@@ -4904,8 +5220,12 @@ def agendar_jitsi(
             "observacion"
         )
 
-        inicio = timezone.datetime.fromisoformat(
-            f"{fecha}T{hora}"
+        inicio = timezone.make_aware(
+
+            datetime.fromisoformat(
+                f"{fecha}T{hora}"
+            )
+
         )
 
         fin = inicio + timedelta(
@@ -4937,44 +5257,39 @@ def agendar_jitsi(
 
         )
 
-        # 🔥 enviar correo
-        send_mail(
+        if miembro.correo:
+            # 🔥 enviar correo
+            send_mail(
+                subject=f"Cita: {titulo}",
+                message=f"""
+    
+    Hola {miembro.nombre},
+    
+    Se ha agendado una reunión virtual.
+    
+    Fecha:
+    {fecha}
+    
+    Hora:
+    {hora}
+    
+    Enlace:
+    {enlace}
+    
+    """,
 
-            subject=f"Cita: {titulo}",
+                from_email=settings.DEFAULT_FROM_EMAIL,
 
-            message=f"""
+                recipient_list=[miembro.correo],
 
-Hola {miembro.nombre},
+                fail_silently=True
 
-Se ha agendado una reunión virtual.
+            )
 
-Fecha:
-{fecha}
+        messages.success( request,"Reunión agendada." )
 
-Hora:
-{hora}
+        return redirect( "lista_citas")
 
-Enlace:
-{enlace}
-
-""",
-
-            from_email=settings.DEFAULT_FROM_EMAIL,
-
-            recipient_list=[miembro.correo],
-
-            fail_silently=True
-
-        )
-
-        messages.success(
-            request,
-            "Reunión agendada."
-        )
-
-        return redirect(
-            "lista_citas"
-        )
 
     return render(
         request,

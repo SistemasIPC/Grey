@@ -272,6 +272,51 @@ class Categoria_lider(models.Model):
         unique_together = ('codigo', 'id_iglesia')
         ordering = ['codigo']
 
+#********************************
+
+class MiembroConsolidacion(models.Model):
+
+    iglesia = models.ForeignKey(
+        Iglesia,
+        on_delete=models.CASCADE
+    )
+
+    identificacion = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True
+    )
+
+    nombre = models.CharField(
+        max_length=100
+    )
+
+    apellido = models.CharField(
+        max_length=100
+    )
+
+    celular = models.CharField(
+        max_length=20
+    )
+
+    telefono = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True
+    )
+
+    correo = models.EmailField(
+        null=True,
+        blank=True
+    )
+
+    creado = models.DateTimeField(
+        auto_now_add=True
+    )
+
+    def __str__(self):
+
+        return f"{self.nombre} {self.apellido}"
 
 
 class Miembro(models.Model):
@@ -598,6 +643,48 @@ class AsistentesGrupoCasa(models.Model):
 
 
 
+class AsistentesGrupoCasaConsolidacion(models.Model):
+
+    ESTADO_CHOICES = [
+        ("C", "Consolidación"),
+        ("S", "Seguimiento"),
+        ("A", "Asistente"),
+        ("U", "Ausente"),
+    ]
+    grupo_casa = models.ForeignKey(GrupoCasa,
+                                   on_delete=models.CASCADE
+                                   )
+    miembro = models.ForeignKey(
+        MiembroConsolidacion,
+        on_delete=models.CASCADE
+    )
+    equipo = models.ForeignKey(
+        "EquipoGrupoCasa",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+    consolidacion = models.ForeignKey(
+        "Consolidacion",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    estado = models.CharField(
+        max_length=1,
+        choices=ESTADO_CHOICES,
+        default="C"
+    )
+
+    fecha = models.DateField(auto_now_add=True)
+    observaciones = models.TextField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.miembro} - {self.get_estado_display()}"
+
+
 
 class TipoBienvenida(models.Model):
 
@@ -704,11 +791,15 @@ class Red(models.Model):
 
 
 
+
+
+
+
 class Consolidacion(models.Model):
     ESTADO_SEGUIMIENTO = [ ("P", "Pendiente"), ("E", "En proceso"),   ("T", "Terminado"),   ]
     TERMINAO_SEGUIMIENTO = [ ("G", "Grupo en casa"), ("R", "Red"), ("C", "Consolidacion"), ("N", "Ninguno"), ]
 
-    miembro = models.ForeignKey(Miembro, on_delete=models.CASCADE)
+    miembro = models.ForeignKey(MiembroConsolidacion, on_delete=models.CASCADE)
 
     categoria_servicio = models.ForeignKey(Categoria_servicio, on_delete=models.CASCADE)
 
@@ -866,6 +957,53 @@ class AsistentesRed(models.Model):
 
     miembro = models.ForeignKey(
         "Miembro",
+        on_delete=models.CASCADE
+    )
+
+    consolidacion = models.ForeignKey(
+        "Consolidacion",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    encargado = models.ForeignKey(
+        "Miembro_ministerio",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    estado = models.CharField(
+        max_length=1,
+        choices=ESTADO_CHOICES,
+        default="C"
+    )
+
+    fecha = models.DateField(auto_now_add=True)
+    observacion =  models.TextField(null=True, blank=True)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.miembro} - {self.get_estado_display()}"
+
+
+
+class AsistentesRedConsolidacion(models.Model):
+
+    ESTADO_CHOICES = [
+        ("C", "Consolidación"),
+        ("S", "Seguimiento"),
+        ("A", "Asistente"),
+        ("U", "Ausente"),
+    ]
+
+    red = models.ForeignKey(
+        "Red",
+        on_delete=models.CASCADE  )
+
+    miembro = models.ForeignKey(
+        MiembroConsolidacion,
         on_delete=models.CASCADE
     )
 
@@ -1169,7 +1307,7 @@ class CitaConsolidacion(models.Model):
     )
 
     miembro = models.ForeignKey(
-        Miembro,
+        MiembroConsolidacion,
         on_delete=models.CASCADE
     )
 

@@ -199,7 +199,7 @@ Guardar
 <select
 class="cambiar-estado-red form-control"
 data-id="{{ a.id }}"
-data-observaciones="{{ a.observacion|default:'' }}">
+data-observaciones="{{ a.observacion|default:'' }}"  data-consolidacion="0">
 
 <option value="A" {% if a.estado == "A" %}selected{% endif %}>Asistente</option>
 <option value="S" {% if a.estado == "S" %}selected{% endif %}>Seguimiento</option>
@@ -234,6 +234,89 @@ Eliminar
 </tr>
 
 {% endfor %}
+
+
+
+{% for a in asistentesRed %}
+
+<tr class="table-success">
+
+<td>{{ a.miembro.nombre }} {{ a.miembro.apellido }}</td>
+
+<td>{{ a.miembro.telefono }}</td>
+
+<td>{{ a.miembro.email }}</td>
+
+<td>{{ a.miembro.fecha_nacimiento|date:"d/m/Y" }}</td>
+
+
+
+<td>
+
+    <select class="form-control cambiar-encargado-misred" data-id="{{ a.id }}">
+
+        <option value="">Sin encargado</option>
+
+        {% for e in encargados %}
+
+        <option value="{{ e.id }}"
+        {% if a.encargado_id == e.id %}selected{% endif %}>
+
+            {{ e.id_miembro.nombre }} {{ e.id_miembro.apellido }} - {{ e.id_rol_ministerio.descripcion }}
+
+        </option>
+
+        {% endfor %}
+
+    </select>
+
+</td>
+
+
+
+<td>
+
+<select
+class="cambiar-estado-red form-control"
+data-id="{{ a.id }}"
+data-observaciones="{{ a.observacion|default:'' }}"  data-consolidacion="1">
+
+    {% if a.estado == "C" %}
+<option value="C" selected>Consolidado</option>
+{% endif %}
+
+
+<option value="S" {% if a.estado == "S" %}selected{% endif %}>Seguimiento</option>
+
+
+
+
+</select>
+
+</td>
+
+<td>
+
+{% if a.estado != "C" %}
+
+<a href="{% url 'eliminar_asistente_misred' a.id %}"
+onclick="return confirm('¿Desea eliminar el asistente?')"
+class="btn btn-danger btn-sm">
+
+Eliminar
+
+</a>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+
+
 
 </tbody>
 
@@ -325,11 +408,13 @@ $(document).ready(function(){
 
 
 
-let asistente_red_id = null
-let estado_red = null
+let asistente_red_id = null;
+let estado_red = null;
+let if_consolidacion = null;
 
 $(".cambiar-estado-red").change(function(){
 
+    if_consolidacion = $(this).data("consolidacion");
     asistente_red_id = $(this).data("id")
     estado_red = $(this).val()
 
@@ -354,6 +439,7 @@ $("#guardarEstadoRed").click(function(){
             id: asistente_red_id,
             estado: estado_red,
             observaciones: $("#observacion_red").val(),
+            if_consolidacion:if_consolidacion,
             csrfmiddlewaretoken: "{{ csrf_token }}"
 
         },

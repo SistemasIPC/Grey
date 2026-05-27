@@ -25,7 +25,7 @@
 
         </div>
 
-    {% if request.session.mis_ministerio or request.session.iglesa_superusuario %}
+    {% if request.session.mis_ministerio or request.session.iglesa_superusuario or request.session.rol_consolidador %}
     <!-- 🔥 BOTÓN NUEVO -->
     <div class="mb-3">
 
@@ -145,7 +145,7 @@
 
 
 
-                        {% if request.session.mis_ministerio or request.session.iglesa_superusuario %}
+                        {% if request.session.mis_ministerio or request.session.iglesa_superusuario or  request.session.rol_consolidador %}
                             <a href="{% url 'miembro-update' miembro.pk %}"
                                class="btn btn-warning btn-sm">
 
@@ -153,6 +153,9 @@
 
                             </a>
 
+                        {% endif %}
+
+                        {% if request.session.mis_ministerio or request.session.iglesa_superusuario %}
 
                             <a href="{% url 'miembro-delete' miembro.pk %}"
                                class="btn btn-danger btn-sm"

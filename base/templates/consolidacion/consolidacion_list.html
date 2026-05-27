@@ -107,6 +107,17 @@ Terminado
 </form>
 
 
+
+<table class="table table-bordered table-hover" width="50%">
+    <tbody>
+        <tr class="table-danger">
+            <td class="table-warning">Han pasado {{dias_alerta_con_1}} d&iacute;as</td>
+            <td class="table-danger"> Han pasado {{dias_alerta_con_2}} d&iacute;as </td>
+        </tr>
+    </tbody>
+</table>
+
+
 <table class="table table-bordered table-hover">
 
 <thead>
@@ -149,12 +160,13 @@ class="table-warning"
 
 <td>
 
-{% if r.en_seguimiento == 'P' %}
-<a href="{% url 'consolidacion_editar' r.id %}" class="btn btn-primary btn-sm">
-Editar
-</a>
+{% if not r.en_seguimiento == 'T'  %}
+    {% if r.en_seguimiento == 'P' or not r.miembro.identificacion  %}
+    <a href="{% url 'consolidacion_editar' r.id %}" class="btn btn-primary btn-sm">
+    Editar
+    </a>
+    {% endif %}
 {% endif %}
-
 
 
 
@@ -180,8 +192,8 @@ class="btn btn-primary btn-sm">
 
 <button
 class="btn btn-warning btn-sm cambiar-estado"
-data-id="{{ r.id }}" data-estado="T"  data-observaciones="{{ r.observacion|default:'' }}">
-En proceso
+data-id="{{ r.id }}" data-estado="T"  data-observaciones="{{ r.observacion|default:'' }}" data-identificacion="{{ r.miembro.identificacion|default:'' }}">
+Terminar proceso
 </button>
 
 {% else %}
@@ -216,7 +228,7 @@ Enviar Saludo WS
 
 
 
-{% if r.miembro.correo %}
+{% if r.miembro.correo or r.miembro.celular%}
 
     {% if r.miembro.id not in miembros_con_cita_agendada %}
 
@@ -317,6 +329,22 @@ let consolidacion_id = null
 let nuevo_estado = null
 
 $(".cambiar-estado").click(function(){
+
+
+
+    if ($(this).data("estado")=="T") {
+         const identificacion = (this.dataset.identificacion).trim()
+
+         if (!identificacion) {
+                    alert(
+                        "Debe registrar la identificación antes de terminar el proceso."
+                    )
+                    return
+                }
+    }
+
+
+
 
     consolidacion_id = $(this).data("id")
     nuevo_estado = $(this).data("estado")

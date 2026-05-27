@@ -131,11 +131,6 @@ $(".select2-grupo").select2({
 });
 </script>
 
-<a href="{% url 'consolidacion_list' %}" >
-Volver a consolidaci&oacute;n
-</a>
-
-
 <h3>Seguimiento Nuevo</h3>
 
 
@@ -152,68 +147,10 @@ Volver a consolidaci&oacute;n
 
 <div class="row">
 
-
-            <div class="col-md-4">
-
-                <label>
-                    Identificación
-                </label>
-
-                {{ form.identificacion }}
-
-            </div>
-
-            <div class="col-md-4">
-
-                <label>
-                    Nombre
-                </label>
-
-                {{ form.nombre }}
-
-            </div>
-
-            <div class="col-md-4">
-
-                <label>
-                    Apellido
-                </label>
-
-                {{ form.apellido }}
-
-            </div>
-
-            <div class="col-md-4">
-
-                <label>
-                    Celular
-                </label>
-
-                {{ form.celular }}
-
-            </div>
-
-            <div class="col-md-4">
-
-                <label>
-                    Teléfono
-                </label>
-
-                {{ form.telefono }}
-
-            </div>
-
-            <div class="col-md-4">
-
-                <label>
-                    Correo
-                </label>
-
-                {{ form.correo }}
-
-            </div>
-
-
+<div class="col-md-6">
+<label>Miembro</label>
+{{ form.miembro }}
+</div>
 
 
 <div class="col-md-6">

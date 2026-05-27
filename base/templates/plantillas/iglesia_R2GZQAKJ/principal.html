@@ -168,13 +168,7 @@
 
 
                     {% if request.session.iglesa_superusuario %}
-                            <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
-
-
-
-                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
-                             <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
-                            <li class="nav-item" ><a class="nav-link" href="{% url 'grupo_casa_list' %}">Grupos en casa </a> </li>
+                           <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Servicios </a> </li>
                            <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'evento_list' %}">Eventos </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
@@ -183,22 +177,23 @@
                             <li class="nav-item" ><a  class="nav-link" href="{% url 'grafica_iglesia_anio_anio' %}">Grafica anio anio</a> </li> -->
                            <li class="nav-item" >----------- </li>
 
-                            <li class="nav-item" ><a class="nav-link" href="{% url 'categoria_lider_list' %}">Categor&iacute;a l&iacute;der </a> </li>
 
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'grupo_casa_list' %}">Grupos en casa </a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'buscar_ocupaciones'  %}">Buscar ocupaciones </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'ministerio-list' %}">Ministerio </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'registro_publico_miembro' request.session.token_registro %}"  target="_blank" rel="noopener noreferrer">Registro puiblico </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'configuracion_iglesias' %}">Configuraciones </a> </li>
+                            <li class="nav-item" ><a class="nav-link" href="{% url 'categoria_lider_list' %}">Categor&iacute;a l&iacute;der </a> </li>
                     <li class="nav-item" ><a class="nav-link" href="{% url 'usuario_iglesia_list' %}">Usuarios e Iglesia </a></li>
 
                     {% else %}
                             {% if request.session.mis_ministerio %}
-                                <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
                                 <li class="nav-item" ><a  class="nav-link" href="{% url 'servicios' %}">Programar </a> </li>
-                                <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
                                 <li class="nav-item" > <a class="nav-link"  href="{% url 'participantes_por_servicio' %}" class="btn btn-info">  Ver participantes</a></li>
 
-                    {% endif %}
-                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
+                                {% endif %}
+
 
                             {% if request.session.mis_grupos %}
                                 <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_grupos_casa' %}">Mis grupos</a> </li>
@@ -214,28 +209,30 @@
 
 
                             {% if request.session.rol_consolidador %}
-                                <li class="nav-item" ><a  class="nav-link" href="{% url 'consolidacion_list' %}">Consolidacion</a> </li>
+                                 <li class="nav-item" ><a  class="nav-link" href="{% url 'consolidacion_list' %}">Consolidacion</a> </li>
                             {% endif %}
+
 
 
                                     {% if request.session.pendientes_por_consolidacion %}
 
                                           <li class="nav-item" >
-                                                <a href="{% url 'consolidacion_pendiente' %}" class="nav-link"> Seguimiento consolidación  </a>
+                                                <a href="{% url 'consolidacion_pendiente' %}" class="nav-link bg-danger"> Seguimiento consolidación  </a>
                                           </li>
-                                        <span class="badge bg-danger">
-                                            {{ request.session.pendientes_por_consolidacion }}
-                                        </span>
 
                                     {% endif %}
-
 
 
                             <li class="nav-item" ><a  class="nav-link" href="{% url 'grupo-casa-list' %}">Consultar grupos en Casa</a> </li>
 
 
+                            {% if request.session.mis_ministerio %}
+                                <li class="nav-item" ><a class="nav-link"  href="{% url 'rol_ministerio_list' %}">Rol ministerio</a> </li>
+                                <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-ministerio-list' %}">Integrantes ministerio</a> </li>
 
+                                {% endif %}
 
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'miembro-list' %}">Membresia</a> </li>
 
                     {% endif %}
 
