@@ -12,10 +12,21 @@
 
     <thead class="table-info">
         <tr>
+
             <th>Año</th>
-            <th>Miembros Final</th>
+            <th>M. Inicio</th>
+            <th>M. Ganados</th>
+            <th>M. Perdidos</th>
+            <th>M. Final</th>
             <th>Activos</th>
-            <th>Asistencia</th>
+            <th>Promedio Esc.</th>
+
+            <th class="table-info">&nbsp;</th>
+
+            <th>Diezmos/ofrendas</th>
+            <th>Aportes_presbiterio</th>
+            <th>otros_gastos</th>
+
             <th>Acciones</th>
         </tr>
     </thead>
@@ -26,9 +37,16 @@
 
         <tr>
             <td>{{ r.anio }}</td>
+            <td>{{ r.miembros_inicio }}</td>
+            <td>{{ r.miembros_ganados }}</td>
+            <td>{{ r.promedio_perdidos }}</td>
             <td>{{ r.miembros_final }}</td>
             <td>{{ r.miembros_activos }}</td>
             <td>{{ r.promedio_escuela }}</td>
+            <td class="table-info">&nbsp;</td>
+            <td>{{ r.diezmos_ofrendas }}</td>
+            <td>{{ r.aportes_presbiterio }}</td>
+            <td>{{ r.otros_gastos }}</td>
 
             <td>
 

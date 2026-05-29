@@ -1,9 +1,11 @@
 {% extends "presbiterio/principal.html" %}
 
 {% block content %}
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <h3>Comportamiento del Presbiterio ({{anio_inicio}} -{{anio_actual}})</h3>
 
+
+<h4>Membrec&iacute;a</h4>
 <!-- 🔘 Selector -->
 <div class="mb-3">
 
@@ -26,6 +28,17 @@
         <input type="checkbox" class="toggle-dataset" data-index="3" checked>
         Perdidos
     </label>
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset" data-index="4" checked>
+        Activos
+    </label>
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset" data-index="5" checked>
+        Prom. escuela
+    </label>
+
+
 
     <button id="toggleAll" class="btn btn-sm btn-secondary ms-3">
         Mostrar / Ocultar todo
@@ -36,7 +49,48 @@
 <!-- 📊 Gráfica -->
 <canvas id="grafica" height="100"></canvas>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+
+
+
+
+<h4>Ingresos/egresos</h4>
+
+<!-- 🔘 Selector de variables -->
+<div class="mb-3">
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset-2" data-index="0" checked>
+        Diezmo ofrenda
+    </label>
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset-2" data-index="1" checked>
+        Aportes presbiterio
+    </label>
+
+    <label class="me-3">
+        <input type="checkbox" class="toggle-dataset-2" data-index="2" checked>
+        Otros gastos
+    </label>
+
+    <!-- Botón opcional -->
+    <button id="toggleAll2" class="btn btn-sm btn-secondary ms-3">
+        Mostrar / Ocultar todo
+    </button>
+
+</div>
+
+<!-- 📊 Gráfica -->
+<div style="height: 500px;">
+
+    <canvas id="grafica2"></canvas>
+
+</div>
+
+
+
+
 
 <script>
 
@@ -68,6 +122,18 @@ const chart = new Chart(ctx, {
             {
                 label: 'Perdidos',
                 data: {{ perdidos|safe }},
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Activos',
+                data: {{ mactivos|safe }},
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Prom. escuela',
+                data: {{ promedioescuelas|safe }},
                 borderWidth: 2,
                 fill: false
             }
@@ -123,5 +189,88 @@ document.getElementById("toggleAll").onclick = function(){
 }
 
 </script>
+
+<script>
+
+const ctx2 = document.getElementById('grafica2');
+
+const chart2 = new Chart(ctx2, {
+    type: 'line',
+    data: {
+        labels: {{ anios|safe }},
+        datasets: [
+            {
+                label: 'Diezmo ofrenda',
+                data: {{ diezmos_ofrendas|safe }},
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Aportes presbiterio',
+                data: {{ aportes_presbiterio|safe }},
+                borderWidth: 2,
+                fill: false
+            },
+            {
+                label: 'Otros gastos',
+                data: {{ otros_gastos|safe }},
+                borderWidth: 2,
+                fill: false
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top'
+            }
+        },
+        interaction: {
+            mode: 'index',
+            intersect: false
+        },
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+
+// 🔘 Mostrar / ocultar variables
+document.querySelectorAll(".toggle-dataset-2").forEach(function(chk){
+
+    chk.addEventListener("change", function(){
+
+        const index = parseInt(this.dataset.index)
+
+        chart2.data.datasets[index].hidden = !this.checked
+
+        chart2.update()
+    })
+
+})
+
+
+// 🔄 Botón mostrar / ocultar todo
+document.getElementById("toggleAll2").onclick = function(){
+
+    let allHidden = chart2.data.datasets.every(d => d.hidden)
+
+    chart2.data.datasets.forEach(d => d.hidden = !allHidden)
+
+    document.querySelectorAll(".toggle-dataset-2").forEach(chk => {
+        chk.checked = allHidden
+    })
+
+    chart2.update()
+}
+
+</script>
+
+
 
 {% endblock %}

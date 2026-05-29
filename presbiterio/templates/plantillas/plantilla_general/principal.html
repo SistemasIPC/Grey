@@ -172,6 +172,9 @@
                            <li class="nav-item" ><a  class="nav-link" href="{% url 'lista-tipos-bienvenida' %}">Links bienvenida</a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'evento_list' %}">Eventos </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'evento_programado_list' %}">Eventos Programados </a> </li>
+
+                           <!-- <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_reportes_anuales' %}">Reportes Anuales</a> </li>
+                            <li class="nav-item" ><a  class="nav-link" href="{% url 'grafica_iglesia_anio_anio' %}">Grafica anio anio</a> </li> -->
                            <li class="nav-item" >----------- </li>
 
 
@@ -182,11 +185,7 @@
                             <li class="nav-item" ><a class="nav-link" href="{% url 'registro_publico_miembro' request.session.token_registro %}"  target="_blank" rel="noopener noreferrer">Registro puiblico </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'configuracion_iglesias' %}">Configuraciones </a> </li>
                             <li class="nav-item" ><a class="nav-link" href="{% url 'categoria_lider_list' %}">Categor&iacute;a l&iacute;der </a> </li>
-                            <li class="nav-item" ><a class="nav-link" href="{% url 'usuario_iglesia_list' %}">Usuarios e Iglesia </a></li>
-                           <li class="nav-item" >----------- </li>
-                            <li class="nav-item" ><a  class="nav-link" href="{% url 'mis_reportes_anuales' %}">Reportes Anuales</a> </li>
-                            <li class="nav-item" ><a  class="nav-link" href="{% url 'grafica_iglesia_anio_anio' %}">Grafica anio anio</a> </li>
-
+                    <li class="nav-item" ><a class="nav-link" href="{% url 'usuario_iglesia_list' %}">Usuarios e Iglesia </a></li>
 
                     {% else %}
                             {% if request.session.mis_ministerio %}

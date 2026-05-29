@@ -3432,20 +3432,33 @@ def mis_reportes_anuales(request):
     )
 
     iglesia = usuario_iglesia.id_iglesia
+    config = ConfiPresbiterio.objects.filter(
+        presbiterio=iglesia.presbiterio
+    ).first()
+
+
 
     reportes = ReporteAnualIglesia.objects.filter(
         iglesia=iglesia
     ).order_by("anio") # order_by("-anio")
 
     ultimo_anio = reportes.last().anio if reportes else None
+
+    anio_actual = date.today().year
+
+    anios_hab = [
+        anio_actual - i
+        for i in range(
+            config.cantidad_anios + 1
+        )
+    ]
+
+
+
+
     for r in reportes:
-        config = ConfiPresbiterio.objects.filter(
-            presbiterio=iglesia.presbiterio
-        ).first()
+        r.puede_editar = (r.anio in anios_hab)
 
-        #r.puede_editar = config and date.today() <= config.fecha_reporte
-
-        r.puede_editar = ( r.anio == ultimo_anio and  config and  date.today() <= config.fecha_reporte   )
 
 
 
@@ -3492,7 +3505,7 @@ def reporte_anual_form(request, anio=None):
     else:
         form = ReporteAnualForm(instance=instancia, iglesia=iglesia)
 
-    hay_anios = len(form.fields["anio"]) > 0
+    hay_anios = bool(form.fields["anio"].choices )
 
     return render(request, "reportes/estadisticas_anual/reporte_form.html", {
         "form": form, "iglesia": iglesia,"hay_anios": hay_anios
@@ -3532,6 +3545,15 @@ def grafica_iglesia_anio_anio(request):
     final = []
     ganados = []
     perdidos = []
+    mactivos = []
+    promedioescuelas = []
+
+    diezmos_ofrendas = []
+    aportes_presbiterio = []
+    otros_gastos = []
+
+
+
 
     for r in reportes:
         anios.append(r.anio)
@@ -3539,6 +3561,13 @@ def grafica_iglesia_anio_anio(request):
         final.append(r.miembros_final or 0)
         ganados.append(r.miembros_ganados or 0)
         perdidos.append(r.miembros_perdidos or 0)
+        mactivos.append(r.miembros_activos or 0)
+        promedioescuelas.append(r.promedio_escuela or 0)
+
+        diezmos_ofrendas.append( float(r.diezmos_ofrendas or 0))
+        aportes_presbiterio.append( float(r.aportes_presbiterio or 0))
+        otros_gastos.append( float(r.otros_gastos or 0))
+
 
     return render(request, "reportes/estadisticas_anual/grafica_igle_anio_anio.html", {
         "anios": anios,
@@ -3547,7 +3576,12 @@ def grafica_iglesia_anio_anio(request):
         "ganados": ganados,
         "perdidos": perdidos,
         "anio_actual":anio_actual,
-        "anio_inicio": anio_inicio
+        "anio_inicio": anio_inicio,
+        "mactivos": mactivos,
+        "promedioescuelas": promedioescuelas,
+        "diezmos_ofrendas": diezmos_ofrendas,
+        "aportes_presbiterio": aportes_presbiterio,
+        "otros_gastos": otros_gastos
     })
 
 #   *****************************************************************
@@ -3954,7 +3988,8 @@ def inscripcion_evento(request, evento_id):
         # =========================================
         elif accion == "inscribir":
 
-            form = form_class(request.POST)
+
+            form = form_class(request.POST, evento=evento)
 
             if not form.is_valid():
                 messages.error(request, form.errors)
@@ -3993,7 +4028,7 @@ def inscripcion_evento(request, evento_id):
                 iglesia=iglesia
             ).first()
 
-            if not rango:
+            if evento.solicitar_rango_edad and not rango:
                 messages.error(request, "Debe seleccionar un rango válido.")
                 return redirect(request.path)
 
@@ -4155,7 +4190,8 @@ def auto_inscripcion_evento(request, token_reg_evento):
         # =========================================
         elif accion == "inscribir":
 
-            form = form_class(request.POST)
+
+            form = form_class(request.POST,evento=evento )
 
             if not form.is_valid():
                 messages.error(request, form.errors)
@@ -4204,7 +4240,7 @@ def auto_inscripcion_evento(request, token_reg_evento):
                 iglesia=iglesia
             ).first()
 
-            if not rango:
+            if evento.solicitar_rango_edad and not rango:
                 messages.error(request, "Debe seleccionar un rango válido.")
                 return redirect(request.path)
 

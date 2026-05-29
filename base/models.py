@@ -1184,6 +1184,7 @@ class EventoProgramado(models.Model):
         unique=True
     )
     msg_registro_exitoso = models.TextField(blank=True, default='Registro exitoso', verbose_name="Mensaje registro exitoso")
+    solicitar_rango_edad = models.BooleanField( default=True  )
     imagen = models.ImageField(
         upload_to=ruta_imagen_evento,
         null=True,
@@ -1238,7 +1239,8 @@ class InscripcionEvento(models.Model):
     )
     miembro = models.ForeignKey(Miembro, on_delete=models.CASCADE)
 
-    rango_edad = models.ForeignKey(RangoEdad,on_delete=models.PROTECT   )
+    rango_edad = models.ForeignKey(RangoEdad,on_delete=models.PROTECT, null=True,  blank=True   )
+    val_rango_edad = models.BooleanField(default=True)
     fecha_inscripcion = models.DateTimeField(auto_now_add=True)
     otra_congregacion = models.BooleanField(null=True,default=False)
 

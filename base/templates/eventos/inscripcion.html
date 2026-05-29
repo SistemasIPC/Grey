@@ -55,7 +55,7 @@
 <!-- 👥 SI ES VISITANTE -->
 {% if mostrar_form_visitante %}
     <div class="alert alert-warning">
-        No existe en miembros. Registrar visitante:
+        No existe en la base de datos. Registrar visitante:
     </div>
 
     <form method="post">
@@ -69,7 +69,7 @@
         <input type="text" name="telefono" class="form-control mb-2" placeholder="Celular" pattern="\+?[0-9]{7,15}" required>
         <input type="email" name="correo" class="form-control mb-2" placeholder="Correo" required>
 
-           <select name="rango_edad" class="form-control mb-2" required>
+           <select name="rango_edad" class="form-control mb-2" >
                 <option value="">Seleccione rango de edad</option>
                 {% for r in rangos %}
                     <option value="{{ r.id }}">{{ r.edad_min }} - {{ r.edad_max }} años | {{ r.nombre }}</option>

@@ -458,7 +458,7 @@ class Usuario_presbiterio(models.Model):
     correo = models.CharField(null=True, max_length=100)
     superusuario = models.BooleanField(default=False)
     creado = models.DateTimeField(auto_now_add=True)
-
+    activo = models.BooleanField(default=True)
     class Meta:
         unique_together = ('usuario', 'presbiterio')  # Evita duplicados
 

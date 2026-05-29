@@ -53,6 +53,7 @@ from django.core.mail import EmailMessage
 from .forms import IglesiaForm
 from .forms import RegistroUsuarioForm
 from django.db.models import Q
+from .utils import *
 
 #-----------------------------------------------------------------
 #                       LOGIN
@@ -62,6 +63,31 @@ class LoginPresbiterioView (LoginView):
     template_name = "login/login_presbiterios.html"
     field = '__all__'
     redirect_authenticated_user = True
+
+
+    def form_valid(self, form):
+
+        response = super().form_valid(form)
+
+        user = self.request.user
+
+        usuario_presbiterio = None
+
+
+        if not user.is_superuser:
+
+            usuario_presbiterio = ( Usuario_presbiterio.objects.select_related("presbiterio") .filter(
+                    usuario=user
+                ).first()
+            )
+
+        cargar_sesion_usuario(self.request, user,  usuario_presbiterio   )
+
+        return response
+
+
+
+
 
     def get_success_url(self):
         return reverse_lazy('menu_principal_presbiterio')
@@ -300,7 +326,7 @@ class ListaMocion(LoginRequiredMixin, ListView):
 
         context['valor_buscado'] = valor_buscado
 
-        print( context['mociones'])
+        #print( context['mociones'])
         return context
 
 
@@ -1082,7 +1108,7 @@ def tablero_asamblea(request):
 def actualizar_sesion_asamblea(request):
     if request.method == "POST":
         sesion_id = request.POST.get("sesion_id")
-        print(sesion_id)
+        #print(sesion_id)
         if sesion_id:
             # Desactivar todas las sesiones
             asamblea = Asamblea.objects.filter(finalizada=False).first()
@@ -1184,20 +1210,6 @@ def reportes_estadistica_presbiterio(request):
             "tiene_reporte": bool(reporte)
         })
 
-    total_iglesias = iglesias.count()
-    total_reportaron = reportes.count()
-    total_no_reportaron = total_iglesias - total_reportaron
-    totales = reportes.aggregate(
-        miembros_inicio=Sum("miembros_inicio"),
-        miembros_ganados=Sum("miembros_ganados"),
-        miembros_perdidos=Sum("miembros_perdidos"),
-        miembros_final=Sum("miembros_final"),
-        miembros_activos=Sum("miembros_activos"),
-        promedio_escuela=Sum("promedio_escuela"),
-        diezmos_ofrendas=Sum("diezmos_ofrendas"),
-        aportes_presbiterio=Sum("aportes_presbiterio"),
-        otros_gastos=Sum("otros_gastos"),
-    )
 
     anio_actual = date.today().year
     puede_recordar = int(anio) in [anio_actual, anio_actual - 1]
@@ -1205,11 +1217,6 @@ def reportes_estadistica_presbiterio(request):
     return render(request, "reportes/estadisticas_anual/list_reporte.html", {
         "data": data,
         "anio": int(anio),
-        "total_iglesias": total_iglesias,
-        "total_reportaron": total_reportaron,
-        "total_no_reportaron": total_no_reportaron,
-        "totales": totales,
-        "reportes": reportes,  # 👈 NUEVO
         "current_year": date.today().year,
         "puede_recordar": puede_recordar
     })
@@ -1436,6 +1443,12 @@ def grafica_presbiterio_anio_anio(request):
         miembros_final=Sum("miembros_final"),
         miembros_ganados=Sum("miembros_ganados"),
         miembros_perdidos=Sum("miembros_perdidos"),
+
+        miembros_activos=Sum("miembros_activos"),
+        promedio_escuela=Sum("promedio_escuela"),
+        diezmos_ofrendas=Sum("diezmos_ofrendas"),
+        aportes_presbiterio=Sum("aportes_presbiterio"),
+        otros_gastos=Sum("otros_gastos"),
     )
 
     # 🔹 Convertir a diccionario para asegurar continuidad de años
@@ -1447,6 +1460,14 @@ def grafica_presbiterio_anio_anio(request):
     ganados = []
     perdidos = []
 
+    mactivos = []
+    promedioescuelas = []
+
+    diezmos_ofrendas = []
+    aportes_presbiterio = []
+    otros_gastos = []
+
+
     for y in range(anio_inicio, anio_actual + 1):
 
         item = data_dict.get(y, {})
@@ -1457,6 +1478,17 @@ def grafica_presbiterio_anio_anio(request):
         ganados.append(item.get("miembros_ganados") or 0)
         perdidos.append(item.get("miembros_perdidos") or 0)
 
+
+        mactivos.append(item.get("miembros_activos") or 0)
+        promedioescuelas.append(item.get("promedio_escuela") or 0)
+        diezmos_ofrendas.append(float(item.get("diezmos_ofrendas") or 0))
+        aportes_presbiterio.append(float(item.get("aportes_presbiterio") or 0))
+        otros_gastos.append(float(item.get("otros_gastos") or 0))
+
+
+
+
+
     return render(request, "reportes/estadisticas_anual/grafica_pres_anio_anio.html", {
         "anios": anios,
         "inicio": inicio,
@@ -1464,7 +1496,12 @@ def grafica_presbiterio_anio_anio(request):
         "ganados": ganados,
         "perdidos": perdidos,
         "anio_actual": anio_actual,
-        "anio_inicio": anio_inicio
+        "anio_inicio": anio_inicio,
+        "mactivos": mactivos,
+        "promedioescuelas": promedioescuelas,
+        "diezmos_ofrendas": diezmos_ofrendas,
+        "aportes_presbiterio": aportes_presbiterio,
+        "otros_gastos": otros_gastos
     })
 
 

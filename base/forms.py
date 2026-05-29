@@ -780,6 +780,12 @@ class ConsolidacionForm(forms.ModelForm):
 
 
 class ReporteAnualForm(forms.ModelForm):
+    anio = forms.ChoiceField(
+        choices=[],
+        widget=forms.Select(
+            attrs={"class": "form-control"}
+        )
+    )
 
     class Meta:
         model = ReporteAnualIglesia
@@ -942,6 +948,7 @@ class EventoProgramadoForm(forms.ModelForm):
             "fecha",
             "hora",
             "capacidad",
+            "solicitar_rango_edad",
             "edad_min",
             "edad_max",
             "estado",
@@ -966,12 +973,18 @@ class EventoProgramadoForm(forms.ModelForm):
             "estado": forms.Select(attrs={"class": "form-control"}),
             "msg_registro_exitoso": forms.Textarea(attrs={"class": "form-control"}),
             "imagen": forms.FileInput( attrs={ "class": "form-control"}),
+            "solicitar_rango_edad": forms.CheckboxInput(
+                attrs={
+                    "class": "form-check-input"
+                }
+            ),
         }
 
     def clean(self):
         cleaned_data = super().clean()
 
         evento = cleaned_data.get("evento")
+        solicitar_rango = cleaned_data.get("solicitar_rango_edad" )
 
         capacidad = cleaned_data.get(
             "capacidad"
@@ -995,39 +1008,48 @@ class EventoProgramadoForm(forms.ModelForm):
                 "Debe ingresar la capacidad."
             )
 
-        # 🔥 edad mínima requerida
+        #################################################
+        # 🔥 VALIDAR RANGO SOLO SI APLICA
+        #################################################
 
-        if edad_min is None:
-            self.add_error(
-                "edad_min",
-                "Debe ingresar la edad mínima."
-            )
+        if solicitar_rango:
 
-        # 🔥 edad máxima requerida
+            # 🔥 edad mínima requerida
 
-        if edad_max is None:
-            self.add_error(
-                "edad_max",
-                "Debe ingresar la edad máxima."
-            )
-
-        # 🔥 validar relación edades
-
-        if (
-                edad_min is not None and
-                edad_max is not None
-        ):
-
-            if edad_min > edad_max:
+            if edad_min is None:
                 self.add_error(
                     "edad_min",
-                    "La edad mínima no puede ser mayor que la máxima."
+                    "Debe ingresar la edad mínima."
                 )
 
+            # 🔥 edad máxima requerida
+
+            if edad_max is None:
                 self.add_error(
                     "edad_max",
-                    "La edad máxima no puede ser menor que la mínima."
+                    "Debe ingresar la edad máxima."
                 )
+
+            # 🔥 validar relación edades
+
+            if (
+                    edad_min is not None and
+                    edad_max is not None
+            ):
+
+                if edad_min > edad_max:
+                    self.add_error(
+                        "edad_min",
+                        "La edad mínima no puede ser mayor que la máxima."
+                    )
+
+                    self.add_error(
+                        "edad_max",
+                        "La edad máxima no puede ser menor que la mínima."
+                    )
+            else:
+                cleaned_data["edad_min"] = None
+                cleaned_data["edad_max"] = None
 
         estado = cleaned_data.get("estado")
         imagen = cleaned_data.get("imagen")
@@ -1082,6 +1104,7 @@ class EventoProgramadoForm(forms.ModelForm):
 
 class InscripcionEventoForm(forms.Form):
 
+
     identificacion = forms.CharField(
         max_length=20,
         required=True
@@ -1106,7 +1129,7 @@ class InscripcionEventoForm(forms.Form):
         required=False
     )
 
-    rango_edad = forms.IntegerField(required=True)
+    rango_edad = forms.IntegerField(required=False)
     
     otra_congregacion = forms.BooleanField(  required=False  )
 
@@ -1152,6 +1175,19 @@ class InscripcionEventoForm(forms.Form):
             if not nombre:
                 raise ValidationError("Debe ingresar el nombre.")
 
+        #################################################
+        # 🔥 VALIDAR RANGO EDAD
+        #################################################
+
+
+        if ( self.evento and self.evento.solicitar_rango_edad ):
+
+            if not cleaned_data.get( "rango_edad" ):
+                self.add_error(
+                    "rango_edad",
+                    "Debe seleccionar el rango de edad."
+                )
+
         return cleaned_data
 
 
@@ -1174,7 +1210,14 @@ class InscripcionEventoForm(forms.Form):
 
 
 
+    def __init__(self, *args, **kwargs):
 
+        self.evento = kwargs.pop(
+            "evento",
+            None
+        )
+
+        super().__init__(*args, **kwargs)
 
 def validar_texto_nombre(valor, campo="Nombre"):
     valor = valor.strip()
