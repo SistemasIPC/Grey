@@ -9,11 +9,6 @@ Nuevo Registro
 </a>
 
 
-<a href="{% url 'lista_citas' %}" class="btn btn-warning mb-3">
-Citas consolidacion
-</a>
-
-
 
 <form method="get" class="row mb-3">
 
@@ -108,27 +103,40 @@ Terminado
 
 
 
-<table class="table table-bordered table-hover" width="50%">
-    <tbody>
-        <tr class="table-danger">
-            <td class="table-warning">Han pasado {{dias_alerta_con_1}} d&iacute;as</td>
-            <td class="table-danger"> Han pasado {{dias_alerta_con_2}} d&iacute;as </td>
-        </tr>
-    </tbody>
-</table>
+
+            <div class="d-flex gap-2 flex-wrap mb-3">
+
+                <span class="badge bg-warning">
+                   Han pasado {{dias_alerta_con_1}} d&iacute;as
+                </span>
+
+                <span class="badge bg-danger">
+                    Han pasado {{dias_alerta_con_2}} d&iacute;as
+                </span>
+
+
+            </div>
+
+
+
+
+
 
 
 <table class="table table-bordered table-hover">
 
-<thead>
+<thead class="table-dark">
 
 <tr>
 <th>Nombre</th>
 <th>Fecha ingreso</th>
-<th>Servicio</th>
+<th>Contactado en </th>
+
 <th>Red</th>
     <th>Grupo en Casa</th>
 <th>Días</th>
+<th>Contacto</th>
+<th>Estado</th>
 <th>Acciones</th>
 </tr>
 
@@ -154,60 +162,11 @@ class="table-warning"
 
 <td>{{ r.categoria_servicio }}</td>
 
-<td>{{ r.red }} </td>
-<td> {{ r.grupo_casa }}</td>
+<td>{{ r.red|default:"" }} </td>
+<td> {{ r.grupo_casa|default:"" }}</td>
 <td>{{ r.fecha_ingreso|timesince }}</td>
 
-<td>
-
-{% if not r.en_seguimiento == 'T'  %}
-    {% if r.en_seguimiento == 'P' or not r.miembro.identificacion  %}
-    <a href="{% url 'consolidacion_editar' r.id %}" class="btn btn-primary btn-sm">
-    Editar
-    </a>
-    {% endif %}
-{% endif %}
-
-
-
-
-
-{% if r.en_seguimiento == 'P' %}
-
-<button
-class="btn btn-danger btn-sm cambiar-estado"
-data-id="{{ r.id }}" data-estado="E" data-observaciones="{{ r.observacion|default:'' }}">
-Pendiente
-</button>
-
-{% elif r.en_seguimiento == 'E' %}
-
-{% if r.red or r.grupo_casa %}
-<a href="{% url 'consolidacion_enviar_correo' r.id %}"
-onclick="return confirm('¿Desea enviar el recordatorio de seguimiento?')"
-class="btn btn-primary btn-sm">
-📧 Enviar correo
-</a>
-{% endif %}
-
-<button
-class="btn btn-warning btn-sm cambiar-estado"
-data-id="{{ r.id }}" data-estado="T"  data-observaciones="{{ r.observacion|default:'' }}" data-identificacion="{{ r.miembro.identificacion|default:'' }}">
-Terminar proceso
-</button>
-
-{% else %}
-Terminado
-{% endif %}
-
-
-
-
-
-
-
-
-
+    <td>
 {% if not r.whatsapp_enviado %}
 
 
@@ -255,6 +214,53 @@ Enviar Saludo WS
     {% endif %}
 
 {% endif %}
+
+
+
+</td>
+
+
+    <td>
+{% if r.en_seguimiento == 'P' %}
+
+<button
+class="btn btn-danger btn-sm cambiar-estado"
+data-id="{{ r.id }}" data-estado="E" data-observaciones="{{ r.observacion|default:'' }}">
+Pendiente
+</button>
+
+{% elif r.en_seguimiento == 'E' %}
+
+{% if r.red or r.grupo_casa %}
+<a href="{% url 'consolidacion_enviar_correo' r.id %}"
+onclick="return confirm('¿Desea enviar el recordatorio de seguimiento?')"
+class="btn btn-primary btn-sm">
+📧 Enviar correo
+</a>
+{% endif %}
+
+<button
+class="btn btn-warning btn-sm cambiar-estado"
+data-id="{{ r.id }}" data-estado="T"  data-observaciones="{{ r.observacion|default:'' }}" data-identificacion="{{ r.miembro.identificacion|default:'' }}">
+Terminar proceso
+</button>
+
+{% else %}
+Terminado
+{% endif %}
+
+</td>
+
+<td>
+
+{% if not r.en_seguimiento == 'T'  %}
+    {% if r.en_seguimiento == 'P' or not r.miembro.identificacion  %}
+    <a href="{% url 'consolidacion_editar' r.id %}" class="btn btn-primary btn-sm">
+    Editar
+    </a>
+    {% endif %}
+{% endif %}
+
 
 
 
