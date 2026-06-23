@@ -37,6 +37,7 @@
         <thead class="table-dark">
         <tr>
             <th>Usuario</th>
+            <th>E-mail</th>
             <th>Iglesia</th>
             <th>Superusuario</th>
             <th>Rol consolidador</th>
@@ -46,6 +47,7 @@
         {% for usuario in usuarios_iglesia %}
         <tr  {% if usuario.superusuario %} class='icono-mocion-nula'  {% endif %}  >
             <td>{{ usuario.id_usuario.username }}</td>
+            <td>{{ usuario.id_usuario.email }}</td>
             <td>{{ usuario.id_iglesia.nombre }}</td>
             <td>
                 {% if usuario.superusuario %}
