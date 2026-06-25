@@ -5673,10 +5673,12 @@ class ImagenBannerIglesiaUpdateView(VistaProtegida,UpdateView):
 # Reportes Consolidacion
 # ==========================================
 
-
+@login_required(login_url='/login/')
 def reporte_consolidacion(request):
 
     iglesia = request.session.get("iglesia_id")
+
+    config = ConfiguracionIglesia.objects.get( iglesia_id=iglesia )
 
     fecha_inicio = request.GET.get("fecha_inicio")
     fecha_fin = request.GET.get("fecha_fin")
@@ -5721,12 +5723,12 @@ def reporte_consolidacion(request):
 
     pendientes_3 = consolidaciones.filter(
         en_seguimiento="P",
-        fecha_ingreso__gt=hoy - timedelta(days=3)
+        fecha_ingreso__gt=hoy - timedelta(days=config.dias_alerta_con_1)
     ).count()
 
     pendientes_5 = consolidaciones.filter(
         en_seguimiento="P",
-        fecha_ingreso__lte=hoy - timedelta(days=5)
+        fecha_ingreso__lte=hoy - timedelta(days=config.dias_alerta_con_2)
     ).count()
 
     ###################################################
@@ -5940,7 +5942,7 @@ def reporte_consolidacion(request):
 
         "grupos": grupos,
         "redes": redes,
-
+        "config": config,
         "total_citas": total_citas,
         "citas_agendadas": citas_agendadas,
         "citas_atendidas": citas_atendidas,
@@ -5970,7 +5972,7 @@ def reporte_consolidacion(request):
 # ==========================================
 # Reportes Consolidacion EJECUTIVO
 # ==========================================
-
+@login_required(login_url='/login/')
 def reporte_consolidacion_ejecutivo(request):
 
     iglesia_id = request.session.get(
@@ -6357,7 +6359,7 @@ def reporte_consolidacion_ejecutivo(request):
                 json.dumps(
                     historial_totales
                 ),
-
+    "config": config,
     "total_convertidos": convertidos,
 
     "miembros_red": miembros_red,
