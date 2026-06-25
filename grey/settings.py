@@ -9,9 +9,11 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+
 #********************************
-#     LOCAL
+#     RENDER
 #*******************************
+
 
 from pathlib import Path
 import os
@@ -34,10 +36,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 
 #*************  Inactividad
-SESSION_COOKIE_AGE = 600
+SESSION_COOKIE_AGE = 600 #10 minutos
 SESSION_SAVE_EVERY_REQUEST = True
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
-
 
 # SECURITY WARNING: don't run with debug turned on in production!
 #DEBUG = True
@@ -45,10 +46,23 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 #ALLOWED_HOSTS = ['*']
 
 #Debug
-DEBUG = True   # en producion va False
-ALLOWED_HOSTS = ['*']
+DEBUG = False   # en producion va False
+#ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    "nexuscumberland.org",
+    "www.nexuscumberland.org",
+    "grey-1-ljus.onrender.com",
+]
 
-# Application definition
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://nexuscumberland.org",
+    "https://www.nexuscumberland.org",
+]
 
 # Application definition
 
@@ -287,4 +301,4 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_ROOT = "/var/data/media"
