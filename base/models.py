@@ -823,10 +823,16 @@ class Consolidacion(models.Model):
     en_seguimiento = models.CharField(max_length=1, choices=ESTADO_SEGUIMIENTO, default="P"  )
     termina_seguimiento = models.CharField(max_length=1, choices=TERMINAO_SEGUIMIENTO   , default="C" )
 
+    fecha_terminacion = models.DateField(
+        null=True,
+        blank=True
+    )
+
     whatsapp_enviado = models.BooleanField(default=False)
     fecha_whatsapp = models.DateTimeField(null=True, blank=True)
 
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+
 
     def __str__(self):
         return str(self.miembro)

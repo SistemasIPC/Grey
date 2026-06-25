@@ -62,6 +62,19 @@ from django.db.models import OuterRef, Subquery,Exists
 from .models import CitaConsolidacion, MiembroConsolidacion
 from django.conf import settings
 from .forms import ImagenBannerIglesiaForm
+from django.http import HttpResponse
+from reportlab.platypus import (
+    SimpleDocTemplate,
+    Paragraph,
+    Spacer,
+    Table,
+    TableStyle
+)
+
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+
+
 
 #-----------------------------------------------------------------
 #                       LOGIN
@@ -2353,7 +2366,7 @@ def consolidacion_cambiar_ajax(request):
 
         if nuevo_estado == "T":
             miembro = actualizar_miembro_desde_consolidacion(registro )
-
+            registro.fecha_terminacion = timezone.now().date()
             if registro.red:
                 existe = AsistentesRedConsolidacion.objects.filter(consolidacion=registro).first()
                 if existe:
@@ -5656,3 +5669,906 @@ class ImagenBannerIglesiaUpdateView(VistaProtegida,UpdateView):
         return configuracion
 
 
+# ==========================================
+# Reportes Consolidacion
+# ==========================================
+
+
+def reporte_consolidacion(request):
+
+    iglesia = request.session.get("iglesia_id")
+
+    fecha_inicio = request.GET.get("fecha_inicio")
+    fecha_fin = request.GET.get("fecha_fin")
+
+    consolidaciones = Consolidacion.objects.filter(
+        miembro__iglesia_id=iglesia
+    )
+
+    citas = CitaConsolidacion.objects.filter(
+        iglesia_id=iglesia
+    )
+
+    if fecha_inicio:
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__gte=fecha_inicio
+        )
+
+        citas = citas.filter(
+            fecha_inicio__date__gte=fecha_inicio
+        )
+
+    if fecha_fin:
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__lte=fecha_fin
+        )
+
+        citas = citas.filter(
+            fecha_inicio__date__lte=fecha_fin
+        )
+
+    hoy = timezone.now().date()
+
+    total_consolidados = consolidaciones.count()
+
+    con_grupo = consolidaciones.filter(
+        grupo_casa__isnull=False
+    ).count()
+
+    con_red = consolidaciones.filter(
+        red__isnull=False
+    ).count()
+
+    pendientes_3 = consolidaciones.filter(
+        en_seguimiento="P",
+        fecha_ingreso__gt=hoy - timedelta(days=3)
+    ).count()
+
+    pendientes_5 = consolidaciones.filter(
+        en_seguimiento="P",
+        fecha_ingreso__lte=hoy - timedelta(days=5)
+    ).count()
+
+    ###################################################
+    # CONSOLIDACIÓN GENERAL
+    ###################################################
+
+    pendientes = consolidaciones.filter(
+        en_seguimiento="P"
+    ).count()
+
+    proceso = consolidaciones.filter(
+        en_seguimiento="E"
+    ).count()
+
+    terminados = consolidaciones.filter(
+        en_seguimiento="T"
+    ).count()
+
+    ###################################################
+    # GRUPOS EN CASA
+    ###################################################
+
+    grupos = (
+        consolidaciones
+        .filter(grupo_casa__isnull=False)
+        .values("grupo_casa__descripcion")
+        .annotate(
+
+            pendientes=Count(
+                "id",
+                filter=Q(en_seguimiento="P")
+            ),
+
+            proceso=Count(
+                "id",
+                filter=Q(en_seguimiento="E")
+            ),
+
+            terminados=Count(
+                "id",
+                filter=Q(en_seguimiento="T")
+            ),
+        )
+        .order_by("grupo_casa__descripcion")
+    )
+
+    ###################################################
+    # REDES
+    ###################################################
+
+    redes = (
+        consolidaciones
+        .filter(red__isnull=False)
+        .values("red__nombre")
+        .annotate(
+
+            pendientes=Count(
+                "id",
+                filter=Q(en_seguimiento="P")
+            ),
+
+            proceso=Count(
+                "id",
+                filter=Q(en_seguimiento="E")
+            ),
+
+            terminados=Count(
+                "id",
+                filter=Q(en_seguimiento="T")
+            ),
+        )
+        .order_by("red__nombre")
+    )
+
+    ###################################################
+    # CATEGORÍA SERVICIO
+    ###################################################
+
+    categorias = (
+
+        consolidaciones
+
+        .values(
+            "categoria_servicio__descripcion"
+        )
+
+        .annotate(
+
+            pendientes=Count(
+                "id",
+                filter=Q(
+                    en_seguimiento="P"
+                )
+            ),
+
+            proceso=Count(
+                "id",
+                filter=Q(
+                    en_seguimiento="E"
+                )
+            ),
+
+            terminados=Count(
+                "id",
+                filter=Q(
+                    en_seguimiento="T"
+                )
+            ),
+
+            total=Count("id")
+
+        )
+
+        .order_by(
+            "categoria_servicio__descripcion"
+        )
+
+    )
+
+
+
+    ###################################################
+    # CITAS
+    ###################################################
+
+    total_citas = citas.count()
+
+    citas_agendadas = citas.filter(
+        estado="A"
+    ).count()
+
+    citas_atendidas = citas.filter(
+        estado="T"
+    ).count()
+
+    citas_canceladas = citas.filter(
+        estado="C"
+    ).count()
+
+    ###################################################
+    # MIEMBRO, RED y GRUPO EN CASA
+    ###################################################
+    consolidados = consolidaciones.select_related(
+        "miembro"
+    )
+
+    identificaciones = list(
+
+        consolidados.exclude(
+            miembro__identificacion__isnull=True
+        ).exclude(
+            miembro__identificacion=""
+        ).values_list(
+            "miembro__identificacion",
+            flat=True
+        )
+
+    )
+
+    miembros_convertidos = Miembro.objects.filter(
+        iglesia=iglesia,
+        identificacion__in=identificaciones
+    )
+
+    total_convertidos = miembros_convertidos.count()
+
+    miembros_red = AsistentesRed.objects.filter(
+        miembro__in=miembros_convertidos
+    ).values(
+        "miembro"
+    ).distinct().count()
+
+    miembros_grupo = AsistentesGrupoCasa.objects.filter(
+        miembro__in=miembros_convertidos
+    ).values(
+        "miembro"
+    ).distinct().count()
+
+    porcentaje_red = 0
+    porcentaje_grupo = 0
+
+    if total_convertidos:
+        porcentaje_red = round(
+            miembros_red * 100 / total_convertidos,
+            1
+        )
+
+        porcentaje_grupo = round(
+            miembros_grupo * 100 / total_convertidos,
+            1
+        )
+
+
+
+
+
+    context = {
+
+        "fecha_inicio": fecha_inicio,
+        "fecha_fin": fecha_fin,
+
+        "total_consolidados": total_consolidados,
+        "con_grupo": con_grupo,
+        "con_red": con_red,
+        "pendientes_3": pendientes_3,
+        "pendientes_5": pendientes_5,
+
+        "pendientes": pendientes,
+        "proceso": proceso,
+        "terminados": terminados,
+
+        "grupos": grupos,
+        "redes": redes,
+
+        "total_citas": total_citas,
+        "citas_agendadas": citas_agendadas,
+        "citas_atendidas": citas_atendidas,
+        "citas_canceladas": citas_canceladas,
+        "categorias": categorias,
+        "total_convertidos": total_convertidos,
+
+        "miembros_red": miembros_red,
+
+        "miembros_grupo": miembros_grupo,
+
+        "porcentaje_red": porcentaje_red,
+
+        "porcentaje_grupo": porcentaje_grupo,
+    }
+
+    return render(
+        request,
+        "reportes/consolidacion/reporte_consolidacion.html",
+        context
+    )
+
+
+
+
+
+# ==========================================
+# Reportes Consolidacion EJECUTIVO
+# ==========================================
+
+def reporte_consolidacion_ejecutivo(request):
+
+    iglesia_id = request.session.get(
+        "iglesia_id"
+    )
+
+    config = ConfiguracionIglesia.objects.get(
+        iglesia_id=iglesia_id
+    )
+
+    fecha_inicio = request.GET.get(
+        "fecha_inicio"
+    )
+
+    fecha_fin = request.GET.get(
+        "fecha_fin"
+    )
+
+    consolidaciones = Consolidacion.objects.filter(
+        miembro__iglesia_id=iglesia_id
+    )
+
+    citas = CitaConsolidacion.objects.filter(
+        iglesia_id=iglesia_id
+    )
+
+    if fecha_inicio:
+
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__gte=fecha_inicio
+        )
+
+        citas = citas.filter(
+            fecha_inicio__date__gte=fecha_inicio
+        )
+
+    if fecha_fin:
+
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__lte=fecha_fin
+        )
+
+        citas = citas.filter(
+            fecha_inicio__date__lte=fecha_fin
+        )
+
+    #################################################
+    # TARJETAS PRINCIPALES
+    #################################################
+
+    total = consolidaciones.count()
+
+    pendientes = consolidaciones.filter(
+        en_seguimiento="P"
+    ).count()
+
+    proceso = consolidaciones.filter(
+        en_seguimiento="E"
+    ).count()
+
+    terminados = consolidaciones.filter(
+        en_seguimiento="T"
+    ).count()
+
+    efectividad = 0
+
+    if total > 0:
+
+        efectividad = round(
+            (terminados / total) * 100,
+            2
+        )
+
+    #################################################
+    # CONVERSIÓN A MIEMBRO
+    #################################################
+
+    identificaciones = consolidaciones.exclude(
+        miembro__identificacion__isnull=True
+    ).exclude(
+        miembro__identificacion=""
+    ).values_list(
+        "miembro__identificacion",
+        flat=True
+    )
+
+    miembros_convertidos  = Miembro.objects.filter(
+        iglesia_id=iglesia_id,
+        identificacion__in=identificaciones
+    )
+
+    convertidos = miembros_convertidos.count()
+
+
+    conversion = 0
+
+    base_conversion = len(
+        list(identificaciones)
+    )
+
+    if base_conversion > 0:
+
+        conversion = round(
+            (convertidos / base_conversion) * 100,
+            2
+        )
+
+
+    #################################################
+    # MIEMBRO; RED Y GRUPO
+    #################################################
+
+    miembros_red = AsistentesRed.objects.filter(
+        miembro__in=miembros_convertidos
+    ).values(
+        "miembro"
+    ).distinct().count()
+
+    miembros_grupo = AsistentesGrupoCasa.objects.filter(
+        miembro__in=miembros_convertidos
+    ).values(
+        "miembro"
+    ).distinct().count()
+
+    porcentaje_red = 0
+    porcentaje_grupo = 0
+
+    if convertidos:
+        porcentaje_red = round(
+            miembros_red * 100 / convertidos,
+            1
+        )
+
+        porcentaje_grupo = round(
+            miembros_grupo * 100 / convertidos,
+            1
+        )
+
+
+
+    #################################################
+    # CITAS
+    #################################################
+
+    total_citas = citas.count()
+
+    citas_agendadas = citas.filter(
+        estado="A"
+    ).count()
+
+    citas_atendidas = citas.filter(
+        estado="T"
+    ).count()
+
+    citas_canceladas = citas.filter(
+        estado="C"
+    ).count()
+
+    #################################################
+    # SEMÁFORO
+    #################################################
+
+    hoy = timezone.now().date()
+
+    verde = 0
+    amarillo = 0
+    rojo = 0
+
+    for c in consolidaciones.filter(
+        en_seguimiento="P"
+    ):
+
+        dias = (
+            hoy - c.fecha_ingreso
+        ).days
+
+        if dias < config.dias_alerta_con_1:
+
+            verde += 1
+
+        elif dias < config.dias_alerta_con_2:
+
+            amarillo += 1
+
+        else:
+
+            rojo += 1
+
+    #################################################
+    # CATEGORÍAS
+    #################################################
+
+    categorias = (
+
+        consolidaciones
+
+        .values(
+            "categoria_servicio__descripcion"
+        )
+
+        .annotate(
+            total=Count("id"),
+            pendientes=Count(
+                "id",
+                filter=Q(en_seguimiento="P")
+            ),
+            proceso=Count(
+                "id",
+                filter=Q(en_seguimiento="E")
+            ),
+            terminados=Count(
+                "id",
+                filter=Q(en_seguimiento="T")
+            ),
+        )
+
+        .order_by(
+            "categoria_servicio__descripcion"
+        )
+
+    )
+
+    #################################################
+    # TOP REDES
+    #################################################
+
+    redes = (
+
+        consolidaciones
+
+        .filter(
+            red__isnull=False
+        )
+
+        .values(
+            "red__nombre"
+        )
+
+        .annotate(
+            total=Count("id")
+        )
+
+        .order_by(
+            "-total"
+        )[:10]
+
+    )
+
+    #################################################
+    # TOP GRUPOS
+    #################################################
+
+    grupos = (
+
+        consolidaciones
+
+        .filter(
+            grupo_casa__isnull=False
+        )
+
+        .values(
+            "grupo_casa__descripcion"
+        )
+
+        .annotate(
+            total=Count("id")
+        )
+
+        .order_by(
+            "-total"
+        )[:10]
+
+    )
+
+    #################################################
+    # CONSOLIDADORES
+    #################################################
+
+    consolidadores = (
+
+        consolidaciones
+
+        .values(
+            "usuario__username"
+        )
+
+        .annotate(
+            total=Count("id")
+        )
+
+        .order_by(
+            "-total"
+        )
+
+    )
+
+    #################################################
+    # EVOLUCIÓN MENSUAL
+    #################################################
+
+    historial = (
+
+        consolidaciones
+
+        .filter(
+            fecha_terminacion__isnull=False
+        )
+
+        .extra(
+            select={
+                "mes":
+                    "EXTRACT(MONTH FROM fecha_terminacion)",
+                "anio":
+                    "EXTRACT(YEAR FROM fecha_terminacion)"
+            }
+        )
+
+        .values(
+            "anio",
+            "mes"
+        )
+
+        .annotate(
+            total=Count("id")
+        )
+
+        .order_by(
+            "anio",
+            "mes"
+        )
+
+    )
+
+    historial_labels = [
+        f"{x['mes']}/{x['anio']}"
+        for x in historial
+    ]
+
+    historial_totales = [
+        x["total"]
+        for x in historial
+    ]
+
+    #################################################
+    # CONTEXTO
+    #################################################
+
+    return render(
+        request,
+        "reportes/consolidacion/dashboard_ejecutivo.html",
+        {
+
+            "fecha_inicio": fecha_inicio,
+            "fecha_fin": fecha_fin,
+
+            "total": total,
+            "pendientes": pendientes,
+            "proceso": proceso,
+            "terminados": terminados,
+
+            "efectividad": efectividad,
+            "conversion": conversion,
+
+            "total_citas": total_citas,
+            "citas_agendadas": citas_agendadas,
+            "citas_atendidas": citas_atendidas,
+            "citas_canceladas": citas_canceladas,
+
+            "verde": verde,
+            "amarillo": amarillo,
+            "rojo": rojo,
+
+            "categorias": categorias,
+            "redes": redes,
+            "grupos": grupos,
+            "consolidadores": consolidadores,
+
+            "historial_labels":
+                json.dumps(
+                    historial_labels
+                ),
+
+            "historial_totales":
+                json.dumps(
+                    historial_totales
+                ),
+
+    "total_convertidos": convertidos,
+
+    "miembros_red": miembros_red,
+
+    "miembros_grupo": miembros_grupo,
+
+    "porcentaje_red": porcentaje_red,
+
+    "porcentaje_grupo": porcentaje_grupo,
+
+
+        }
+    )
+
+
+@login_required
+def reporte_consolidacion_pdf(request):
+
+    fecha_inicio = request.GET.get("fecha_inicio")
+    fecha_fin = request.GET.get("fecha_fin")
+
+
+
+    iglesia_id = request.session.get("iglesia_id")
+
+    consolidaciones = Consolidacion.objects.filter(
+        miembro__iglesia_id=iglesia_id
+    )
+
+    if fecha_inicio:
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__gte=fecha_inicio
+        )
+
+    if fecha_fin:
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__lte=fecha_fin
+        )
+
+    total = consolidaciones.count()
+
+    pendientes = consolidaciones.filter(
+        en_seguimiento="P"
+    ).count()
+
+    proceso = consolidaciones.filter(
+        en_seguimiento="E"
+    ).count()
+
+    terminados = consolidaciones.filter(
+        en_seguimiento="T"
+    ).count()
+
+    response = HttpResponse(
+        content_type="application/pdf"
+    )
+
+    response[
+        "Content-Disposition"
+    ] = 'attachment; filename="reporte_consolidacion.pdf"'
+
+    doc = SimpleDocTemplate(
+        response
+    )
+
+    estilos = getSampleStyleSheet()
+
+    elementos = []
+
+    elementos.append(
+        Paragraph(
+            "Reporte de Consolidación",
+            estilos["Title"]
+        )
+    )
+
+    elementos.append(
+        Spacer(1, 20)
+    )
+
+    datos = [
+
+        ["Indicador", "Valor"],
+
+        ["Total", total],
+
+        ["Pendientes", pendientes],
+
+        ["En Proceso", proceso],
+
+        ["Terminados", terminados],
+
+    ]
+
+    tabla = Table(datos)
+
+    tabla.setStyle(
+
+        TableStyle([
+
+            ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+
+            ("GRID", (0,0), (-1,-1), 1, colors.black),
+
+        ])
+
+    )
+
+    elementos.append(tabla)
+
+    doc.build(elementos)
+
+    return response
+
+
+
+@login_required
+def reporte_citas_pdf(request):
+
+    fecha_inicio = request.GET.get("fecha_inicio")
+    fecha_fin = request.GET.get("fecha_fin")
+
+    iglesia_id = request.session.get(
+        "iglesia_id"
+    )
+
+    citas = CitaConsolidacion.objects.filter(
+        iglesia_id=iglesia_id
+    )
+
+    if fecha_inicio:
+        citas = citas.filter(
+            fecha_inicio__date__gte=fecha_inicio
+        )
+
+    if fecha_fin:
+        citas = citas.filter(
+            fecha_inicio__date__lte=fecha_fin
+        )
+
+    total = citas.count()
+
+    agendadas = citas.filter(
+        estado="A"
+    ).count()
+
+    atendidas = citas.filter(
+        estado="T"
+    ).count()
+
+    canceladas = citas.filter(
+        estado="C"
+    ).count()
+
+    response = HttpResponse(
+        content_type="application/pdf"
+    )
+
+    response[
+        "Content-Disposition"
+    ] = 'attachment; filename="reporte_citas.pdf"'
+
+    doc = SimpleDocTemplate(
+        response
+    )
+
+    estilos = getSampleStyleSheet()
+
+    elementos = []
+
+    elementos.append(
+        Paragraph(
+            "Reporte de Citas",
+            estilos["Title"]
+        )
+    )
+
+    elementos.append(
+        Spacer(1,20)
+    )
+
+    datos = [
+
+        ["Indicador", "Valor"],
+
+        ["Total", total],
+
+        ["Agendadas", agendadas],
+
+        ["Atendidas", atendidas],
+
+        ["Canceladas", canceladas],
+
+    ]
+
+    tabla = Table(datos)
+
+    tabla.setStyle(
+
+        TableStyle([
+
+            ("BACKGROUND", (0,0), (-1,0), colors.lightgrey),
+
+            ("GRID", (0,0), (-1,-1), 1, colors.black),
+
+        ])
+
+    )
+
+    elementos.append(tabla)
+
+    doc.build(elementos)
+
+    return response

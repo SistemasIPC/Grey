@@ -177,6 +177,16 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                path("reportes/estadistica_anual/<int:anio>/", views.reporte_anual_form, name="reporte_anual_form_editar"),
                path("reportes/estadistica_anual/grafica/", views.grafica_iglesia_anio_anio, name="grafica_iglesia_anio_anio"),
 
+                   # ==========================================
+                   # Reportes Consolidacion
+                   # ==========================================
+
+               path("reportes/consolidacion/", views.reporte_consolidacion,    name="reporte_consolidacion"),
+               path("reportes/dashboard-ejecutivo/",views.reporte_consolidacion_ejecutivo, name="reporte_consolidacion_ejecutivo"),
+               path("reportes/consolidacion/pdf/", views.reporte_consolidacion_pdf, name="reporte_consolidacion_pdf" ),
+               path( "reportes/citas/pdf/", views.reporte_citas_pdf, name="reporte_citas_pdf" ),
+
+
 
                 path("eventos/", views.evento_list, name="evento_list"),
                 path("eventos/create/", views.evento_create, name="evento_create"),

@@ -1,0 +1,461 @@
+{% extends 'principal.html' %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<h2>Dashboard Consolidación</h2>
+
+<form method="get" class="row mb-4">
+
+    <div class="col-md-3">
+        <label>Fecha inicial</label>
+        <input type="date"
+               name="fecha_inicio"
+               value="{{ fecha_inicio }}"
+               class="form-control">
+    </div>
+
+    <div class="col-md-3">
+        <label>Fecha final</label>
+        <input type="date"
+               name="fecha_fin"
+               value="{{ fecha_fin }}"
+               class="form-control">
+    </div>
+
+    <div class="col-md-2">
+        <br>
+        <button class="btn btn-primary">
+            Consultar
+        </button>
+    </div>
+
+
+
+
+
+</form>
+
+<!--
+<div class="col-md-2">
+        <br>
+
+        <a href="{% url 'reporte_consolidacion_pdf' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+           target="_blank"
+           class="btn btn-danger">
+
+            PDF Consolidación
+
+        </a>
+    </div>
+
+    <div class="col-md-2">
+        <br>
+
+        <a href="{% url 'reporte_citas_pdf' %}?fecha_inicio={{ fecha_inicio }}&fecha_fin={{ fecha_fin }}"
+           target="_blank"
+           class="btn btn-danger">
+
+            PDF Citas
+
+        </a>
+    </div>
+
+    -->
+<div class="row">
+
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ total_consolidados }}</h3>
+                Consolidados
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ con_grupo }}</h3>
+                Grupo Casa
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ con_red }}</h3>
+                Red
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ pendientes_3 }}</h3>
+                < 3 días
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ pendientes_5 }}</h3>
+                ≥ 5 días
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+
+<hr>
+
+    <div class="row mb-4">
+
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+
+                    <h2>
+                        {{ total_convertidos }}
+                    </h2>
+
+                    <strong>
+                        Son Miembros
+                    </strong>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+
+                    <h2>
+                        {{ miembros_red }}
+                    </h2>
+
+                    <strong>
+                        Están en Red
+                    </strong>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+
+                    <h2>
+                        {{ miembros_grupo }}
+                    </h2>
+
+                    <strong>
+                        Están en Grupo Casa
+                    </strong>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card mb-4">
+
+        <div class="card-header">
+            Ruta de Integración
+        </div>
+
+        <div class="card-body">
+
+            <div style="height:350px">
+                <canvas id="graficaIntegracion"></canvas>
+            </div>
+
+        </div>
+
+    </div>
+
+<h4>Estado Consolidación</h4>
+
+
+<div style="max-width: 400px; margin:auto;">
+    <canvas id="graficaConsolidacion"></canvas>
+</div>
+
+
+<script>
+
+
+new Chart(
+    document.getElementById('graficaIntegracion'),
+    {
+        type:'bar',
+        data:{
+            labels:[
+                'Convertidos',
+                'En Red',
+                'En Grupo Casa'
+            ],
+            datasets:[{
+                data:[
+                    {{ total_convertidos }},
+                    {{ miembros_red }},
+                    {{ miembros_grupo }}
+                ]
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    }
+);
+
+new Chart(
+    document.getElementById('graficaConsolidacion'),
+    {
+        type: 'pie',
+        data: {
+            labels: [
+                'Pendiente',
+                'En proceso',
+                'Terminado'
+            ],
+            datasets: [{
+                data: [
+                    {{ pendientes }},
+                    {{ proceso }},
+                    {{ terminados }}
+                ]
+            }]
+        }
+    }
+);
+</script>
+
+
+<hr>
+
+<h4>Por Categoría de Servicio</h4>
+
+<table class="table table-striped table-bordered">
+
+    <thead class="table-dark">
+
+        <tr>
+
+            <th>Categoría</th>
+
+            <th>Total</th>
+
+            <th>Pendientes</th>
+
+            <th>En Proceso</th>
+
+            <th>Terminados</th>
+
+        </tr>
+
+    </thead>
+
+    <tbody>
+
+        {% for c in categorias %}
+
+        <tr>
+
+            <td>
+                {{ c.categoria_servicio__descripcion }}
+            </td>
+
+            <td>
+                {{ c.total }}
+            </td>
+
+            <td>
+                {{ c.pendientes }}
+            </td>
+
+            <td>
+                {{ c.proceso }}
+            </td>
+
+            <td>
+                {{ c.terminados }}
+            </td>
+
+        </tr>
+
+        {% endfor %}
+
+    </tbody>
+
+</table>
+
+<hr>
+
+<h4>Por Grupo Casa</h4>
+
+<table class="table table-bordered">
+
+    <thead>
+
+    <tr>
+
+        <th>Grupo</th>
+        <th>Pendientes</th>
+        <th>Proceso</th>
+        <th>Terminados</th>
+
+    </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for g in grupos %}
+
+        <tr>
+
+            <td>{{ g.grupo_casa__descripcion }}</td>
+
+            <td>{{ g.pendientes }}</td>
+
+            <td>{{ g.proceso }}</td>
+
+            <td>{{ g.terminados }}</td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+<hr>
+
+<h4>Por Red</h4>
+
+<table class="table table-bordered">
+
+    <thead>
+
+    <tr>
+
+        <th>Red</th>
+        <th>Pendientes</th>
+        <th>Proceso</th>
+        <th>Terminados</th>
+
+    </tr>
+
+    </thead>
+
+    <tbody>
+
+    {% for r in redes %}
+
+        <tr>
+
+            <td>{{ r.red__nombre }}</td>
+
+            <td>{{ r.pendientes }}</td>
+
+            <td>{{ r.proceso }}</td>
+
+            <td>{{ r.terminados }}</td>
+
+        </tr>
+
+    {% endfor %}
+
+    </tbody>
+
+</table>
+
+<hr>
+
+<h4>Citas de Consolidación</h4>
+
+<div class="row">
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ total_citas }}</h3>
+                Total
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ citas_agendadas }}</h3>
+                Agendadas
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ citas_atendidas }}</h3>
+                Atendidas
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h3>{{ citas_canceladas }}</h3>
+                Canceladas
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div style="max-width: 400px; margin:auto;">
+    <canvas id="graficaCitas"></canvas>
+</div>
+
+<script>
+
+new Chart(
+    document.getElementById('graficaCitas'),
+    {
+        type: 'pie',
+        data: {
+            labels: [
+                'Agendadas',
+                'Atendidas',
+                'Canceladas'
+            ],
+            datasets: [{
+                data: [
+                    {{ citas_agendadas }},
+                    {{ citas_atendidas }},
+                    {{ citas_canceladas }}
+                ]
+            }]
+        }
+    }
+);
+
+</script>
+
+{% endblock %}

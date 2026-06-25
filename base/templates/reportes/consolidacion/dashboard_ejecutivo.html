@@ -1,0 +1,608 @@
+{% extends 'principal.html' %}
+
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<div class="container-fluid">
+
+```
+<h2 class="mb-4">
+    Dashboard ejecutivo de consolidación
+</h2>
+
+<!-- FILTROS -->
+
+<form method="get" class="row mb-4">
+
+    <div class="col-md-3">
+        <label>Fecha Inicial</label>
+        <input type="date"
+               name="fecha_inicio"
+               value="{{ fecha_inicio }}"
+               class="form-control">
+    </div>
+
+    <div class="col-md-3">
+        <label>Fecha Final</label>
+        <input type="date"
+               name="fecha_fin"
+               value="{{ fecha_fin }}"
+               class="form-control">
+    </div>
+
+    <div class="col-md-2">
+        <br>
+        <button class="btn btn-primary">
+            Consultar
+        </button>
+    </div>
+
+</form>
+
+<!-- KPI -->
+
+<div class="row mb-4">
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-primary">
+            <div class="card-body">
+                <h2>{{ total }}</h2>
+                <strong>Total Consolidaciones</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-warning">
+            <div class="card-body">
+                <h2>{{ pendientes }}</h2>
+                <strong>Pendientes</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-info">
+            <div class="card-body">
+                <h2>{{ proceso }}</h2>
+                <strong>En Proceso</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center border-success">
+            <div class="card-body">
+                <h2>{{ terminados }}</h2>
+                <strong>Terminados</strong>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="row mb-4">
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2>{{ efectividad }}%</h2>
+                <strong>Efectividad</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2>{{ conversion }}%</h2>
+                <strong>Conversión a Miembro</strong>
+            </div>
+        </div>
+    </div>
+
+
+<div class="row mb-4">
+
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+
+                <h2>
+                    {{ total_convertidos }}
+                </h2>
+
+                <strong>
+                    Son Miembros
+                </strong>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+
+                <h2>
+                    {{ miembros_red }}
+                </h2>
+
+                <strong>
+                    Están en Red
+                </strong>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+
+                <h2>
+                    {{ miembros_grupo }}
+                </h2>
+
+                <strong>
+                    Están en Grupo Casa
+                </strong>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+
+
+
+
+
+
+
+<div class="card mb-4">
+
+    <div class="card-header">
+        Ruta de Integración
+    </div>
+
+    <div class="card-body">
+
+        <div style="height:350px">
+            <canvas id="graficaIntegracion"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2>{{ total_citas }}</h2>
+                <strong>Total Citas</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <h2>{{ citas_atendidas }}</h2>
+                <strong>Citas Atendidas</strong>
+            </div>
+        </div>
+    </div>
+
+
+
+
+</div>
+
+
+
+
+
+
+
+
+<!-- GRAFICAS PIE -->
+
+<div class="row mb-5">
+
+    <div class="col-md-6">
+
+        <div class="card">
+
+            <div class="card-header">
+                Estado Consolidación
+            </div>
+
+            <div class="card-body">
+
+                <div style="height:350px">
+                    <canvas id="graficaConsolidacion"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <div class="card">
+
+            <div class="card-header">
+                Estado Citas
+            </div>
+
+            <div class="card-body">
+
+                <div style="height:350px">
+                    <canvas id="graficaCitas"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- SEMAFORO -->
+
+<div class="row mb-5">
+
+    <div class="col-md-6">
+
+        <div class="card">
+
+            <div class="card-header">
+                Semáforo Seguimiento
+            </div>
+
+            <div class="card-body">
+
+                <div style="height:350px">
+                    <canvas id="graficaSemaforo"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="col-md-6">
+
+        <div class="card">
+
+            <div class="card-header">
+                Evolución Mensual Terminados
+            </div>
+
+            <div class="card-body">
+
+                <div style="height:350px">
+                    <canvas id="graficaEvolucion"></canvas>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- TABLA CATEGORIAS -->
+
+<div class="card mb-4">
+
+    <div class="card-header">
+        Categorías de Servicio
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-striped table-bordered">
+
+            <thead class="table-dark">
+
+                <tr>
+
+                    <th>Categoría</th>
+                    <th>Total</th>
+                    <th>Pendientes</th>
+                    <th>Proceso</th>
+                    <th>Terminados</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for c in categorias %}
+
+                <tr>
+
+                    <td>{{ c.categoria_servicio__descripcion }}</td>
+                    <td>{{ c.total }}</td>
+                    <td>{{ c.pendientes }}</td>
+                    <td>{{ c.proceso }}</td>
+                    <td>{{ c.terminados }}</td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- TOP REDES -->
+
+<div class="card mb-4">
+
+    <div class="card-header">
+        Top Redes
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-bordered">
+
+            <thead>
+
+                <tr>
+
+                    <th>Red</th>
+                    <th>Total</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for r in redes %}
+
+                <tr>
+
+                    <td>{{ r.red__nombre }}</td>
+                    <td>{{ r.total }}</td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- TOP GRUPOS -->
+
+<div class="card mb-4">
+
+    <div class="card-header">
+        Top Grupos Casa
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-bordered">
+
+            <thead>
+
+                <tr>
+
+                    <th>Grupo</th>
+                    <th>Total</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for g in grupos %}
+
+                <tr>
+
+                    <td>{{ g.grupo_casa__nombre }}</td>
+                    <td>{{ g.total }}</td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+<!-- CONSOLIDADORES -->
+
+<div class="card mb-5">
+
+    <div class="card-header">
+        Consolidadores Más Activos
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-striped">
+
+            <thead>
+
+                <tr>
+
+                    <th>Usuario</th>
+                    <th>Total</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                {% for c in consolidadores %}
+
+                <tr>
+
+                    <td>{{ c.usuario__username }}</td>
+                    <td>{{ c.total }}</td>
+
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+```
+
+</div>
+
+<script>
+
+
+
+
+
+
+
+new Chart(
+    document.getElementById('graficaConsolidacion'),
+    {
+        type:'pie',
+        data:{
+            labels:['Pendientes','Proceso','Terminados'],
+            datasets:[{
+                data:[
+                    {{ pendientes }},
+                    {{ proceso }},
+                    {{ terminados }}
+                ]
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    }
+);
+
+new Chart(
+    document.getElementById('graficaCitas'),
+    {
+        type:'pie',
+        data:{
+            labels:['Agendadas','Atendidas','Canceladas'],
+            datasets:[{
+                data:[
+                    {{ citas_agendadas }},
+                    {{ citas_atendidas }},
+                    {{ citas_canceladas }}
+                ]
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    }
+);
+
+new Chart(
+    document.getElementById('graficaSemaforo'),
+    {
+        type:'doughnut',
+        data:{
+            labels:['Verde','Amarillo','Rojo'],
+            datasets:[{
+                data:[
+                    {{ verde }},
+                    {{ amarillo }},
+                    {{ rojo }}
+                ]
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    }
+);
+
+new Chart(
+    document.getElementById('graficaEvolucion'),
+    {
+        type:'line',
+        data:{
+            labels: {{ historial_labels|safe }},
+            datasets:[{
+                label:'Terminados',
+                data: {{ historial_totales|safe }}
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    }
+);
+
+
+
+
+new Chart(
+    document.getElementById('graficaIntegracion'),
+    {
+        type:'bar',
+        data:{
+            labels:[
+                'Convertidos',
+                'En Red',
+                'En Grupo Casa'
+            ],
+            datasets:[{
+                data:[
+                    {{ total_convertidos }},
+                    {{ miembros_red }},
+                    {{ miembros_grupo }}
+                ]
+            }]
+        },
+        options:{
+            responsive:true,
+            maintainAspectRatio:false
+        }
+    }
+);
+
+</script>
+
+{% endblock %}
