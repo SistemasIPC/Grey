@@ -1,0 +1,394 @@
+{% extends 'principal.html' %}
+{% block content %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<h2> Reporte por Red/Grupo en casa</h2>
+<form method="get">
+
+    <div class="row">
+
+        <div class="col-md-3">
+
+            <label>Fecha inicial</label>
+
+            <input type="date"
+                   name="fecha_inicio"
+                   value="{{ fecha_inicio }}"
+                   class="form-control">
+
+        </div>
+
+        <div class="col-md-3">
+
+            <label>Fecha final</label>
+
+            <input type="date"
+                   name="fecha_fin"
+                   value="{{ fecha_fin }}"
+                   class="form-control">
+
+        </div>
+
+        <div class="col-md-3">
+
+            <label>Tipo Reporte</label>
+
+            <select name="tipo"
+                    id="tipo_reporte"
+                    class="form-control">
+
+                <option value="">
+                    Seleccione
+                </option>
+
+                <option value="red"
+                        {% if tipo == 'red' %}selected{% endif %}>
+                    Red
+                </option>
+
+                <option value="grupo"
+                        {% if tipo == 'grupo' %}selected{% endif %}>
+                    Grupo Casa
+                </option>
+
+            </select>
+
+        </div>
+
+    </div>
+
+    <br>
+
+    <!-- RED -->
+
+    <div class="row" id="div_red">
+
+        <div class="col-md-6">
+
+            <label>Red</label>
+
+            <select name="red"
+                    class="form-control">
+
+                <option value="">
+                    Todas
+                </option>
+
+                {% for red in redes %}
+
+                    <option value="{{ red.id }}"
+                            {% if red.id|stringformat:"s" == red_id %}
+                                selected
+                            {% endif %}>
+
+                        {{ red.nombre }}
+
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+    </div>
+
+    <!-- GRUPO CASA -->
+
+    <div class="row"
+         id="div_grupo">
+
+        <div class="col-md-6">
+
+            <label>Grupo Casa</label>
+
+            <select
+                id="grupo_casa"
+                name="grupo_casa"
+                class="form-control select2-grupo"
+                data-url="{% url 'ajax_buscar_grupo_casa_reporte' %}">
+
+    {% if grupo %}
+        <option value="{{ grupo.id }}" selected>
+            {{ grupo.descripcion }}
+
+        </option>
+    {% endif %}
+
+            </select>
+
+        </div>
+
+    </div>
+
+    <br>
+
+    <button class="btn btn-primary">
+        Consultar
+    </button>
+
+</form>
+
+
+
+{% if titulo_reporte %}
+
+<div class="card mb-3">
+
+    <div class="card-body">
+
+        <h4>
+
+            {{ titulo_reporte }}
+
+        </h4>
+
+        <strong>Desde:</strong>
+        {{ fecha_inicio }}
+
+        &nbsp;&nbsp;
+
+        <strong>Hasta:</strong>
+        {{ fecha_fin }}
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+
+{% if tipo %}
+
+<hr>
+
+<div class="row">
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+
+                <h2>{{ total }}</h2>
+
+                <strong>Total</strong>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+
+                <h2>{{ pendientes }}</h2>
+
+                <strong>Pendientes</strong>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+
+                <h2>{{ proceso }}</h2>
+
+                <strong>En Proceso</strong>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+
+                <h2>{{ terminados }}</h2>
+
+                <strong>Terminados</strong>
+
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<br>
+
+<div class="card">
+
+    <div class="card-header">
+
+        Resultado del Reporte
+
+    </div>
+
+    <div class="card-body">
+
+        <table class="table table-bordered">
+
+            <thead class="table-dark">
+
+                <tr>
+
+                    <th>Indicador</th>
+                    <th>Cantidad</th>
+
+                </tr>
+
+            </thead>
+
+            <tbody>
+
+                <tr>
+                    <td>Total consolidaciones</td>
+                    <td>{{ total }}</td>
+                </tr>
+
+                <tr>
+                    <td>Pendientes</td>
+                    <td>{{ pendientes }}</td>
+                </tr>
+
+                <tr>
+                    <td>En proceso</td>
+                    <td>{{ proceso }}</td>
+                </tr>
+
+                <tr>
+                    <td>Terminadas</td>
+                    <td>{{ terminados }}</td>
+                </tr>
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</div>
+
+{% endif %}
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+{% if tipo %}
+
+<div class="card mt-4">
+
+    <div class="card-header">
+        Estado de Consolidaciones
+    </div>
+
+    <div class="card-body">
+
+        <div style="height:300px">
+
+            <canvas id="graficaEstado"></canvas>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+new Chart(
+
+    document.getElementById('graficaEstado'),
+
+    {
+
+        type:'bar',
+
+        data:{
+
+            labels:[
+                'Pendientes',
+                'Proceso',
+                'Terminados'
+            ],
+
+            datasets:[{
+
+                data:[
+                    {{ pendientes }},
+                    {{ proceso }},
+                    {{ terminados }}
+                ]
+
+            }]
+
+        },
+
+        options:{
+
+            responsive:true,
+            maintainAspectRatio:false
+
+        }
+
+    }
+
+);
+
+</script>
+
+{% endif %}
+
+
+
+
+<script>
+
+$(document).ready(function(){
+
+    $("#grupo_casa").select2({
+
+        placeholder:"Escriba 3 letras",
+
+        minimumInputLength:3,
+
+        ajax:{
+
+            url:$("#grupo_casa").data("url"),
+
+            dataType:"json",
+
+            delay:250,
+
+            data:function(params){
+
+                return {
+
+                    term:params.term
+
+                };
+
+            },
+
+            processResults:function(data){
+
+                return {
+
+                    results:data
+
+                };
+
+            }
+
+        }
+
+    });
+
+});
+</script>
+
+{% endblock %}

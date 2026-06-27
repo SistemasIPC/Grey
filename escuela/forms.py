@@ -5,7 +5,7 @@ from django.contrib.auth.forms import UserCreationForm
 
 from datetime import date
 
-from base.models import User, Iglesia, Categoria_iglesia
+from base.models import User, Miembro, Iglesia, Categoria_iglesia
 
 
 
@@ -264,10 +264,24 @@ class MaestroForm(forms.ModelForm):
             )
 
             # 🔹 usuarios que NO son maestros aún
-            usados = Maestro.objects.values_list("user_id", flat=True)
-
             if self.instance.pk:
-                usados = usados.exclude(pk=self.instance.user_id)
+
+                usados = Maestro.objects.exclude(
+                    pk=self.instance.pk
+                ).values_list(
+                    "user_id",
+                    flat=True
+                )
+
+            else:
+
+                usados = Maestro.objects.values_list(
+                    "user_id",
+                    flat=True
+                )
+
+
+
 
             self.fields["user"].queryset = User.objects.exclude(id__in=usados)
 
@@ -297,7 +311,17 @@ class MaestroForm(forms.ModelForm):
 
         return cleaned_data
 
+    def save(self, commit=True):
 
+        obj = super().save(commit=False)
+
+        if self.iglesia:
+            obj.iglesia = self.iglesia
+
+        if commit:
+            obj.save()
+
+        return obj
 
 class TemaForm(forms.ModelForm):
 

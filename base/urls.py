@@ -185,8 +185,8 @@ urlpatterns = [    path('registro/',PaginaRegistro.as_view(),name='registro_igle
                path("reportes/dashboard-ejecutivo/",views.reporte_consolidacion_ejecutivo, name="reporte_consolidacion_ejecutivo"),
                path("reportes/consolidacion/pdf/", views.reporte_consolidacion_pdf, name="reporte_consolidacion_pdf" ),
                path( "reportes/citas/pdf/", views.reporte_citas_pdf, name="reporte_citas_pdf" ),
-
-
+               path("reportes/consolidacion/red-grupo-casa/", views.reporte_grupo_red,    name="reporte_grupo_red"),
+               path("reportes/ajax/grupo-casa/", views.ajax_buscar_grupo_casa_reporte,    name="ajax_buscar_grupo_casa_reporte"),
 
                 path("eventos/", views.evento_list, name="evento_list"),
                 path("eventos/create/", views.evento_create, name="evento_create"),

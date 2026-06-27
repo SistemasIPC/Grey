@@ -20,7 +20,7 @@ class Nivel(models.Model):
         blank=True,
         on_delete=models.CASCADE
     )
-
+    activo = models.BooleanField(default=True)
     class Meta:
         ordering = ["orden"]
         unique_together = ("iglesia", "nombre")
@@ -38,7 +38,7 @@ class Curso(models.Model):
     nivel = models.ForeignKey("Nivel", on_delete=models.PROTECT)
 
     descripcion = models.TextField(blank=True, null=True)
-
+    activo = models.BooleanField(default=True)
     class Meta:
         unique_together = ("iglesia", "nombre", "nivel")
         ordering = ["nivel__orden", "nombre"]
@@ -75,7 +75,7 @@ class Periodo(models.Model):
     fecha_inicio = models.DateField()
     fecha_fin = models.DateField()
     activo_inscripcion = models.BooleanField(default=False)
-
+    activo = models.BooleanField(default=True)
     class Meta:
         unique_together = ("iglesia", "nombre")
         ordering = ["-fecha_inicio"]
@@ -131,6 +131,13 @@ class CursoPeriodo(models.Model):
     aula = models.CharField(max_length=50)
     dia_semana = models.IntegerField(choices=DIAS_SEMANA)
     hora = models.TimeField()
+    fecha_inicio = models.DateField(null=True, blank=True)
+    fecha_fin = models.DateField(null=True,  blank=True )
+    descripcion = models.TextField( blank=True )
+    observaciones = models.TextField( blank=True )
+    permitir_autoinscripcion = models.BooleanField( default=True )
+    publicar_calificaciones = models.BooleanField( default=False)
+    cerrar_asistencia = models.BooleanField( default=False )
 
     class Meta:
         unique_together = ('curso', 'periodo', 'nombre_grupo')
@@ -139,6 +146,8 @@ class CursoPeriodo(models.Model):
         super().clean()
 
         errors = {}
+        if self.cupo is None or self.cupo <= 0:
+            errors["cupo"] = "Debe ingresar un cupo mayor a cero."
 
         # 🔹 validar pertenencia solo si existen
         if self.curso and self.iglesia:
@@ -181,7 +190,7 @@ class Especialidad_maestro(models.Model):
     iglesia = models.ForeignKey(Iglesia, on_delete=models.CASCADE)
     nombre = models.CharField(max_length=50)
     descripcion = models.CharField(max_length=100)
-
+    activo = models.BooleanField(default=True)
     class Meta:
         unique_together = ("iglesia", "nombre")
         ordering = ["nombre"]
@@ -202,9 +211,16 @@ class Maestro(models.Model):
     fecha_registro = models.DateTimeField(auto_now_add=True)
 
     def clean(self):
-        if self.especialidad and self.especialidad.iglesia != self.iglesia:
-            raise ValidationError("La especialidad no pertenece a la iglesia")
+        super().clean()
 
+        if (
+                self.especialidad_id and
+                self.iglesia_id and
+                self.especialidad.iglesia_id != self.iglesia_id
+        ):
+            raise ValidationError(
+                "La especialidad no pertenece a la iglesia."
+            )
     def save(self, *args, **kwargs):
         self.full_clean()
         super().save(*args, **kwargs)
@@ -221,6 +237,8 @@ class Tema(models.Model):
 
     nombre = models.CharField(max_length=100)
     orden = models.IntegerField()
+
+
 
     class Meta:
         ordering = ["orden"]
@@ -265,7 +283,7 @@ class TemaCursoPeriodo(models.Model):
 
     nombre = models.CharField(max_length=100)
     orden = models.IntegerField()
-
+    desarrollado = models.BooleanField(default=False)
     maestro = models.ForeignKey(
         Maestro,
         on_delete=models.SET_NULL,
@@ -384,6 +402,19 @@ class Inscripcion(models.Model):
         default='activo'
     )
 
+    nota_final = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=True,
+        blank=True
+    )
+
+    fecha_aprobacion = models.DateField(
+        null=True,
+        blank=True
+    )
+
+
     observacion = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -398,6 +429,11 @@ class Inscripcion(models.Model):
 
 
 class Clase(models.Model):
+    curso_periodo = models.ForeignKey(
+        "CursoPeriodo",
+        on_delete=models.CASCADE
+    )
+
     tema = models.ForeignKey("TemaCursoPeriodo", on_delete=models.CASCADE)
 
     fecha = models.DateField()
@@ -447,6 +483,11 @@ class Evaluacion(models.Model):
 class Calificacion(models.Model):
     inscripcion = models.ForeignKey("Inscripcion", on_delete=models.CASCADE)
     evaluacion = models.ForeignKey("Evaluacion", on_delete=models.CASCADE)
+
+    tema_curso_periodo = models.ForeignKey(
+        TemaCursoPeriodo,
+        on_delete=models.CASCADE
+    )
 
     nota = models.DecimalField(max_digits=5, decimal_places=2)
 
@@ -532,3 +573,20 @@ class RespuestaEvaluacion(models.Model):
 
     def __str__(self):
         return f"{self.pregunta.texto} - {self.texto} "
+
+
+class AsistenciaClase(models.Model):
+
+    inscripcion = models.ForeignKey(
+        Inscripcion,
+        on_delete=models.CASCADE
+    )
+
+    tema_curso_periodo = models.ForeignKey(
+        TemaCursoPeriodo,
+        on_delete=models.CASCADE
+    )
+
+    asistio = models.BooleanField(default=False)
+
+    fecha = models.DateField()

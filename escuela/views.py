@@ -21,7 +21,7 @@ from django.db.models import Q
 
 from .models import *
 from .forms import *
-from .utils import obtener_iglesia
+from .utils import *
 from base.models import Iglesia, Usuario_iglesia, Miembro
 from django.contrib.auth.decorators import login_required
 import json
@@ -43,7 +43,9 @@ class LoginEscuelaView (LoginView):
     redirect_authenticated_user = True
 
     def get_success_url(self):
-        return reverse_lazy('menu_principal_escuela')
+        return reverse_lazy('escuela_dashboard_inicial')
+        #return reverse_lazy('menu_principal_escuela')
+
 
 class PaginaRegistro(FormView):
     template_name = 'escuela/login/registro_escuela.html'
@@ -69,24 +71,41 @@ class PaginaRegistro(FormView):
 #                       MENU PRINCIPAL
 #----------------------------------------------------------------
 #------Aqui
+
+
+
+
+
 class Menu_principal(LoginRequiredMixin, ListView):
-    model = Iglesia
-    context_object_name = 'iglesia'
-    template_name = 'escuela/menu/inicio.html'
+    def get(self, request, *args, **kwargs):
+        usuario_iglesia = Usuario_iglesia.objects.filter(
+            id_usuario=request.user
+        ).first()
 
-    def get_context_data(self, **kwargs):
+        # Aquí puedes realizar la lógica que necesites
 
-        context = super().get_context_data(**kwargs)
-
-        usuario_iglesia = Usuario_iglesia.objects.filter(id_usuario=self.request.user).first()
-
+        return redirect('escuela_dashboard_inicial')
 
 
-        if usuario_iglesia:
-            iglesia = usuario_iglesia.id_iglesia  # Obtiene la iglesia asociada
-            context['iglesia'] = iglesia
+#class Menu_principal(LoginRequiredMixin, ListView):
+#    model = Iglesia
+#    context_object_name = 'iglesia'
+#    template_name = 'escuela/menu/inicio.html'
 
-        return context
+
+#    def get_context_data(self, **kwargs):
+
+#       context = super().get_context_data(**kwargs)
+
+#        usuario_iglesia = Usuario_iglesia.objects.filter(id_usuario=self.request.user).first()
+
+
+
+ #       if usuario_iglesia:
+ #           iglesia = usuario_iglesia.id_iglesia  # Obtiene la iglesia asociada
+  #          context['iglesia'] = iglesia
+
+   #     return context
 
 
 #-----------------------------------------------------------------
@@ -672,16 +691,19 @@ def maestro_list(request):
 
 @login_required(login_url='/escuela/login/')
 def maestro_create(request):
-    iglesia = obtener_iglesia(request)
+
+
+    usuario_iglesia = obtener_usuario_iglesia(request)
+    iglesia = usuario_iglesia.id_iglesia
 
     if request.method == "POST":
         form = MaestroForm(request.POST, iglesia=iglesia)
 
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.iglesia = iglesia
-            obj.save()
-            return redirect("maestro_list")
+            form.save()
+            return redirect(
+                "maestro_list"
+            )
     else:
         form = MaestroForm(iglesia=iglesia)
 
@@ -1450,3 +1472,516 @@ def auto_inscripcion(request):
         "puede_inscribir": puede_inscribir,
         "ultimo_aprobado": ultimo_aprobado
     })
+
+
+#-----------------------------------------------------------------
+#                      DASHBOARD GENERAL INICIAL GESTION
+#----------------------------------------------------------------
+
+@login_required(login_url='/escuela/login/')
+def escuela_dashboard(request):
+
+    iglesia = obtener_iglesia(request)
+
+    cursos = CursoPeriodo.objects.filter(
+        iglesia=iglesia,
+        activo=True
+    ).select_related(
+        "curso",
+        "periodo",
+        "maestro"
+    ).order_by(
+        "curso__nivel__orden",
+        "curso__nombre",
+        "nombre_grupo"
+    )
+
+    print("-----")
+    print(cursos)
+    print("-----")
+
+    return render(
+        request,
+        "escuela/gestion/dashboard_inicial.html",
+        {
+            "cursos": cursos
+        }
+    )
+
+
+@login_required(login_url='/escuela/login/')
+def ajax_buscar_maestro(request):
+
+    iglesia = obtener_iglesia(request)
+
+    term = request.GET.get("term", "").strip()
+
+    maestros = Maestro.objects.filter(
+        iglesia=iglesia,
+        user__first_name__icontains=term
+    ) | Maestro.objects.filter(
+        iglesia=iglesia,
+        user__last_name__icontains=term
+    )
+
+    resultados = []
+
+    for m in maestros[:20]:
+
+        resultados.append({
+
+            "id": m.id,
+
+            "text": f"{m.user.get_full_name()}"
+
+        })
+
+    return JsonResponse(resultados, safe=False)
+
+
+@login_required(login_url='/escuela/login/')
+def ajax_info_maestro(request):
+
+    iglesia = obtener_iglesia(request)
+
+    maestro = get_object_or_404(
+
+        Maestro,
+
+        pk=request.GET.get("id"),
+
+        iglesia=iglesia
+
+    )
+
+    cursos = CursoPeriodo.objects.filter(
+
+        iglesia=iglesia,
+
+        maestro=maestro.user,
+
+        activo=True
+
+    ).select_related("curso")
+
+    data = []
+
+    for c in cursos:
+
+        inscritos = Inscripcion.objects.filter(
+
+            curso_periodo=c,
+
+            estado="activo"
+
+        ).count()
+
+        data.append({
+
+            "curso": c.curso.nombre,
+
+            "grupo": c.nombre_grupo,
+
+            "dia": c.get_dia_semana_display(),
+
+            "hora": c.hora.strftime("%H:%M"),
+
+            "inscritos": inscritos,
+
+            "cupo": c.cupo
+
+        })
+
+    return JsonResponse({
+
+        "nombre": maestro.user.get_full_name(),
+
+        "especialidad": maestro.especialidad.nombre if maestro.especialidad else "",
+
+        "telefono": maestro.telefono,
+
+        "cursos": data
+
+    })
+
+
+@login_required(login_url='/escuela/login/')
+def ajax_buscar_estudiante(request):
+
+    iglesia = obtener_iglesia(request)
+
+    term = request.GET.get("term", "").strip()
+
+    inscritos = Inscripcion.objects.filter(
+
+        estudiante__iglesia=iglesia
+
+    ).filter(
+
+        Q(estudiante__nombre__icontains=term) |
+
+        Q(estudiante__apellido__icontains=term)
+
+    ).select_related(
+
+        "estudiante"
+
+    ).distinct()
+
+    resultados = []
+
+    for i in inscritos[:20]:
+
+        resultados.append({
+
+            "id": i.id,
+
+            "text": f"{i.estudiante.nombre} {i.estudiante.apellido}"
+
+        })
+
+    return JsonResponse(resultados, safe=False)
+
+
+@login_required(login_url='/escuela/login/')
+def ajax_info_estudiante(request):
+
+    iglesia = obtener_iglesia(request)
+
+    inscripcion = get_object_or_404(
+
+        Inscripcion,
+
+        pk=request.GET.get("id"),
+
+        estudiante__iglesia=iglesia
+
+    )
+
+    return JsonResponse({
+
+        "nombre": inscripcion.estudiante.nombre,
+
+        "apellido": inscripcion.estudiante.apellido,
+
+        "curso": inscripcion.curso_periodo.curso.nombre,
+
+        "grupo": inscripcion.curso_periodo.nombre_grupo,
+
+        "maestro": inscripcion.curso_periodo.maestro.get_full_name(),
+
+        "estado": inscripcion.estado,
+
+        "fecha": inscripcion.fecha_inscripcion.strftime("%d/%m/%Y")
+
+    })
+
+
+
+#-----------------------------------------------------------------
+#                      DASHBOARD ESCUELA
+#----------------------------------------------------------------
+
+
+@login_required(login_url='/escuela/login/')
+def dashboard_curso_periodo(request, pk):
+
+    iglesia = obtener_iglesia(request)
+
+    curso_periodo = get_object_or_404(
+        CursoPeriodo,
+        pk=pk,
+        iglesia=iglesia
+    )
+
+    inscritos = Inscripcion.objects.filter(
+        curso_periodo=curso_periodo,
+        estado="activo"
+    ).count()
+
+    clases = Clase.objects.filter(
+        curso_periodo=curso_periodo
+    ).count()
+
+    temas = TemaCursoPeriodo.objects.filter(
+        curso_periodo=curso_periodo
+    )
+
+    total_temas = temas.count()
+
+    temas_desarrollados = temas.filter(
+        desarrollado=True
+    ).count()
+
+    disponibles = max(
+        curso_periodo.cupo - inscritos,
+        0
+    )
+
+    porcentaje = 0
+
+    if curso_periodo.cupo:
+
+        porcentaje = round(
+            inscritos * 100 / curso_periodo.cupo,
+            1
+        )
+
+
+    context = {
+
+        "curso_periodo": curso_periodo,
+
+        "inscritos": inscritos,
+
+        "disponibles": disponibles,
+
+        "clases": clases,
+
+        "total_temas": total_temas,
+
+        "temas_desarrollados": temas_desarrollados,
+
+        "porcentaje": porcentaje,
+    }
+
+    context["inscripciones"] = get_estudiantes(curso_periodo)
+
+    return render(
+        request,
+        "escuela/gestion/dashboard/curso_periodo.html",
+        context
+    )
+
+
+def get_estudiantes(curso_periodo):
+
+    return (
+        Inscripcion.objects
+        .filter(
+            curso_periodo=curso_periodo,
+            estado="activo"
+        )
+        .select_related("estudiante")
+        .order_by(
+            "estudiante__apellido",
+            "estudiante__nombre"
+        )
+    )
+
+
+
+
+@login_required(login_url='/escuela/login/')
+def ajax_inscribir_estudiante(request, pk):
+
+    if request.method != "POST":
+
+        return JsonResponse({
+
+            "ok":False
+
+        })
+
+    iglesia = obtener_iglesia(request)
+
+    curso = get_object_or_404(
+
+        CursoPeriodo,
+
+        pk=pk,
+
+        iglesia=iglesia
+
+    )
+
+    estudiante = get_object_or_404(
+
+        Miembro,
+
+        pk=request.POST["estudiante"],
+
+        iglesia=iglesia
+
+    )
+
+    if Inscripcion.objects.filter(
+
+        estudiante=estudiante,
+
+        curso_periodo=curso
+
+    ).exists():
+
+        return JsonResponse({
+
+            "ok":False,
+
+            "mensaje":"El estudiante ya está inscrito."
+
+        })
+
+    inscritos = Inscripcion.objects.filter(
+
+        curso_periodo=curso,
+
+        estado="activo"
+
+    ).count()
+
+    if curso.cupo > 0 and inscritos >= curso.cupo:
+
+        return JsonResponse({
+
+            "ok":False,
+
+            "mensaje":"El curso ya no tiene cupos."
+
+        })
+
+    Inscripcion.objects.create(
+
+        estudiante=estudiante,
+
+        curso_periodo=curso
+
+    )
+
+    return JsonResponse({
+
+        "ok":True
+
+    })
+
+
+
+@login_required(login_url='/escuela/login/')
+def ajax_buscar_estudiante_curso_periodo(request):
+
+    iglesia = obtener_iglesia(request)
+    termino = request.GET.get("term", "").strip()
+    curso_periodo_id = request.GET.get("curso_periodo")
+
+    curso_periodo = get_object_or_404(
+
+        CursoPeriodo,
+
+        pk=curso_periodo_id,
+
+        iglesia=iglesia
+
+    )
+
+    estudiantes = Miembro.objects.filter(
+
+        iglesia=iglesia,
+
+        activo=True
+
+    )
+
+
+
+
+    #*************************************************
+    # Excluir estudiantes inscritos en este grupo
+    #*************************************************
+
+    inscritos = Inscripcion.objects.filter(
+        curso_periodo=curso_periodo
+    ).values_list(
+        "estudiante_id",
+        flat=True
+    )
+
+    estudiantes = estudiantes.exclude(
+        id__in=inscritos
+    )
+
+    #*************************************************
+    #Excluir estudiantes inscritos en otro grupo del mismo curso
+    #*************************************************
+
+    otros_grupos = Inscripcion.objects.filter(
+
+        curso_periodo__curso=curso_periodo.curso,
+
+        curso_periodo__periodo=curso_periodo.periodo,
+
+        estado="activo"
+
+    ).values_list(
+
+        "estudiante_id",
+
+        flat=True
+
+    )
+
+    estudiantes = estudiantes.exclude(
+
+        id__in=otros_grupos
+
+    )
+
+    #*************************************************
+    #Excluir quienes aprobaron el curso
+    #*************************************************
+
+    aprobados = Inscripcion.objects.filter(
+
+        curso_periodo__curso=curso_periodo.curso,
+
+        estado="aprobado"
+
+    ).values_list(
+
+        "estudiante_id",
+
+        flat=True
+
+    )
+
+    estudiantes = estudiantes.exclude(
+
+        id__in=aprobados
+
+    )
+
+    #*************************************************
+    #Aplicar búsqueda
+    #*************************************************
+
+    estudiantes = estudiantes.filter(
+
+        Q(nombre__icontains=termino) |
+
+        Q(apellido__icontains=termino) |
+
+        Q(identificacion__icontains=termino)
+
+    ).order_by(
+
+        "apellido",
+
+        "nombre"
+
+    )[:20]
+
+    #*************************************************
+    #Retornar JSON
+    #*************************************************
+
+    data=[]
+
+    for estudiante in estudiantes:
+
+        data.append({
+
+            "id": estudiante.id,
+
+            "text": f"{estudiante.identificacion} - {estudiante.nombre} {estudiante.apellido}"
+
+        })
+
+    return JsonResponse(data, safe=False)

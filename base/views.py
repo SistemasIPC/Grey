@@ -6574,3 +6574,180 @@ def reporte_citas_pdf(request):
     doc.build(elementos)
 
     return response
+
+
+
+
+@login_required(login_url='/login/')
+def ajax_buscar_grupo_casa_reporte(request):
+
+    termino = request.GET.get(
+        "term",
+        ""
+    )
+
+    iglesia = request.session.get(
+        "iglesia_id"
+    )
+
+    grupos = GrupoCasa.objects.filter(
+
+        iglesia_id=iglesia,
+
+        descripcion__icontains=termino
+
+    ).order_by(
+        "descripcion"
+    )[:20]
+
+    resultado = [
+
+        {
+
+            "id": g.id,
+
+            "text": g.descripcion
+
+        }
+
+        for g in grupos
+
+    ]
+
+    return JsonResponse(
+        resultado,
+        safe=False
+    )
+
+
+@login_required(login_url='/login/')
+def reporte_grupo_red(request):
+
+    iglesia = request.session.get("iglesia_id")
+
+    fecha_inicio = request.GET.get(
+        "fecha_inicio"
+    )
+
+    fecha_fin = request.GET.get(
+        "fecha_fin"
+    )
+
+    tipo = request.GET.get(
+        "tipo"
+    )
+
+    red_id = request.GET.get(
+        "red"
+    )
+
+    grupo_id = request.GET.get(
+        "grupo_casa"
+    )
+
+    titulo_reporte = ""
+
+    if tipo == "red" and red_id:
+
+        red = Red.objects.filter(
+            id=red_id,
+            iglesia_id=iglesia
+        ).first()
+
+        if red:
+            titulo_reporte = f"Red: {red.nombre}"
+
+    elif tipo == "grupo" and grupo_id:
+
+        grupo = GrupoCasa.objects.filter(
+            id=grupo_id,
+            iglesia_id=iglesia
+        ).first()
+
+        if grupo:
+            titulo_reporte = f"Grupo Casa: {grupo.descripcion}"
+
+
+
+
+    consolidaciones = Consolidacion.objects.filter(
+
+        miembro__iglesia_id=iglesia
+
+    )
+
+    if fecha_inicio:
+
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__gte=fecha_inicio
+        )
+
+    if fecha_fin:
+
+        consolidaciones = consolidaciones.filter(
+            fecha_ingreso__lte=fecha_fin
+        )
+
+    if tipo == "red" and red_id:
+
+        consolidaciones = consolidaciones.filter(
+            red_id=red_id
+        )
+
+    if tipo == "grupo" and grupo_id:
+
+        consolidaciones = consolidaciones.filter(
+            grupo_casa_id=grupo_id
+        )
+
+    total = consolidaciones.count()
+
+    pendientes = consolidaciones.filter(
+        en_seguimiento="P"
+    ).count()
+
+    proceso = consolidaciones.filter(
+        en_seguimiento="E"
+    ).count()
+
+    terminados = consolidaciones.filter(
+        en_seguimiento="T"
+    ).count()
+
+    context = {
+
+        "redes": Red.objects.filter(
+            iglesia_id=iglesia
+        ),
+
+        "fecha_inicio": fecha_inicio,
+
+        "fecha_fin": fecha_fin,
+
+        "tipo": tipo,
+
+        "red_id": red_id,
+
+        "grupo_id": grupo_id,
+        "grupo": grupo,
+
+        "total": total,
+
+        "pendientes": pendientes,
+
+        "proceso": proceso,
+
+        "terminados": terminados,
+        "titulo_reporte": titulo_reporte,
+
+    }
+
+    return render(
+
+        request,
+
+        "reportes/consolidacion/reporte_red_grupo.html",
+
+        context
+
+    )

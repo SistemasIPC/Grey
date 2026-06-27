@@ -1,0 +1,73 @@
+<table class="table table-hover">
+
+<thead>
+
+<tr>
+
+<th>Nombre</th>
+
+<th>Teléfono</th>
+
+<th>Estado</th>
+
+<th width="250">Acciones</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for i in inscripciones %}
+
+<tr>
+
+<td>
+
+{{ i.estudiante.nombre }}
+
+{{ i.estudiante.apellido }}
+
+</td>
+
+<td>
+
+{{ i.estudiante.telefono }}
+
+</td>
+
+<td>
+
+{{ i.get_estado_display }}
+
+</td>
+
+<td>
+
+<a class="btn btn-info btn-sm">
+
+Dashboard
+
+</a>
+
+<a class="btn btn-success btn-sm">
+
+Historial
+
+</a>
+
+<a class="btn btn-danger btn-sm">
+
+Retirar
+
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>

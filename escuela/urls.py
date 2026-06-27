@@ -71,9 +71,29 @@ urlpatterns = [path('registro/',PaginaRegistro.as_view(),name='registro_escuela'
     path("materiales/orden/", views.material_curso_periodo_orden, name="material_curso_periodo_orden" ),
 
     path("inscripcion/<int:curso_periodo_id>/nuevo/", views.inscripcion_create, name="inscripcion_create"  ),
-    path( "auto-inscripcion/", views.auto_inscripcion, name="auto_inscripcion" )
+    path( "auto-inscripcion/", views.auto_inscripcion, name="auto_inscripcion" ),
 
-]
+#-----------------------------------------------------------------
+#                      DASHBOARD GENERAL INICIAL GESTION
+#----------------------------------------------------------------
+
+    path("dashboard/inicial", views.escuela_dashboard, name="escuela_dashboard_inicial" ),
+    path("ajax/buscar-maestro/",views.ajax_buscar_maestro, name="ajax_buscar_maestro"),
+    path("ajax/info-maestro/", views.ajax_info_maestro, name="ajax_info_maestro"),
+    path("ajax/buscar-estudiante/",views.ajax_buscar_estudiante, name="ajax_buscar_estudiante"),
+    path("ajax/info-estudiante/", views.ajax_info_estudiante, name="ajax_info_estudiante"),
+
+#-----------------------------------------------------------------
+#                      DASHBOARD ESCUELA
+#----------------------------------------------------------------
+    path( "dashboard/curso/<int:pk>/",  views.dashboard_curso_periodo,  name="dashboard_curso_periodo"),
+    path("ajax/inscribir-estudiante/<int:pk>/", views.ajax_inscribir_estudiante, name="ajax_inscribir_estudiante"),
+    path("ajax/cperiodo/buscar-estudiante/", views.ajax_buscar_estudiante_curso_periodo, name="ajax_buscar_estudiante_curso_periodo"),
+
+
+
+
+               ]
 
 
 if settings.DEBUG:

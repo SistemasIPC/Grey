@@ -1,0 +1,400 @@
+{% extends "escuela/principal.html" %}
+
+{% block content %}
+
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0/dist/js/select2.min.js"></script>
+
+<div class="container-fluid">
+
+    <h2 class="mb-4">
+
+        Tablero General Escuela
+
+    </h2>
+
+
+    <!-- CURSOS -->
+
+    <div class="card mb-4">
+
+        <div class="card-header bg-primary text-white">
+
+            Cursos Activos
+
+        </div>
+
+        <div class="card-body">
+
+            <table class="table table-bordered table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Curso</th>
+
+                        <th>Grupo</th>
+
+                        <th>Maestro</th>
+
+                        <th>Día</th>
+
+                        <th>Hora</th>
+
+                        <th>Aula</th>
+
+                        <th>Cupo</th>
+
+                        <th>Inscritos</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                {% for c in cursos %}
+
+                    <tr>
+
+
+                        <td>
+
+                            <a href="{% url 'dashboard_curso_periodo' c.id %}">
+                                {{ c.periodo.nombre }}
+                            </a>
+
+                        </td>
+
+
+                        <td>{{ c.curso.nombre }}</td>
+
+                        <td>{{ c.nombre_grupo }}</td>
+
+                        <td>
+
+                            {% if c.maestro %}
+                                {{ c.maestro.get_full_name }}
+                            {% endif %}
+
+                        </td>
+
+                        <td>{{ c.get_dia_semana_display }}</td>
+
+                        <td>{{ c.hora }}</td>
+
+                        <td>{{ c.aula }}</td>
+
+                        <td>{{ c.cupo }}</td>
+
+                        <td>
+
+                            {{ c.inscripcion_set.count }}
+
+                        </td>
+
+                    </tr>
+
+                {% empty %}
+
+                    <tr>
+
+                        <td colspan="8">
+
+                            No existen cursos activos.
+
+                        </td>
+
+                    </tr>
+
+                {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+
+    <div class="row">
+
+        <!-- MAESTRO -->
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header bg-success text-white">
+
+                    Buscar Maestro
+
+                </div>
+
+                <div class="card-body">
+
+                    <select
+
+                        id="buscar_maestro"
+
+                        class="form-control">
+
+                    </select>
+
+                    <hr>
+
+                    <div id="resultado_maestro">
+
+                        <div class="text-muted">
+
+                            Seleccione un maestro.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ESTUDIANTE -->
+
+        <div class="col-md-6">
+
+            <div class="card">
+
+                <div class="card-header bg-info text-white">
+
+                    Buscar Estudiante
+
+                </div>
+
+                <div class="card-body">
+
+                    <select
+
+                        id="buscar_estudiante"
+
+                        class="form-control">
+
+                    </select>
+
+                    <hr>
+
+                    <div id="resultado_estudiante">
+
+                        <div class="text-muted">
+
+                            Seleccione un estudiante.
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+$("#buscar_maestro").select2({
+
+    placeholder:"Digite el nombre del maestro",
+
+    minimumInputLength:3,
+
+    ajax:{
+
+        url:"{% url 'ajax_buscar_maestro' %}",
+
+        dataType:"json",
+
+        delay:300,
+
+        data:function(params){
+
+            return{
+
+                term:params.term
+
+            };
+
+        },
+
+        processResults:function(data){
+
+            return{
+
+                results:data
+
+            };
+
+        }
+
+    }
+
+});
+
+
+$("#buscar_estudiante").select2({
+
+    placeholder:"Digite el nombre del estudiante",
+
+    minimumInputLength:3,
+
+    ajax:{
+
+        url:"{% url 'ajax_buscar_estudiante' %}",
+
+        dataType:"json",
+
+        delay:300,
+
+        data:function(params){
+
+            return{
+
+                term:params.term
+
+            };
+
+        },
+
+        processResults:function(data){
+
+            return{
+
+                results:data
+
+            };
+
+        }
+
+    }
+
+});
+
+
+$("#buscar_maestro").on("select2:select",function(e){
+
+    $.get(
+
+        "{% url 'ajax_info_maestro' %}",
+
+        {
+
+            id:e.params.data.id
+
+        },
+
+        function(r){
+
+            let html="";
+
+            html+="<h5>"+r.nombre+"</h5>";
+
+            html+="<p><b>Especialidad:</b> "+r.especialidad+"</p>";
+
+            html+="<p><b>Teléfono:</b> "+r.telefono+"</p>";
+
+            html+="<table class='table table-sm table-bordered'>";
+
+            html+="<tr>";
+
+            html+="<th>Curso</th>";
+
+            html+="<th>Grupo</th>";
+
+            html+="<th>Día</th>";
+
+            html+="<th>Hora</th>";
+
+            html+="<th>Inscritos</th>";
+
+            html+="</tr>";
+
+            r.cursos.forEach(function(c){
+
+                html+="<tr>";
+
+                html+="<td>"+c.curso+"</td>";
+
+                html+="<td>"+c.grupo+"</td>";
+
+                html+="<td>"+c.dia+"</td>";
+
+                html+="<td>"+c.hora+"</td>";
+
+                html+="<td>"+c.inscritos+" / "+c.cupo+"</td>";
+
+                html+="</tr>";
+
+            });
+
+            html+="</table>";
+
+            $("#resultado_maestro").html(html);
+
+        }
+
+    );
+
+});
+
+
+$("#buscar_estudiante").on("select2:select",function(e){
+
+    $.get(
+
+        "{% url 'ajax_info_estudiante' %}",
+
+        {
+
+            id:e.params.data.id
+
+        },
+
+        function(r){
+
+            let html="";
+
+            html+="<h5>"+r.nombre+" "+r.apellido+"</h5>";
+
+            html+="<table class='table table-bordered table-sm'>";
+
+            html+="<tr><th>Curso</th><td>"+r.curso+"</td></tr>";
+
+            html+="<tr><th>Grupo</th><td>"+r.grupo+"</td></tr>";
+
+            html+="<tr><th>Maestro</th><td>"+r.maestro+"</td></tr>";
+
+            html+="<tr><th>Estado</th><td>"+r.estado+"</td></tr>";
+
+            html+="<tr><th>Inscripción</th><td>"+r.fecha+"</td></tr>";
+
+            html+="</table>";
+
+            $("#resultado_estudiante").html(html);
+
+        }
+
+    );
+
+});
+
+</script>
+
+{% endblock %}
