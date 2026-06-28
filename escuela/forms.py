@@ -159,10 +159,16 @@ class CursoPeriodoForm(forms.ModelForm):
             ).exclude(id__in=usados).order_by("nivel__orden")
 
             # 🔹 maestros de la iglesia
-            self.fields["maestro"].queryset = User.objects.filter(
-                maestro__iglesia=self.iglesia,
-                maestro__activo=True
+            self.fields["maestro"].label_from_instance = (
+                lambda obj: (
+                    f"{obj.first_name} {obj.last_name}".strip()
+                    if obj.first_name
+                    else obj.username
+                )
             )
+
+
+
 
     class Meta:
         model = CursoPeriodo
@@ -283,7 +289,12 @@ class MaestroForm(forms.ModelForm):
 
 
 
-            self.fields["user"].queryset = User.objects.exclude(id__in=usados)
+           # self.fields["user"].queryset = User.objects.exclude(id__in=usados)
+
+            self.fields['user'].label_from_instance = (
+                lambda obj: f"{obj.first_name} {obj.last_name}" if obj.first_name  else obj.username
+            )
+
 
     class Meta:
         model = Maestro

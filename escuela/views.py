@@ -1924,6 +1924,29 @@ def ajax_buscar_estudiante_curso_periodo(request):
 
     )
 
+
+
+    #*************************************************
+    #Excluir estudiantes inscritos en otros cursos del mismo periodo
+    #*************************************************
+
+    otros_curso_periodo = Inscripcion.objects.filter(
+
+        curso_periodo__periodo=curso_periodo.periodo,
+
+        estado="activo"
+
+    ).values_list(
+
+        "estudiante_id",
+
+        flat=True
+
+    )
+
+
+    estudiantes = estudiantes.exclude(id__in=otros_curso_periodo )
+
     #*************************************************
     #Excluir quienes aprobaron el curso
     #*************************************************

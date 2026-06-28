@@ -31,7 +31,7 @@
 <tbody>
 {% for m in page_obj %}
 <tr>
-    <td>{{ m.user.username }}</td>
+    <td>{{ m.user.first_name }} {{ m.user.last_name }}</td>
     <td>{{ m.especialidad }}</td>
     <td>{{ m.telefono }}</td>
     <td>{{ m.activo|yesno:"Sí,No" }}</td>
