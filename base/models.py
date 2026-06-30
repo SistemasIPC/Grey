@@ -11,7 +11,7 @@ import shutil
 from django.conf import settings
 
 from django.utils.timezone import now
-from presbiterio.models import Presbiterio
+
 
 # Create your models here.
 
@@ -727,7 +727,11 @@ class Bienvenida(models.Model):
         blank=True,
         null=True
     )
-
+    link_playlist_spotify = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True
+    )
     link_devocional_youversion = models.CharField(
         max_length=500,
         blank=True,

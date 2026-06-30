@@ -2002,6 +2002,10 @@ class VerBienvenidaView(DetailView):
             context["youtube_id_play"] = youtube_id_play
 
 
+            # veridicar spotify
+            if self.object.link_playlist_spotify:
+                context["link_playlist_spotify"] =  spotify_embed_url(self.object.link_playlist_spotify)
+
 
         return context
 

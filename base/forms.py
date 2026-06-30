@@ -390,6 +390,7 @@ class BienvenidaUpdateForm(forms.ModelForm):
             "numero_telefonico",
             "texto_biblico",
             "link_playlist",
+            "link_playlist_spotify",
             "link_devocional_youversion",
             "link_libro_online",
             "link_video_bienvenida",

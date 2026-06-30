@@ -51,7 +51,14 @@ def cargar_sesion_usuario(request, user,usuario_presbiterio=None):
                 usuario_presbiterio.superusuario
             )
 
-
+            request.session["tipo_organizacion"] = (
+                usuario_presbiterio.presbiterio.tipo
+            )
+            request.session["des_organizacion"] = (
+                usuario_presbiterio.presbiterio.get_tipo_display()
+                if usuario_presbiterio.presbiterio
+                else ""
+            )
 #            request.session["token_registro"] = str(
 #                usuario_presbiterio.id_presbiterio.token_registro
 #            )

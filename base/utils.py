@@ -3,7 +3,7 @@
 from django.shortcuts import get_object_or_404
 from .models import Usuario_iglesia, GrupoCasa, Ministerio,ConfiguracionIglesia,Consolidacion
 
-
+from urllib.parse import urlparse
 
 def cargar_sesion_usuario(request, user,usuario_iglesia=None):
 
@@ -117,3 +117,20 @@ def obtener_usuario_iglesia(request):
     return usuario_iglesia
 
 
+
+
+def spotify_embed_url(url):
+    """
+    Convierte una URL normal de Spotify a una URL de embed.
+
+    Ejemplo:
+    https://open.spotify.com/playlist/1UfcZRo1FTHjB2coOdybu0?si=...
+    ->
+    https://open.spotify.com/embed/playlist/1UfcZRo1FTHjB2coOdybu0?utm_source=generator
+    """
+    if not url:
+        return ""
+
+    path = urlparse(url).path
+
+    return f"https://open.spotify.com/embed{path}?utm_source=generator"

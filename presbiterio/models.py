@@ -4,10 +4,115 @@ from django.db import models
 from django.db import models
 from django.contrib.auth.models import User
 from django.urls import reverse
-
-
+from django.core.exceptions import ValidationError
 import datetime
+import random
+import string
 # Create your models here.
+
+
+import uuid
+
+def generar_codigo(modelo):
+    """
+    Genera un código alfanumérico único de 5 caracteres.
+    """
+    while True:
+        codigo = ''.join(random.choices(string.ascii_uppercase + string.digits, k=5))
+        if not modelo.objects.filter(codigo=codigo).exists():
+            return codigo
+
+
+class Presbiterio(models.Model):
+    TIPO = (
+        ("G", "General"),
+        ("S", "Sínodo"),
+        ("P", "Presbiterio"),
+    )
+
+    tipo = models.CharField(
+        max_length=1,
+        choices=TIPO,
+        default="P",
+        db_index=True
+    )
+
+    organizacion_padre = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="dependencias"
+    )
+
+    codigo = models.CharField(
+        max_length=5,
+        unique=True,
+        editable=False
+    )
+
+    token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True
+    )
+
+    nombre = models.CharField(max_length=200)
+    descripcion = models.TextField(null=True,
+                                   blank=True)
+    direccion = models.TextField(null=True, blank=True)
+    telefono = models.CharField(max_length=50, null=True, blank=True)
+    correo = models.CharField(max_length=100, null=True, blank=True)
+    activo = models.BooleanField(default=True)
+    creado = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['nombre']
+        verbose_name = "Organización"
+        verbose_name_plural = "Organizaciones"
+
+
+
+    def clean(self):
+
+        if self.tipo == "G" and self.organizacion_padre:
+            raise ValidationError(
+                "Una organización General no puede tener organización padre."
+            )
+
+        if self.tipo == "S":
+            if not self.organizacion_padre:
+                raise ValidationError(
+                    "Un Sínodo debe pertenecer a una organización General."
+                )
+
+            if self.organizacion_padre.tipo != "G":
+                raise ValidationError(
+                    "Un Sínodo solo puede depender de una organización General."
+                )
+
+        if self.tipo == "P":
+            if not self.organizacion_padre:
+                raise ValidationError(
+                    "Un Presbiterio debe pertenecer a un Sínodo."
+                )
+
+            if self.organizacion_padre.tipo != "S":
+                raise ValidationError(
+                    "Un Presbiterio solo puede depender de un Sínodo."
+                )
+
+    def save(self, *args, **kwargs):
+        if not self.codigo:
+            self.codigo = generar_codigo(Presbiterio)
+
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.get_tipo_display()} - {self.codigo} - {self.nombre}"
+        #return f"{self.codigo} - {self.nombre}"
+
 
 
 class Estado_asamblea(models.Model):
@@ -40,6 +145,17 @@ class Asamblea(models.Model):
     id_usuario = models.ForeignKey(User, on_delete=models.CASCADE,
                                  null=False,
                                  blank=True)
+    organizacion = models.ForeignKey(
+        Presbiterio,
+        on_delete=models.CASCADE,
+        related_name="asambleas"
+    )
+
+    token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True
+    )
     numero = models.PositiveIntegerField()
     titulo = models.CharField(max_length=200)
     descripcion = models.TextField(null=True,
@@ -91,6 +207,11 @@ class Miembro(models.Model):
     id_usuario = models.ForeignKey(User, on_delete=models.CASCADE,
                                  null=False,
                                  blank=True)
+    organizacion = models.ForeignKey(
+        Presbiterio,
+        on_delete=models.CASCADE,
+        related_name="miembros"
+    )
     identificacion = models.CharField(max_length=10)
     celular = models.CharField(max_length=10)
     nombre = models.CharField(max_length=100)
@@ -142,6 +263,11 @@ class Asistente(models.Model):
 
 
 class Tipo_organo(models.Model):
+    organizacion = models.ForeignKey(
+        Presbiterio,
+        on_delete=models.CASCADE,
+        related_name="tipos_organo"
+    )
     codigo = models.CharField(max_length=2)
     descripcion = models.CharField(max_length=50)
     def __str__(self):
@@ -193,6 +319,11 @@ class Estado_organo(models.Model):
         ordering = ['codigo']
 
 class Organo(models.Model):
+    organizacion = models.ForeignKey(
+        Presbiterio,
+        on_delete=models.CASCADE,
+        related_name="organos"
+    )
     codigo = models.CharField(max_length=2)
     descripcion = models.CharField(max_length=50)
     funcion = models.TextField(null=True,
@@ -395,23 +526,6 @@ class VotacionPostulado(models.Model):
 #==================================
 
 
-
-
-class Presbiterio(models.Model):
-    nombre = models.CharField(max_length=200)
-    descripcion = models.TextField(null=True,
-                                   blank=True)
-    direccion = models.TextField(null=True, blank=True)
-    telefono = models.CharField(max_length=50, null=True, blank=True)
-    correo = models.CharField(max_length=100, null=True, blank=True)
-    activo = models.BooleanField(default=True)
-    creado = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.nombre
-
-    class Meta:
-        ordering = ['nombre']
 
 
 class ConfiPresbiterio(models.Model):
